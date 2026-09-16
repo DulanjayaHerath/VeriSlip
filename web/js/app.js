@@ -87,14 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const waFileInput = document.getElementById("wa-file-input");
   const waChatText = document.getElementById("wa-chat-text");
   const waSendBtn = document.getElementById("wa-send-btn");
-
-  // Calculator Elements
-  const sellerSlider = document.getElementById("seller-slider");
-  const courierSlider = document.getElementById("courier-slider");
-  const sellerCount = document.getElementById("seller-count");
-  const courierCount = document.getElementById("courier-count");
-  const calcMrr = document.getElementById("calc-mrr");
-
   // ==========================================
   // 1. TAB NAVIGATION
   // ==========================================
@@ -906,25 +898,25 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================
-  // 9. UNIT ECONOMICS CALCULATOR
+  // 9. DEVELOPER API CODE SNIPPET COPIER
   // ==========================================
-  sellerSlider.addEventListener("input", updateCalculator);
-  courierSlider.addEventListener("input", updateCalculator);
-
-  function updateCalculator() {
-    const sellers = parseInt(sellerSlider.value);
-    const courierCalls = parseInt(courierSlider.value);
-
-    sellerCount.textContent = sellers.toLocaleString();
-    courierCount.textContent = courierCalls.toLocaleString();
-
-    // LKR 1,490 per seller/month + LKR 8 per courier API call
-    const sellerRev = sellers * 1490;
-    const courierRev = courierCalls * 8;
-    const totalRevLkr = sellerRev + courierRev;
-
-    calcMrr.textContent = `LKR ${totalRevLkr.toLocaleString()}`;
-  }
+  document.querySelectorAll(".copy-code-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetId = btn.dataset.copy;
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        navigator.clipboard.writeText(targetEl.textContent.trim()).then(() => {
+          const originalText = btn.textContent;
+          btn.textContent = "Copied!";
+          btn.style.color = "var(--accent-emerald)";
+          setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.color = "";
+          }, 2000);
+        });
+      }
+    });
+  });
 
   function setLoading(isLoading) {
     if (isLoading) {

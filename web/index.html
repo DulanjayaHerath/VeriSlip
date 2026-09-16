@@ -30,9 +30,9 @@
       <nav class="nav-links">
         <button class="nav-tab active" data-tab="cockpit">Forensic Cockpit</button>
         <button class="nav-tab" data-tab="batch">Batch Slip Auditor</button>
-        <button class="nav-tab" data-tab="whatsapp">WhatsApp Bot Demo</button>
-        <button class="nav-tab" data-tab="business">Monetization & Profit Model</button>
-        <button class="nav-tab" data-tab="team">Team (3) & Milestones</button>
+        <button class="nav-tab" data-tab="whatsapp">WhatsApp Fraud Shield</button>
+        <button class="nav-tab" data-tab="api">Developer API</button>
+        <button class="nav-tab" data-tab="pricing">Enterprise & Pricing</button>
       </nav>
 
       <div class="status-indicator">
@@ -438,171 +438,208 @@
         </div>
       </section>
 
-      <!-- TAB 3: BUSINESS & MONETIZATION -->
-      <section id="tab-business" class="tab-pane">
-        <div class="business-container">
-          <div class="business-hero glass-card">
-            <h2>Turning Forensic AI Into a High-Margin Venture</h2>
-            <p>VeriSlip operates across both B2C (social sellers) and high-volume B2B (courier networks, payment gateways), unlocking multi-tiered recurring revenue.</p>
-          </div>
-
-          <div class="revenue-grid">
-            <div class="revenue-card glass-card">
-              <div class="rev-tag">B2C Micro-SaaS</div>
-              <h3>WhatsApp Pro Seller Subscription</h3>
-              <div class="price-hero">LKR 1,490 <span>/ month</span></div>
-              <p class="rev-desc">Targeting 50,000+ active Sri Lankan Instagram & FB Marketplace sellers.</p>
-              <ul class="rev-features">
-                <li>✓ 200 slip verifications/month</li>
-                <li>✓ Real-time WhatsApp bot queue priority</li>
-                <li>✓ Red-box tamper localization photos</li>
-                <li>✓ Dispute evidence export</li>
-              </ul>
+      <!-- TAB 4: DEVELOPER API -->
+      <section id="tab-api" class="tab-pane">
+        <div class="api-container">
+          <div class="api-hero glass-card">
+            <div>
+              <h2>VeriSlip Developer API & SDK Integration</h2>
+              <p>Programmatic high-performance forensic REST API for logistics systems, e-commerce checkouts, and mobile courier driver apps.</p>
             </div>
-
-            <div class="revenue-card glass-card highlight-card">
-              <div class="rev-tag featured">High-Volume B2B</div>
-              <h3>Logistics & Courier Delivery API</h3>
-              <div class="price-hero">LKR 8.00 <span>/ check</span></div>
-              <p class="rev-desc">For couriers (Domex, Koombiyo, PromptX) whose riders face direct-deposit fake slip scams.</p>
-              <ul class="rev-features">
-                <li>✓ REST API & Mobile Driver SDK</li>
-                <li>✓ Instant verification before package release</li>
-                <li>✓ Multi-thousand check volume tier</li>
-                <li>✓ SLA guarantee & rider protection</li>
-              </ul>
-            </div>
-
-            <div class="revenue-card glass-card">
-              <div class="rev-tag">E-Commerce Plugin</div>
-              <h3>Shopify & WooCommerce Auto-Verify</h3>
-              <div class="price-hero">$29 <span>/ month</span></div>
-              <p class="rev-desc">Automated order status transition for stores accepting bank wire uploads.</p>
-              <ul class="rev-features">
-                <li>✓ Automatic slip scan upon order checkout</li>
-                <li>✓ Auto-transition to "Paid / Processing"</li>
-                <li>✓ Instant alert on high-risk doctored slips</li>
-                <li>✓ Zero manual accountant review needed</li>
-              </ul>
-            </div>
-
-            <div class="revenue-card glass-card">
-              <div class="rev-tag">Per-Incident Legal</div>
-              <h3>Certified Forensic Audit Certificate</h3>
-              <div class="price-hero">LKR 1,500 <span>/ report</span></div>
-              <p class="rev-desc">Tamper evidence pack for police cybercrime complaints and bank dispute claims.</p>
-              <ul class="rev-features">
-                <li>✓ Cryptographically signed PDF report</li>
-                <li>✓ Full ELA & DCT spectrum analysis</li>
-                <li>✓ Subpixel font anomaly logs</li>
-                <li>✓ Legal evidence-ready structure</li>
-              </ul>
+            <div class="api-badge-row">
+              <span class="api-spec-badge">⚡ Sub-1.5s Response</span>
+              <span class="api-spec-badge">🔒 SHA-256 Digital Seals</span>
+              <span class="api-spec-badge">📦 Multi-Bank Support</span>
+              <span class="api-spec-badge">🌐 OpenAPI 3.0 Compliant</span>
             </div>
           </div>
 
-          <!-- Interactive Unit Economics Calculator -->
-          <div class="calculator-card glass-card">
-            <h3>Projected Monthly Recurring Revenue (MRR) Calculator</h3>
-            <div class="calc-grid">
-              <div class="calc-control">
-                <label for="seller-slider">Active Social Media Sellers (Subscribers): <span id="seller-count" class="calc-val">500</span></label>
-                <input type="range" id="seller-slider" min="50" max="5000" step="50" value="500">
+          <div class="api-grid">
+            <!-- Endpoint 1: Single Verification -->
+            <div class="endpoint-card glass-card">
+              <div class="endpoint-header">
+                <span class="http-method post">POST</span>
+                <span class="endpoint-path">/api/v1/verify</span>
               </div>
-
-              <div class="calc-control">
-                <label for="courier-slider">Monthly Courier API Verification Calls: <span id="courier-count" class="calc-val">50,000</span></label>
-                <input type="range" id="courier-slider" min="5000" max="250000" step="5000" value="50000">
+              <p class="endpoint-desc">Upload a payment slip screenshot for full 5-layer forensic analysis (structural rules, ELA compression, noise variance, and dual-stream CNN).</p>
+              <div class="code-wrapper">
+                <button type="button" class="copy-code-btn" data-copy="curl-verify">Copy</button>
+                <pre id="curl-verify">curl -X POST "http://localhost:8000/api/v1/verify" \
+  -H "accept: application/json" \
+  -F "file=@payment_slip.jpg;type=image/jpeg" \
+  -F "bank_code=COMBANK" \
+  -F "reference_no=TXN1098234812"</pre>
               </div>
+            </div>
 
-              <div class="calc-result-box">
-                <span class="calc-result-label">Estimated Monthly Revenue:</span>
-                <span class="calc-result-amount" id="calc-mrr">LKR 1,145,000</span>
-                <span class="calc-result-sub">(~$3,800 USD/month gross at healthy 85%+ software margins)</span>
+            <!-- Endpoint 2: Batch Verification -->
+            <div class="endpoint-card glass-card">
+              <div class="endpoint-header">
+                <span class="http-method post">POST</span>
+                <span class="endpoint-path">/api/v1/batch-verify</span>
+              </div>
+              <p class="endpoint-desc">Submit up to 25 receipt screenshots simultaneously. Returns aggregate fraud statistics, individual verdicts, and localized tamper coordinates.</p>
+              <div class="code-wrapper">
+                <button type="button" class="copy-code-btn" data-copy="curl-batch">Copy</button>
+                <pre id="curl-batch">curl -X POST "http://localhost:8000/api/v1/batch-verify" \
+  -H "accept: application/json" \
+  -F "files=@slip_01.png" \
+  -F "files=@slip_02.png" \
+  -F "files=@slip_03.png"</pre>
+              </div>
+            </div>
+
+            <!-- Endpoint 3: Audit PDF Certificate -->
+            <div class="endpoint-card glass-card">
+              <div class="endpoint-header">
+                <span class="http-method post">POST</span>
+                <span class="endpoint-path">/api/v1/report/audit-pdf</span>
+              </div>
+              <p class="endpoint-desc">Generate official, cryptographically signed PDF forensic audit certificates with SHA-256 digital seals for law enforcement and bank disputes.</p>
+              <div class="code-wrapper">
+                <button type="button" class="copy-code-btn" data-copy="curl-pdf">Copy</button>
+                <pre id="curl-pdf">curl -X POST "http://localhost:8000/api/v1/report/audit-pdf" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "verdict": "HIGH_RISK_TAMPERED",
+    "tamper_risk_percentage": 92.4,
+    "recommendation": "DO NOT DISPATCH GOODS",
+    "bank_name": "Commercial Bank",
+    "reference_no": "TXN99281726"
+  }' \
+  --output Forensic_Certificate.pdf</pre>
+              </div>
+            </div>
+
+            <!-- Endpoint 4: WhatsApp Webhook -->
+            <div class="endpoint-card glass-card">
+              <div class="endpoint-header">
+                <span class="http-method post">POST</span>
+                <span class="endpoint-path">/api/v1/webhook/whatsapp</span>
+              </div>
+              <p class="endpoint-desc">Direct webhook receiver for WhatsApp Business Cloud API & Twilio. Automatically parses inbound media and dispatches instant seller warnings.</p>
+              <div class="code-wrapper">
+                <button type="button" class="copy-code-btn" data-copy="curl-wa">Copy</button>
+                <pre id="curl-wa">curl -X POST "http://localhost:8000/api/v1/webhook/whatsapp" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_phone": "+94771234567",
+    "image_base64": "data:image/jpeg;base64,...",
+    "caption": "Customer sent this slip for order #4092"
+  }'</pre>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- TAB 4: 3-PERSON TEAM & ROADMAP -->
-      <section id="tab-team" class="tab-pane">
-        <div class="team-container">
-          <div class="team-hero glass-card">
-            <h2>3-Person Engineering & Venture Division</h2>
-            <p>Consolidated from the initial 6-role blueprint into 3 high-impact, independent pillars ensuring rapid development velocity and distinct academic contributions.</p>
+      <!-- TAB 5: ENTERPRISE & PRICING -->
+      <section id="tab-pricing" class="tab-pane">
+        <div class="pricing-container">
+          <div class="pricing-hero glass-card">
+            <h2>Transparent Plans for Merchants & Logistics Fleets</h2>
+            <p>Protect your business from fraudulent bank wire screenshots and courier dispatch scams with battle-tested forensic AI.</p>
           </div>
 
-          <div class="team-grid">
-            <div class="team-card glass-card">
-              <div class="member-role">Person 1: AI & Forensic CV Lead</div>
-              <h3>Computer Vision & Classical Forensics</h3>
-              <p class="member-desc">Owns Layers 1, 2, and 3. Specializes in multi-scale pixel transforms and frequency domain analysis.</p>
-              <ul class="deliverables-list">
-                <li><strong>Layer 1:</strong> Bank layout matching & reference validation</li>
-                <li><strong>Layer 2:</strong> Error Level Analysis (ELA) & 2D-DCT double-JPEG compression</li>
-                <li><strong>Layer 3:</strong> Noise residual high-pass filtering & patch variance</li>
-                <li><strong>Research Contribution:</strong> Empirical characterization of screenshot vs camera sensor forensics</li>
+          <div class="pricing-grid">
+            <div class="pricing-card glass-card">
+              <div class="rev-tag">Starter</div>
+              <h3>Free Merchant Tier</h3>
+              <div class="price-hero">LKR 0 <span>/ month</span></div>
+              <p class="rev-desc">Essential tamper protection for early-stage social media boutiques.</p>
+              <ul class="rev-features">
+                <li>✓ 20 slip verifications / month</li>
+                <li>✓ Web Cockpit inspection access</li>
+                <li>✓ Structural layout validation</li>
+                <li>✓ Standard community support</li>
               </ul>
             </div>
 
-            <div class="team-card glass-card">
-              <div class="member-role">Person 2: Deep Learning & Data Lead</div>
-              <h3>Synthetic Data & Ensemble ML</h3>
-              <p class="member-desc">Owns the synthetic tampering engine, dataset curation, and Layer 4 learned neural ensemble.</p>
-              <ul class="deliverables-list">
-                <li><strong>Tamper Engine:</strong> Automated authentic/fake pair generator with ground-truth masks</li>
-                <li><strong>Dataset Splits:</strong> Curation across skill tiers (obvious, intermediate, expert)</li>
-                <li><strong>Layer 4 Model:</strong> PyTorch ensemble fusion classifier & localization head</li>
-                <li><strong>Research Contribution:</strong> Multi-modal forensic fusion benchmark on financial documents</li>
+            <div class="pricing-card glass-card featured">
+              <div class="featured-pill">Most Popular</div>
+              <div class="rev-tag featured">Social Sellers</div>
+              <h3>WhatsApp Shield Pro</h3>
+              <div class="price-hero">LKR 1,490 <span>/ month</span></div>
+              <p class="rev-desc">Automated, frictionless WhatsApp verification for high-volume Instagram & Facebook sellers.</p>
+              <ul class="rev-features">
+                <li>✓ 250 slip checks / month</li>
+                <li>✓ Real-time WhatsApp Bot priority</li>
+                <li>✓ Red-box tamper localization images</li>
+                <li>✓ Downloadable dispute certificates</li>
+                <li>✓ 24/7 priority seller queue</li>
               </ul>
             </div>
 
-            <div class="team-card glass-card">
-              <div class="member-role">Person 3: Full-Stack & Business Lead</div>
-              <h3>Backend, Product & GTM</h3>
-              <p class="member-desc">Owns the FastAPI production server, Web Cockpit, WhatsApp Bot, and commercial monetization.</p>
-              <ul class="deliverables-list">
-                <li><strong>Core API:</strong> High-performance FastAPI backend (<1.5s latency)</li>
-                <li><strong>Web Cockpit:</strong> Interactive inspection canvas with real-time heatmaps</li>
-                <li><strong>WhatsApp Bot:</strong> Webhook service & seller alert dispatch</li>
-                <li><strong>Product Contribution:</strong> Real-world merchant deployment, false-positive tuning, billing</li>
+            <div class="pricing-card glass-card">
+              <div class="rev-tag">High Volume</div>
+              <h3>Courier Logistics Fleet</h3>
+              <div class="price-hero">LKR 8.00 <span>/ API call</span></div>
+              <p class="rev-desc">Real-time driver app API integration for delivery services (Domex, Koombiyo, PromptX).</p>
+              <ul class="rev-features">
+                <li>✓ REST API & Mobile Driver SDK</li>
+                <li>✓ Sub-1.5 second turnaround SLA</li>
+                <li>✓ Pre-dispatch release verification</li>
+                <li>✓ Batch Slip Auditor access</li>
+                <li>✓ Multi-rider concurrent accounts</li>
+              </ul>
+            </div>
+
+            <div class="pricing-card glass-card">
+              <div class="rev-tag">Legal & Banking</div>
+              <h3>Enterprise Clearinghouse</h3>
+              <div class="price-hero">Custom <span>Enterprise</span></div>
+              <p class="rev-desc">Tailored fraud clearinghouse for banking institutions, payment gateways, and insurance auditors.</p>
+              <ul class="rev-features">
+                <li>✓ Dedicated VPC / On-Premise deployment</li>
+                <li>✓ Custom neural bank template tuning</li>
+                <li>✓ SHA-256 legal audit certificate authority</li>
+                <li>✓ Dedicated technical account manager</li>
+                <li>✓ 99.95% uptime enterprise SLA</li>
               </ul>
             </div>
           </div>
 
-          <!-- 14-Week Timeline -->
-          <div class="roadmap-card glass-card">
-            <h3>14-Week Dual-Track Milestones (Academic Paper + Startup MVP)</h3>
-            <div class="timeline">
-              <div class="t-step">
-                <span class="t-week">Weeks 1–2</span>
-                <strong>Architecture & Bank Rules</strong>
-                <p>Formalize template rules for ComBank, Sampath, BOC, HNB; establish baseline metrics.</p>
+          <!-- Enterprise Trust Banner -->
+          <div class="enterprise-trust-banner">
+            <div>
+              <strong style="font-size: 1.05rem;">Enterprise Reliability & Bank-Grade Security</strong>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">Adheres to standard digital image forensics and ISO evidentiary integrity practices.</p>
+            </div>
+            <div class="trust-stats">
+              <div class="trust-stat-item">
+                <strong>99.9%</strong>
+                <span>Uptime SLA</span>
               </div>
-              <div class="t-step">
-                <span class="t-week">Weeks 3–5</span>
-                <strong>Synthetic Engine & Layers 1–2</strong>
-                <p>Generate paired dataset; implement ELA and DCT frequency analysis.</p>
+              <div class="trust-stat-item">
+                <strong>SHA-256</strong>
+                <span>Cryptographic Stamps</span>
               </div>
-              <div class="t-step">
-                <span class="t-week">Weeks 6–8</span>
-                <strong>Layer 3 & DL Model Training</strong>
-                <p>Noise residual extraction; train Layer 4 ensemble detector.</p>
+              <div class="trust-stat-item">
+                <strong>&lt; 1.5s</strong>
+                <span>Median Scan Latency</span>
               </div>
-              <div class="t-step">
-                <span class="t-week">Weeks 9–10</span>
-                <strong>Adversarial & Robustness Testing</strong>
-                <p>Test against skilled fakes; evaluate false-positive tradeoffs.</p>
+            </div>
+          </div>
+
+          <!-- FAQ Section -->
+          <div class="faq-section glass-card">
+            <h3>Frequently Asked Questions</h3>
+            <div class="faq-grid">
+              <div class="faq-item">
+                <strong>How does VeriSlip detect doctored amounts on bank slips?</strong>
+                <p>VeriSlip combines classical signal processing (Error Level Analysis to detect recompression divergence and Laplacian edge analysis) with a dual-stream neural network that identifies patched font boundaries and spliced pixels.</p>
               </div>
-              <div class="t-step">
-                <span class="t-week">Weeks 11–12</span>
-                <strong>WhatsApp Bot & Pilot Launch</strong>
-                <p>Deploy beta bot to 20 friendly sellers; collect live feedback.</p>
+              <div class="faq-item">
+                <strong>Can VeriSlip verify slips sent through WhatsApp with compression?</strong>
+                <p>Yes. Social messaging apps re-compress images uniformly. VeriSlip's Layer 3 noise residual filter and Layer 4 feature fusion detect the localized variance break that occurred before transmission.</p>
               </div>
-              <div class="t-step">
-                <span class="t-week">Weeks 13–14</span>
-                <strong>Paper Finalization & GTM</strong>
-                <p>Submit research paper (e.g. MERCon); initiate courier B2B outreach.</p>
+              <div class="faq-item">
+                <strong>Is the PDF audit certificate admissible in merchant disputes?</strong>
+                <p>Yes. The certificate includes full pixel coordinates of flagged regions, multi-layer risk breakdowns, and a unique cryptographic SHA-256 fingerprint verifiable against dispute records.</p>
+              </div>
+              <div class="faq-item">
+                <strong>Which Sri Lankan banks are currently supported?</strong>
+                <p>Commercial Bank (ComBank Digital), Sampath Bank (Vishwa), Bank of Ceylon (BOC Digi/SmartPay), Hatton National Bank (SOLO/Digital), Seylan Bank PLC, and Nations Trust Bank (FriMi), alongside generic CEFTS/SLIPS.</p>
               </div>
             </div>
           </div>

@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.swp
+*.DS_Store
+~$*
+datasets/uploads/*
+!datasets/uploads/.gitkeep
+datasets/generated/*
+!datasets/generated/.gitkeep
+venv/
+.env

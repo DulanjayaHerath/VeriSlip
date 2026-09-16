@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeriSlip — AI Forensic Slip & Invoice Tamper Detection</title>
+  <meta name="description" content="Forensic fraud detection platform for Sri Lankan bank transfer slips and payment receipts in peer-to-peer commerce.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="navbar">
+      <div class="brand-group">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Veri<span class="gradient-text">Slip</span></span>
+          <span class="brand-badge">Forensic AI v1.0</span>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <button class="nav-tab active" data-tab="cockpit">Forensic Cockpit</button>
+        <button class="nav-tab" data-tab="whatsapp">WhatsApp Bot Demo</button>
+        <button class="nav-tab" data-tab="business">Monetization & Profit Model</button>
+        <button class="nav-tab" data-tab="team">Team (3) & Milestones</button>
+      </nav>
+
+      <div class="status-indicator">
+        <span class="status-dot online"></span>
+        <span class="status-label">5-Layer Engine Online</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- TAB 1: FORENSIC COCKPIT -->
+      <section id="tab-cockpit" class="tab-pane active">
+        <div class="cockpit-layout">
+          <!-- Left Control Panel -->
+          <aside class="control-panel glass-card">
+            <div class="panel-header">
+              <h2>Slip Ingestion</h2>
+              <p class="subtitle">Upload or generate banking screenshots</p>
+            </div>
+
+            <!-- Upload Area -->
+            <div class="upload-dropzone" id="dropzone">
+              <input type="file" id="file-input" accept="image/*" class="file-input-hidden">
+              <div class="dropzone-content">
+                <div class="upload-icon-wrapper">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                </div>
+                <p class="dropzone-title">Drop slip screenshot here</p>
+                <p class="dropzone-hint">Supports JPEG, PNG, WebP</p>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-browse">Browse Files</button>
+              </div>
+            </div>
+
+            <!-- Quick Test Synthetic Slips -->
+            <div class="quick-samples-section">
+              <span class="section-label">One-Click Test Samples:</span>
+              <div class="sample-btn-group">
+                <button type="button" class="sample-btn authentic-btn" id="btn-sample-auth">
+                  <span class="dot green"></span>
+                  <div class="sample-info">
+                    <span class="sample-title">Authentic ComBank Slip</span>
+                    <span class="sample-sub">Genuine LKR 12,500</span>
+                  </div>
+                </button>
+                <button type="button" class="sample-btn tampered-btn" id="btn-sample-tamper-amt">
+                  <span class="dot red"></span>
+                  <div class="sample-info">
+                    <span class="sample-title">Tampered Amount Forgery</span>
+                    <span class="sample-sub">Altered to LKR 125,000</span>
+                  </div>
+                </button>
+                <button type="button" class="sample-btn tampered-btn" id="btn-sample-tamper-ref">
+                  <span class="dot orange"></span>
+                  <div class="sample-info">
+                    <span class="sample-title">Spliced Reference Slip</span>
+                    <span class="sample-sub">Forged Txn Reference</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- Inspection Parameters -->
+            <div class="input-group">
+              <label for="bank-select">Target Bank Template</label>
+              <select id="bank-select" class="form-select">
+                <option value="COMBANK">Commercial Bank (ComBank Digital)</option>
+                <option value="SAMPATH">Sampath Bank (Vishwa)</option>
+                <option value="BOC">Bank of Ceylon (BOC Digi/SmartPay)</option>
+                <option value="HNB">Hatton National Bank (SOLO/Digital)</option>
+                <option value="GENERIC_CEFTS">Generic CEFTS / SLIPS</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label for="ref-input">Transaction Reference (Optional)</label>
+              <input type="text" id="ref-input" class="form-input" placeholder="e.g. TXN1098234812">
+            </div>
+
+            <button type="button" class="btn btn-primary btn-block" id="btn-run-scan">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <span>Analyze Forensics</span>
+            </button>
+          </aside>
+
+          <!-- Center Viewer & Right Verdict Panel -->
+          <div class="viewer-layout">
+            <!-- Inspection Canvas Card -->
+            <div class="inspection-card glass-card">
+              <div class="canvas-header">
+                <div class="view-toggles">
+                  <button class="toggle-pill active" data-view="original">Original Slip</button>
+                  <button class="toggle-pill" data-view="tamper">Flagged Forgery</button>
+                  <button class="toggle-pill" data-view="ela">ELA Heatmap</button>
+                  <button class="toggle-pill" data-view="noise">Noise Residuals</button>
+                </div>
+                <div class="canvas-actions">
+                  <span id="current-view-badge" class="badge">Original Image</span>
+                </div>
+              </div>
+
+              <div class="canvas-viewport" id="canvas-container">
+                <div id="loading-spinner" class="spinner-overlay hidden">
+                  <div class="spinner"></div>
+                  <p>Executing 5-Layer Forensic Pipeline...</p>
+                </div>
+                <img id="display-image" src="" alt="Slip Preview" class="slip-display-img hidden">
+                <canvas id="overlay-canvas" class="overlay-canvas"></canvas>
+                <div id="placeholder-empty" class="canvas-empty-state">
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <h3>No Slip Loaded</h3>
+                  <p>Upload a screenshot or click any sample slip on the left to begin.</p>
+                </div>
+              </div>
+
+              <!-- Anomaly Legend -->
+              <div class="canvas-footer" id="canvas-legend">
+                <div class="legend-item"><span class="legend-box red"></span> Altered Text / Number Splicing</div>
+                <div class="legend-item"><span class="legend-box orange"></span> Noise Residual Variance Outlier</div>
+                <div class="legend-item"><span class="legend-box purple"></span> Compression Gradient Anomaly</div>
+              </div>
+            </div>
+
+            <!-- Verdict & Metric Cards -->
+            <div class="verdict-sidebar">
+              <!-- High-Level Verdict Card -->
+              <div class="verdict-card glass-card" id="verdict-card">
+                <div class="verdict-header">
+                  <span class="verdict-label">Forensic Risk Assessment</span>
+                  <span id="verdict-tag" class="verdict-tag safe">AWAITING INPUT</span>
+                </div>
+
+                <div class="risk-gauge-wrapper">
+                  <div class="gauge-meter">
+                    <div class="gauge-fill" id="gauge-fill" style="width: 0%;"></div>
+                  </div>
+                  <div class="gauge-values">
+                    <span class="risk-percentage" id="risk-score-text">0.0%</span>
+                    <span class="risk-sublabel">Tamper Probability</span>
+                  </div>
+                </div>
+
+                <div class="recommendation-box" id="rec-box">
+                  <p id="rec-text">Select or upload a payment slip to perform verification.</p>
+                </div>
+
+                <button class="btn btn-outline btn-block btn-sm" id="btn-download-report" disabled>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  Export Forensic Audit Report
+                </button>
+              </div>
+
+              <!-- Multi-Layer Technical Breakdowns -->
+              <div class="layers-card glass-card">
+                <h3>Multi-Layer Forensic Signals</h3>
+                
+                <div class="layer-item">
+                  <div class="layer-title-row">
+                    <span class="layer-name">Layer 1: Structural & Metadata</span>
+                    <span class="layer-score-badge" id="l1-score">—</span>
+                  </div>
+                  <p class="layer-desc" id="l1-desc">Template layout, EXIF software tags, reference regex.</p>
+                </div>
+
+                <div class="layer-item">
+                  <div class="layer-title-row">
+                    <span class="layer-name">Layer 2: Error Level (ELA) & DCT</span>
+                    <span class="layer-score-badge" id="l2-score">—</span>
+                  </div>
+                  <p class="layer-desc" id="l2-desc">JPEG compression error divergence & frequency periodicity.</p>
+                </div>
+
+                <div class="layer-item">
+                  <div class="layer-title-row">
+                    <span class="layer-name">Layer 3: Noise Residual Variance</span>
+                    <span class="layer-score-badge" id="l3-score">—</span>
+                  </div>
+                  <p class="layer-desc" id="l3-desc">Spatial high-pass noise discontinuity & patched text edges.</p>
+                </div>
+              </div>
+
+              <!-- Forensic Audit Findings Log -->
+              <div class="findings-card glass-card">
+                <h3>Detected Anomaly Evidence</h3>
+                <ul class="findings-list" id="findings-list">
+                  <li class="findings-empty">No anomalies recorded yet.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: WHATSAPP BOT DEMO -->
+      <section id="tab-whatsapp" class="tab-pane">
+        <div class="whatsapp-layout">
+          <div class="whatsapp-intro glass-card">
+            <h2>The Frictionless Merchant Workflow</h2>
+            <p>90%+ of P2P commerce in Sri Lanka happens over WhatsApp and Instagram direct messaging. Sellers do not want to install complex desktop apps while actively closing a sale. With the <strong>VeriSlip WhatsApp Bot</strong>, sellers forward the buyer's slip directly and get an automated verdict in <strong>3 seconds</strong>.</p>
+
+            <div class="feature-bullets">
+              <div class="f-bullet">
+                <span class="f-icon">⚡</span>
+                <div>
+                  <strong>Sub-3 Second Latency</strong>
+                  <p>Instant forensic scan returns while customer is waiting in chat.</p>
+                </div>
+              </div>
+              <div class="f-bullet">
+                <span class="f-icon">🎯</span>
+                <div>
+                  <strong>Visual Tamper Annotations</strong>
+                  <p>Forged amounts or doctored references are red-boxed in the return image.</p>
+                </div>
+              </div>
+              <div class="f-bullet">
+                <span class="f-icon">💰</span>
+                <div>
+                  <strong>High-Margin Monetization</strong>
+                  <p>10 free checks/month, followed by LKR 1,490/mo Pro pack or LKR 10/check micropayments.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="test-bot-cta">
+              <p>Simulate sending a slip to the bot right now:</p>
+              <div class="bot-btn-row">
+                <button class="btn btn-secondary" id="btn-wa-auth">Send Authentic Slip</button>
+                <button class="btn btn-danger" id="btn-wa-tamper">Send Forged Slip (Amount Edit)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phone Mockup -->
+          <div class="phone-mockup">
+            <div class="phone-screen">
+              <div class="wa-header">
+                <div class="wa-avatar">VS</div>
+                <div class="wa-contact-info">
+                  <div class="wa-name">VeriSlip Fraud Shield</div>
+                  <div class="wa-status">Official Business Account • Online</div>
+                </div>
+              </div>
+
+              <div class="wa-chat-body" id="wa-chat-body">
+                <div class="wa-msg wa-received">
+                  👋 Welcome to VeriSlip Bot! Forward any bank transfer screenshot or payment receipt to instantly verify authenticity.
+                  <span class="wa-time">14:30</span>
+                </div>
+              </div>
+
+              <div class="wa-footer">
+                <div class="wa-input-fake">Forwarded slip image...</div>
+                <button class="wa-send-btn">➤</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: BUSINESS & MONETIZATION -->
+      <section id="tab-business" class="tab-pane">
+        <div class="business-container">
+          <div class="business-hero glass-card">
+            <h2>Turning Forensic AI Into a High-Margin Venture</h2>
+            <p>VeriSlip operates across both B2C (social sellers) and high-volume B2B (courier networks, payment gateways), unlocking multi-tiered recurring revenue.</p>
+          </div>
+
+          <div class="revenue-grid">
+            <div class="revenue-card glass-card">
+              <div class="rev-tag">B2C Micro-SaaS</div>
+              <h3>WhatsApp Pro Seller Subscription</h3>
+              <div class="price-hero">LKR 1,490 <span>/ month</span></div>
+              <p class="rev-desc">Targeting 50,000+ active Sri Lankan Instagram & FB Marketplace sellers.</p>
+              <ul class="rev-features">
+                <li>✓ 200 slip verifications/month</li>
+                <li>✓ Real-time WhatsApp bot queue priority</li>
+                <li>✓ Red-box tamper localization photos</li>
+                <li>✓ Dispute evidence export</li>
+              </ul>
+            </div>
+
+            <div class="revenue-card glass-card highlight-card">
+              <div class="rev-tag featured">High-Volume B2B</div>
+              <h3>Logistics & Courier Delivery API</h3>
+              <div class="price-hero">LKR 8.00 <span>/ check</span></div>
+              <p class="rev-desc">For couriers (Domex, Koombiyo, PromptX) whose riders face direct-deposit fake slip scams.</p>
+              <ul class="rev-features">
+                <li>✓ REST API & Mobile Driver SDK</li>
+                <li>✓ Instant verification before package release</li>
+                <li>✓ Multi-thousand check volume tier</li>
+                <li>✓ SLA guarantee & rider protection</li>
+              </ul>
+            </div>
+
+            <div class="revenue-card glass-card">
+              <div class="rev-tag">E-Commerce Plugin</div>
+              <h3>Shopify & WooCommerce Auto-Verify</h3>
+              <div class="price-hero">$29 <span>/ month</span></div>
+              <p class="rev-desc">Automated order status transition for stores accepting bank wire uploads.</p>
+              <ul class="rev-features">
+                <li>✓ Automatic slip scan upon order checkout</li>
+                <li>✓ Auto-transition to "Paid / Processing"</li>
+                <li>✓ Instant alert on high-risk doctored slips</li>
+                <li>✓ Zero manual accountant review needed</li>
+              </ul>
+            </div>
+
+            <div class="revenue-card glass-card">
+              <div class="rev-tag">Per-Incident Legal</div>
+              <h3>Certified Forensic Audit Certificate</h3>
+              <div class="price-hero">LKR 1,500 <span>/ report</span></div>
+              <p class="rev-desc">Tamper evidence pack for police cybercrime complaints and bank dispute claims.</p>
+              <ul class="rev-features">
+                <li>✓ Cryptographically signed PDF report</li>
+                <li>✓ Full ELA & DCT spectrum analysis</li>
+                <li>✓ Subpixel font anomaly logs</li>
+                <li>✓ Legal evidence-ready structure</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Interactive Unit Economics Calculator -->
+          <div class="calculator-card glass-card">
+            <h3>Projected Monthly Recurring Revenue (MRR) Calculator</h3>
+            <div class="calc-grid">
+              <div class="calc-control">
+                <label for="seller-slider">Active Social Media Sellers (Subscribers): <span id="seller-count" class="calc-val">500</span></label>
+                <input type="range" id="seller-slider" min="50" max="5000" step="50" value="500">
+              </div>
+
+              <div class="calc-control">
+                <label for="courier-slider">Monthly Courier API Verification Calls: <span id="courier-count" class="calc-val">50,000</span></label>
+                <input type="range" id="courier-slider" min="5000" max="250000" step="5000" value="50000">
+              </div>
+
+              <div class="calc-result-box">
+                <span class="calc-result-label">Estimated Monthly Revenue:</span>
+                <span class="calc-result-amount" id="calc-mrr">LKR 1,145,000</span>
+                <span class="calc-result-sub">(~$3,800 USD/month gross at healthy 85%+ software margins)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: 3-PERSON TEAM & ROADMAP -->
+      <section id="tab-team" class="tab-pane">
+        <div class="team-container">
+          <div class="team-hero glass-card">
+            <h2>3-Person Engineering & Venture Division</h2>
+            <p>Consolidated from the initial 6-role blueprint into 3 high-impact, independent pillars ensuring rapid development velocity and distinct academic contributions.</p>
+          </div>
+
+          <div class="team-grid">
+            <div class="team-card glass-card">
+              <div class="member-role">Person 1: AI & Forensic CV Lead</div>
+              <h3>Computer Vision & Classical Forensics</h3>
+              <p class="member-desc">Owns Layers 1, 2, and 3. Specializes in multi-scale pixel transforms and frequency domain analysis.</p>
+              <ul class="deliverables-list">
+                <li><strong>Layer 1:</strong> Bank layout matching & reference validation</li>
+                <li><strong>Layer 2:</strong> Error Level Analysis (ELA) & 2D-DCT double-JPEG compression</li>
+                <li><strong>Layer 3:</strong> Noise residual high-pass filtering & patch variance</li>
+                <li><strong>Research Contribution:</strong> Empirical characterization of screenshot vs camera sensor forensics</li>
+              </ul>
+            </div>
+
+            <div class="team-card glass-card">
+              <div class="member-role">Person 2: Deep Learning & Data Lead</div>
+              <h3>Synthetic Data & Ensemble ML</h3>
+              <p class="member-desc">Owns the synthetic tampering engine, dataset curation, and Layer 4 learned neural ensemble.</p>
+              <ul class="deliverables-list">
+                <li><strong>Tamper Engine:</strong> Automated authentic/fake pair generator with ground-truth masks</li>
+                <li><strong>Dataset Splits:</strong> Curation across skill tiers (obvious, intermediate, expert)</li>
+                <li><strong>Layer 4 Model:</strong> PyTorch ensemble fusion classifier & localization head</li>
+                <li><strong>Research Contribution:</strong> Multi-modal forensic fusion benchmark on financial documents</li>
+              </ul>
+            </div>
+
+            <div class="team-card glass-card">
+              <div class="member-role">Person 3: Full-Stack & Business Lead</div>
+              <h3>Backend, Product & GTM</h3>
+              <p class="member-desc">Owns the FastAPI production server, Web Cockpit, WhatsApp Bot, and commercial monetization.</p>
+              <ul class="deliverables-list">
+                <li><strong>Core API:</strong> High-performance FastAPI backend (<1.5s latency)</li>
+                <li><strong>Web Cockpit:</strong> Interactive inspection canvas with real-time heatmaps</li>
+                <li><strong>WhatsApp Bot:</strong> Webhook service & seller alert dispatch</li>
+                <li><strong>Product Contribution:</strong> Real-world merchant deployment, false-positive tuning, billing</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- 14-Week Timeline -->
+          <div class="roadmap-card glass-card">
+            <h3>14-Week Dual-Track Milestones (Academic Paper + Startup MVP)</h3>
+            <div class="timeline">
+              <div class="t-step">
+                <span class="t-week">Weeks 1–2</span>
+                <strong>Architecture & Bank Rules</strong>
+                <p>Formalize template rules for ComBank, Sampath, BOC, HNB; establish baseline metrics.</p>
+              </div>
+              <div class="t-step">
+                <span class="t-week">Weeks 3–5</span>
+                <strong>Synthetic Engine & Layers 1–2</strong>
+                <p>Generate paired dataset; implement ELA and DCT frequency analysis.</p>
+              </div>
+              <div class="t-step">
+                <span class="t-week">Weeks 6–8</span>
+                <strong>Layer 3 & DL Model Training</strong>
+                <p>Noise residual extraction; train Layer 4 ensemble detector.</p>
+              </div>
+              <div class="t-step">
+                <span class="t-week">Weeks 9–10</span>
+                <strong>Adversarial & Robustness Testing</strong>
+                <p>Test against skilled fakes; evaluate false-positive tradeoffs.</p>
+              </div>
+              <div class="t-step">
+                <span class="t-week">Weeks 11–12</span>
+                <strong>WhatsApp Bot & Pilot Launch</strong>
+                <p>Deploy beta bot to 20 friendly sellers; collect live feedback.</p>
+              </div>
+              <div class="t-step">
+                <span class="t-week">Weeks 13–14</span>
+                <strong>Paper Finalization & GTM</strong>
+                <p>Submit research paper (e.g. MERCon); initiate courier B2B outreach.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

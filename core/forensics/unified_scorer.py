@@ -11,6 +11,7 @@ import numpy as np
 from core.forensics.layer1_structural import Layer1StructuralValidator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
+from core.ml.ensemble_model import Layer4DeepEnsemble
 from core.forensics.utils import normalize_dimensions
 
 def merge_bounding_boxes(boxes: List[Dict[str, Any]], iou_thresh: float = 0.3) -> List[Dict[str, Any]]:
@@ -49,6 +50,7 @@ class VeriSlipForensicEngine:
         self.layer1 = Layer1StructuralValidator()
         self.layer2 = Layer2ClassicalForensics()
         self.layer3 = Layer3NoiseForensics()
+        self.layer4 = Layer4DeepEnsemble()
 
     def analyze(
         self,
@@ -62,28 +64,35 @@ class VeriSlipForensicEngine:
         # Resize if oversized for efficient, responsive inference
         normalized_img = normalize_dimensions(pil_image, max_dim=1400)
 
-        # Run layers
+        # Run layers 1, 2, and 3
         l1_res = self.layer1.evaluate(normalized_img, bank_code=bank_code, reference_no=reference_no)
         l2_res = self.layer2.evaluate(normalized_img)
         l3_res = self.layer3.evaluate(normalized_img)
 
-        # Ensemble weights:
-        # Classical ELA & DCT (Layer 2) is the primary signal for spliced receipts (45%)
-        # Noise residual (Layer 3) catches flat/spliced text patches (35%)
-        # Structural & metadata (Layer 1) provides sanity checks and software flags (20%)
-        w1, w2, w3 = 0.20, 0.45, 0.35
+        # Run Layer 4 Deep Learning Ensemble
+        diff_gray = l2_res.get("diff_gray", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
+        residual = l3_res.get("residual", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
+        l4_res = self.layer4.evaluate(normalized_img, diff_gray, residual)
+
+        # Multi-modal fusion weights:
+        # Layer 1 Structural & Metadata: 15%
+        # Layer 2 Classical ELA & DCT: 35%
+        # Layer 3 Noise Residuals: 25%
+        # Layer 4 Deep Learning Feature Fusion: 25%
+        w1, w2, w3, w4 = 0.15, 0.35, 0.25, 0.25
 
         composite_risk = (
             w1 * l1_res["anomaly_score"] +
             w2 * l2_res["anomaly_score"] +
-            w3 * l3_res["anomaly_score"]
+            w3 * l3_res["anomaly_score"] +
+            w4 * l4_res["anomaly_score"]
         )
 
         # Boost risk if editing software was definitively identified in file metadata
         if l1_res["metadata_analysis"]["is_suspicious"]:
             composite_risk = max(composite_risk, 0.68)
 
-        # Collect candidate bounding boxes from Layer 2 and Layer 3
+        # Collect candidate bounding boxes from Layer 2, Layer 3, and Layer 4
         candidate_boxes = []
         for box in l2_res.get("detected_regions", []):
             candidate_boxes.append(box)
@@ -94,6 +103,9 @@ class VeriSlipForensicEngine:
                 "confidence": round(min(0.92, outlier["z_score"] * 0.20), 2),
                 "label": "Noise Residual Break"
             })
+
+        for box in l4_res.get("detected_regions", []):
+            candidate_boxes.append(box)
 
         final_boxes = merge_bounding_boxes(candidate_boxes)
 
@@ -125,6 +137,7 @@ class VeriSlipForensicEngine:
         all_findings.extend(l1_res.get("findings", []))
         all_findings.extend(l2_res.get("findings", []))
         all_findings.extend(l3_res.get("findings", []))
+        all_findings.extend(l4_res.get("findings", []))
 
         return {
             "verdict": verdict,
@@ -153,6 +166,13 @@ class VeriSlipForensicEngine:
                     "is_anomalous": l3_res["is_anomalous"],
                     "mean_noise_variance": l3_res["mean_noise_variance"],
                     "findings": l3_res["findings"]
+                },
+                "layer4_ensemble": {
+                    "score": l4_res["anomaly_score"],
+                    "is_anomalous": l4_res["is_anomalous"],
+                    "tamper_probability": l4_res.get("tamper_probability", 0.0),
+                    "engine": l4_res.get("engine", "Deep Learning"),
+                    "findings": l4_res.get("findings", [])
                 }
             },
             "forensic_maps": {

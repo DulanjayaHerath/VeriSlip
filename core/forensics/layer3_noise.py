@@ -118,5 +118,6 @@ class Layer3NoiseForensics:
             "mean_noise_variance": round(mean_var, 3),
             "outlier_blocks": outliers[:8],
             "noise_heatmap_base64": cv2_to_base64(noise_heatmap),
+            "residual": residual,
             "findings": notes
         }

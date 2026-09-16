@@ -205,5 +205,6 @@ class Layer2ClassicalForensics:
             "detected_regions": boxes,
             "double_compression_analysis": dct_res,
             "heatmap_base64": cv2_to_base64(heatmap),
+            "diff_gray": diff_gray,
             "findings": notes
         }

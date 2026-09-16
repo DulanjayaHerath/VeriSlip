@@ -76,6 +76,40 @@ BANK_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "currency": "LKR",
         "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
     },
+    "SEYLAN": {
+        "bank_name": "Seylan Bank PLC",
+        "app_name": "Seylan Mobile Banking",
+        "primary_color_rgb": (166, 25, 46),  # Seylan Crimson Red
+        "ref_patterns": [
+            r"^(?:SEY|TXN)?[0-9]{8,14}$",
+            r"^[0-9]{10,12}$"
+        ],
+        "mandatory_fields": [
+            "Reference",
+            "To Account",
+            "Amount",
+            "Date"
+        ],
+        "currency": "LKR",
+        "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+    },
+    "NTB_FRIMI": {
+        "bank_name": "Nations Trust Bank / FriMi",
+        "app_name": "FriMi / NTB Direct",
+        "primary_color_rgb": (230, 0, 126),  # FriMi Magenta
+        "ref_patterns": [
+            r"^(?:FM|NTB)?[0-9]{8,14}$",
+            r"^[A-Z0-9]{10,14}$"
+        ],
+        "mandatory_fields": [
+            "Transaction ID",
+            "Sent To",
+            "Amount",
+            "Date"
+        ],
+        "currency": "LKR",
+        "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+    },
     "GENERIC_CEFTS": {
         "bank_name": "CEFTS / LankaPay Interbank",
         "app_name": "Generic Payment Slip",
@@ -103,6 +137,10 @@ def identify_bank_from_text(text: str) -> str:
         return "BOC"
     elif "HATTON NATIONAL" in text_upper or "HNB" in text_upper or "SOLO" in text_upper:
         return "HNB"
+    elif "SEYLAN" in text_upper:
+        return "SEYLAN"
+    elif "FRIMI" in text_upper or "NATIONS TRUST" in text_upper or "NTB" in text_upper:
+        return "NTB_FRIMI"
     return "GENERIC_CEFTS"
 
 def validate_reference_number(bank_code: str, ref_number: str) -> Dict[str, Any]:

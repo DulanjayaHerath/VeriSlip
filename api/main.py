@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from api.routes.verify import router as verify_router
 from api.routes.forensics import router as forensics_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
+from api.routes.reports import router as reports_router
 
 app = FastAPI(
     title="VeriSlip Forensic API",
@@ -31,6 +32,7 @@ app.add_middleware(
 app.include_router(verify_router)
 app.include_router(forensics_router)
 app.include_router(whatsapp_router)
+app.include_router(reports_router)
 
 @app.get("/health")
 def health_check():
@@ -38,7 +40,7 @@ def health_check():
         "status": "healthy",
         "service": "VeriSlip Forensic Engine",
         "version": "1.0.0",
-        "supported_banks": ["COMBANK", "SAMPATH", "BOC", "HNB", "GENERIC_CEFTS"]
+        "supported_banks": ["COMBANK", "SAMPATH", "BOC", "HNB", "SEYLAN", "NTB_FRIMI", "GENERIC_CEFTS"]
     }
 
 # Mount static web directory

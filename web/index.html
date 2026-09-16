@@ -29,6 +29,7 @@
 
       <nav class="nav-links">
         <button class="nav-tab active" data-tab="cockpit">Forensic Cockpit</button>
+        <button class="nav-tab" data-tab="batch">Batch Slip Auditor</button>
         <button class="nav-tab" data-tab="whatsapp">WhatsApp Bot Demo</button>
         <button class="nav-tab" data-tab="business">Monetization & Profit Model</button>
         <button class="nav-tab" data-tab="team">Team (3) & Milestones</button>
@@ -105,6 +106,8 @@
                 <option value="SAMPATH">Sampath Bank (Vishwa)</option>
                 <option value="BOC">Bank of Ceylon (BOC Digi/SmartPay)</option>
                 <option value="HNB">Hatton National Bank (SOLO/Digital)</option>
+                <option value="SEYLAN">Seylan Bank PLC (Seylan Mobile)</option>
+                <option value="NTB_FRIMI">Nations Trust Bank / FriMi</option>
                 <option value="GENERIC_CEFTS">Generic CEFTS / SLIPS</option>
               </select>
             </div>
@@ -134,9 +137,22 @@
                   <button class="toggle-pill" data-view="ela">ELA Heatmap</button>
                   <button class="toggle-pill" data-view="noise">Noise Residuals</button>
                 </div>
+                <div class="canvas-zoom-controls">
+                  <button type="button" class="zoom-btn" id="btn-zoom-in" title="Zoom In">+</button>
+                  <button type="button" class="zoom-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+                  <button type="button" class="zoom-btn" id="btn-zoom-reset" title="Reset Zoom">↺</button>
+                </div>
                 <div class="canvas-actions">
                   <span id="current-view-badge" class="badge">Original Image</span>
                 </div>
+              </div>
+
+              <!-- Extracted Financial Metadata Bar -->
+              <div class="metadata-bar" id="metadata-bar">
+                <span class="meta-chip highlight" id="meta-bank">🏦 <strong>Bank:</strong> Auto-detect</span>
+                <span class="meta-chip amount-chip" id="meta-amount">💵 <strong>Extracted Amount:</strong> Awaiting scan</span>
+                <span class="meta-chip" id="meta-ref">🔖 <strong>Reference:</strong> —</span>
+                <span class="meta-chip" id="meta-viewport">📱 <strong>Layout:</strong> Mobile Screen</span>
               </div>
 
               <div class="canvas-viewport" id="canvas-container">
@@ -227,6 +243,14 @@
                   </div>
                   <p class="layer-desc" id="l3-desc">Spatial high-pass noise discontinuity & patched text edges.</p>
                 </div>
+
+                <div class="layer-item">
+                  <div class="layer-title-row">
+                    <span class="layer-name">Layer 4: Deep Learning Ensemble</span>
+                    <span class="layer-score-badge" id="l4-score">—</span>
+                  </div>
+                  <p class="layer-desc" id="l4-desc">Dual-stream CNN cross-attention fusion & neural localization.</p>
+                </div>
               </div>
 
               <!-- Forensic Audit Findings Log -->
@@ -241,7 +265,107 @@
         </div>
       </section>
 
-      <!-- TAB 2: WHATSAPP BOT DEMO -->
+      <!-- TAB 2: BATCH SLIP AUDITOR -->
+      <section id="tab-batch" class="tab-pane">
+        <div class="batch-container">
+          <div class="batch-hero glass-card">
+            <div>
+              <h2>High-Throughput Batch Slip Auditor</h2>
+              <p>Automated multi-file forensic pipeline for couriers, marketplace sellers, and reconciliation teams.</p>
+            </div>
+            <div class="batch-hero-actions">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-load-demo-batch">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Load Demo Batch (5 Slips)
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-batch-browse">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Upload Slips Batch
+              </button>
+              <input type="file" id="batch-file-input" accept="image/*" multiple class="file-input-hidden">
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div class="batch-kpi-grid">
+            <div class="kpi-card glass-card">
+              <span class="kpi-label">Total Audited</span>
+              <span class="kpi-value" id="batch-total">0</span>
+              <span class="kpi-sub">Uploaded screenshots</span>
+            </div>
+            <div class="kpi-card glass-card safe">
+              <span class="kpi-label">Verified Authentic</span>
+              <span class="kpi-value" id="batch-auth">0</span>
+              <span class="kpi-sub" id="batch-auth-pct">0% safe</span>
+            </div>
+            <div class="kpi-card glass-card danger">
+              <span class="kpi-label">High-Risk Forgeries</span>
+              <span class="kpi-value" id="batch-risk">0</span>
+              <span class="kpi-sub" id="batch-risk-pct">0% fraudulent</span>
+            </div>
+            <div class="kpi-card glass-card accent">
+              <span class="kpi-label">Fraud Losses Blocked</span>
+              <span class="kpi-value" id="batch-savings">LKR 0</span>
+              <span class="kpi-sub">Estimated revenue protected</span>
+            </div>
+          </div>
+
+          <!-- Batch Table Card -->
+          <div class="batch-table-card glass-card">
+            <div class="batch-table-header">
+              <h3>Live Verification Stream & Audit Ledger</h3>
+              <div class="batch-table-actions">
+                <button type="button" class="btn btn-outline btn-sm" id="btn-export-batch-csv" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Export CSV Ledger
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-clear-batch">Clear</button>
+              </div>
+            </div>
+
+            <!-- Batch Dropzone Indicator -->
+            <div class="upload-dropzone batch-dropzone-compact" id="batch-dropzone">
+              <p>Drag & drop multiple slips here or use <strong>Upload Slips Batch</strong> (Max 25 files)</p>
+            </div>
+
+            <div class="table-responsive">
+              <table class="batch-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Slip File</th>
+                    <th>Detected Bank</th>
+                    <th>Extracted Amount</th>
+                    <th>Tamper Risk</th>
+                    <th>Verdict</th>
+                    <th>Forensic Finding</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="batch-table-body">
+                  <tr>
+                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                      No batch slips uploaded. Click "Load Demo Batch" or upload slips to initiate batch forensics.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: WHATSAPP BOT DEMO -->
       <section id="tab-whatsapp" class="tab-pane">
         <div class="whatsapp-layout">
           <div class="whatsapp-intro glass-card">
@@ -299,9 +423,15 @@
                 </div>
               </div>
 
-              <div class="wa-footer">
-                <div class="wa-input-fake">Forwarded slip image...</div>
-                <button class="wa-send-btn">➤</button>
+              <div class="wa-chat-input-wrapper">
+                <button type="button" class="wa-attach-btn" id="wa-attach-btn" title="Attach Receipt">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                </button>
+                <input type="file" id="wa-file-input" accept="image/*" class="file-input-hidden">
+                <input type="text" id="wa-chat-text" class="wa-real-input" placeholder="Type a message or /verify..." />
+                <button type="button" class="wa-real-send-btn" id="wa-send-btn" title="Send">➤</button>
               </div>
             </div>
           </div>

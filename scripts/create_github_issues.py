@@ -61,6 +61,14 @@ LABEL_COLORS = {
     "layer:gtm-&-pilot": "bfdadc"
 }
 
+def ensure_labels_exist(repo: str):
+    """Pre-create all necessary labels with appropriate colors."""
+    print("  Ensuring label taxonomy exists on GitHub repo...")
+    for label, color in LABEL_COLORS.items():
+        cmd = ["gh", "label", "create", label, "--repo", repo, "--color", color, "--force"]
+        subprocess.run(cmd, capture_output=True, text=True)
+    print("  [✓] Labels configured.")
+
 def create_issue_gh_cli(repo: str, issue: dict) -> bool:
     """Create issue using GitHub CLI (`gh`)."""
     cmd = [
@@ -155,6 +163,9 @@ def main():
     print(f"Target Repo: {args.repo}")
     print(f"Method: {method_name}")
     print(f"Creating {len(selected_issues)} issues...")
+
+    if not use_api:
+        ensure_labels_exist(args.repo)
 
     success_count = 0
     for idx, iss in enumerate(selected_issues):

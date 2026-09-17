@@ -47,3 +47,24 @@ def test_layer4_dualstream_architecture():
     assert 0.0 <= sig_prob.max().item() <= 1.0
     assert 0.0 <= sig_loc.min().item() <= 1.0
     assert 0.0 <= sig_loc.max().item() <= 1.0
+
+
+def test_calibration_profile_integration():
+    from core.forensics.unified_scorer import VeriSlipForensicEngine
+    import json
+    import os
+
+    engine = VeriSlipForensicEngine()
+    assert engine.calibration is not None
+    assert "thresholds" in engine.calibration
+    assert "authentic_max_risk" in engine.calibration["thresholds"]
+    assert "tuned_weights" in engine.calibration
+
+    # Test analysis on synthetic slip with calibration active
+    dummy_img = Image.new("RGB", (300, 500), color=(255, 255, 255))
+    res = engine.analyze(dummy_img)
+
+    assert "verdict" in res
+    assert res["verdict"] in ("AUTHENTIC", "SUSPICIOUS", "HIGH_RISK_TAMPERED")
+    assert 0.0 <= res["tamper_risk_percentage"] <= 100.0
+

@@ -5,6 +5,7 @@ Fuses raw RGB image patches with a 3-channel forensic tensor
 to predict a calibrated tamper probability and pixel-level localization mask.
 """
 
+import os
 from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 import cv2
@@ -117,15 +118,34 @@ if TORCH_AVAILABLE:
 class Layer4DeepEnsemble:
     """Production wrapper for Layer 4 Deep Feature Fusion & Localization."""
 
-    def __init__(self, target_size: Tuple[int, int] = (256, 256)):
+    def __init__(self, target_size: Tuple[int, int] = (256, 256), weights_path: Optional[str] = None):
         self.target_size = target_size
         self.device = torch.device("cpu") if TORCH_AVAILABLE else None
         self.model = None
+        self.is_trained = False
+        self.weights_path = weights_path or os.environ.get("VERISLIP_MODEL_PATH", "weights/verislip_dualstream_best.pt")
 
         if TORCH_AVAILABLE:
             self.model = DualStreamForensicNetwork().to(self.device)
             self.model.eval()
-            self._initialize_pretrained_weights()
+            self._load_or_initialize_weights()
+
+    def _load_or_initialize_weights(self):
+        """Load trained Kaggle checkpoint weights or fallback to calibrated prior."""
+        if self.weights_path and os.path.exists(self.weights_path):
+            try:
+                checkpoint = torch.load(self.weights_path, map_location=self.device)
+                if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+                    self.model.load_state_dict(checkpoint["model_state_dict"])
+                elif isinstance(checkpoint, dict):
+                    self.model.load_state_dict(checkpoint)
+                self.is_trained = True
+                print(f"[Layer 4] Loaded trained DualStreamForensicNetwork weights from {self.weights_path}")
+                return
+            except Exception as e:
+                print(f"[Layer 4] Warning: Could not load weights from {self.weights_path}: {e}")
+
+        self._initialize_pretrained_weights()
 
     def _initialize_pretrained_weights(self):
         """Initialize robust calibration priors for forensic signal fusion."""
@@ -263,6 +283,6 @@ class Layer4DeepEnsemble:
             "tamper_probability": round(prob_val, 3),
             "peak_mask_activation": round(peak_local_energy, 3),
             "detected_regions": boxes,
-            "engine": "PyTorch Dual-Stream Convolutional Attention",
+            "engine": f"PyTorch Dual-Stream Convolutional Attention ({'Trained Kaggle Checkpoint' if self.is_trained else 'Calibrated Prior'})",
             "findings": notes
         }

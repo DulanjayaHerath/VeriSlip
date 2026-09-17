@@ -11,3 +11,11 @@ datasets/generated/*
 !datasets/generated/.gitkeep
 venv/
 .env
+
+# Weights & Dataset Artifacts
+weights/*.pt
+weights/*.pth
+!weights/.gitkeep
+!weights/README.md
+kaggle_dataset/
+*.zip

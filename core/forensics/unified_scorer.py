@@ -14,7 +14,7 @@ from core.forensics.layer1_structural import Layer1StructuralValidator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.ml.ensemble_model import Layer4DeepEnsemble
-from core.forensics.utils import normalize_dimensions
+from core.forensics.utils import normalize_dimensions, pil_to_base64
 
 def merge_bounding_boxes(boxes: List[Dict[str, Any]], iou_thresh: float = 0.3) -> List[Dict[str, Any]]:
     """Merge overlapping bounding boxes from multiple forensic layers using Non-Maximum Suppression (NMS)."""
@@ -71,7 +71,8 @@ class VeriSlipForensicEngine:
         self,
         pil_image: Image.Image,
         bank_code: Optional[str] = None,
-        reference_no: Optional[str] = None
+        reference_no: Optional[str] = None,
+        include_heatmaps: bool = True
     ) -> Dict[str, Any]:
         """
         Execute multi-layer forensic analysis on payment slip image.
@@ -206,8 +207,9 @@ class VeriSlipForensicEngine:
                 }
             },
             "forensic_maps": {
+                "original_b64": pil_to_base64(normalized_img, format="JPEG"),
                 "ela_heatmap_base64": l2_res.get("heatmap_base64"),
                 "noise_heatmap_base64": l3_res.get("noise_heatmap_base64")
-            },
+            } if include_heatmaps else {},
             "findings_summary": all_findings
         }

@@ -132,25 +132,35 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function handleFileSelected(file) {
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload a valid image file (PNG, JPG, WebP).");
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!file.type.startsWith("image/") && !isPdf) {
+      alert("Please upload a valid image file (PNG, JPG, WebP) or PDF bank slip.");
       return;
     }
     currentImageBlob = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      currentBase64 = e.target.result;
-      currentResults = null;
-      resetZoom();
-      showImagePreview(currentBase64);
-      resetVerdictCard();
-      // Reset metadata chip placeholders
-      metaBank.innerHTML = "🏦 <strong>Bank:</strong> Ready for scan";
-      metaAmount.innerHTML = "💵 <strong>Amount:</strong> Ready for scan";
-      metaRef.innerHTML = "🔖 <strong>Ref:</strong> —";
-      metaViewport.innerHTML = `📱 <strong>File:</strong> ${file.name.substring(0, 18)}`;
-    };
-    reader.readAsDataURL(file);
+    currentResults = null;
+    resetZoom();
+    resetVerdictCard();
+    metaBank.innerHTML = "🏦 <strong>Bank:</strong> Ready for scan";
+    metaAmount.innerHTML = "💵 <strong>Amount:</strong> Ready for scan";
+    metaRef.innerHTML = "🔖 <strong>Ref:</strong> —";
+    metaViewport.innerHTML = `📄 <strong>File:</strong> ${file.name.substring(0, 18)}`;
+
+    if (isPdf) {
+      placeholderEmpty.classList.add("hidden");
+      displayImage.classList.add("hidden");
+      overlayCanvas.classList.add("hidden");
+      currentViewBadge.textContent = "Processing PDF Document...";
+      runScan();
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentBase64 = e.target.result;
+        showImagePreview(currentBase64);
+        runScan();
+      };
+      reader.readAsDataURL(file);
+    }
   }
 
   function showImagePreview(src) {
@@ -241,7 +251,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setLoading(true);
     const formData = new FormData();
-    formData.append("file", currentImageBlob, "slip.png");
+    const fileName = currentImageBlob.name || "slip.png";
+    formData.append("file", currentImageBlob, fileName);
 
     const bankCode = bankSelect.value;
     if (bankCode) formData.append("bank_code", bankCode);
@@ -280,6 +291,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function displayVerdict(data) {
+    if (data.forensic_maps && data.forensic_maps.original_b64) {
+      currentBase64 = data.forensic_maps.original_b64;
+      showImagePreview(currentBase64);
+    }
+
     const risk = data.tamper_risk_percentage;
     riskScoreText.textContent = `${risk.toFixed(1)}%`;
     gaugeFill.style.width = `${risk}%`;

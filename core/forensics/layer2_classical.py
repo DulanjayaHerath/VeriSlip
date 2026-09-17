@@ -31,13 +31,14 @@ class Layer2ClassicalForensics:
             - ELA variance metric
         """
         # Save original to memory at calibrated JPEG quality
+        rgb_image = pil_image.convert("RGB")
         buffer = io.BytesIO()
-        pil_image.save(buffer, 'JPEG', quality=self.ela_quality)
+        rgb_image.save(buffer, 'JPEG', quality=self.ela_quality)
         buffer.seek(0)
-        resaved_img = Image.open(buffer).convert("RGB")
+        resaved_img = Image.open(buffer)
 
         # Compute absolute difference
-        diff = ImageChops.difference(pil_image.convert("RGB"), resaved_img)
+        diff = ImageChops.difference(rgb_image, resaved_img)
 
         # Scale difference to emphasize error levels
         diff_arr = np.array(diff, dtype=np.float32)

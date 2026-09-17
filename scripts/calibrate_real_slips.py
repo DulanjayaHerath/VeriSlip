@@ -32,15 +32,28 @@ OUTPUT_PROFILE = "weights/calibration_profile.json"
 
 
 def find_images_in_dir(directory: str) -> List[str]:
-    """Find all image files in a directory."""
+    """Find all image and PDF files in a directory."""
     if not os.path.exists(directory):
         return []
-    valid_exts = ("*.png", "*.jpg", "*.jpeg", "*.webp")
+    valid_exts = ("*.png", "*.jpg", "*.jpeg", "*.webp", "*.pdf")
     files = []
     for ext in valid_exts:
         files.extend(glob.glob(os.path.join(directory, ext)))
         files.extend(glob.glob(os.path.join(directory, ext.upper())))
     return sorted(list(set(files)))
+
+
+def load_slip_as_pil(filepath: str) -> Image.Image:
+    """Load an image or render page 1 of a bank PDF slip to PIL RGB Image."""
+    if filepath.lower().endswith(".pdf"):
+        try:
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(filepath)
+            page = pdf[0]
+            return page.render(scale=2.0).to_pil().convert("RGB")
+        except Exception as e:
+            print(f"  ⚠️ Warning: Could not render PDF {filepath}: {e}")
+    return Image.open(filepath).convert("RGB")
 
 
 def create_realistic_spliced_copy(img: Image.Image) -> Image.Image:
@@ -100,10 +113,10 @@ def run_calibration():
         tamp_samples = [gen.generate_tampered_slip(p[0], p[1], "ALTER_AMOUNT", 850000.0)[0] for p in auth_pairs]
     else:
         print(f"\n✓ Found {len(auth_files)} real authentic slip(s) in {AUTHENTIC_DIR}")
-        auth_samples = [Image.open(f).convert("RGB") for f in auth_files]
+        auth_samples = [load_slip_as_pil(f) for f in auth_files]
         if tamp_files:
             print(f"✓ Found {len(tamp_files)} real tampered slip(s) in {TAMPERED_DIR}")
-            tamp_samples = [Image.open(f).convert("RGB") for f in tamp_files]
+            tamp_samples = [load_slip_as_pil(f) for f in tamp_files]
         else:
             print("ℹ️  No real tampered slips found in tampered/ — synthesizing realistic spliced pairs...")
             tamp_samples = [create_realistic_spliced_copy(img) for img in auth_samples]

@@ -103,3 +103,19 @@ def test_batch_verify_endpoint():
     assert "summary" in data
     assert data["summary"]["total_processed"] == 2
     assert len(data["items"]) == 2
+
+def test_verify_pdf_slip_endpoint():
+    from reportlab.pdfgen import canvas
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf)
+    c.drawString(100, 750, "Bank of Ceylon Fund Transfer")
+    c.drawString(100, 700, "Amount : LKR 50,000.00")
+    c.save()
+    buf.seek(0)
+
+    files = {"file": ("bank_slip.pdf", buf, "application/pdf")}
+    res = client.post("/api/v1/verify", files=files, data={"bank_code": "BOC"})
+    assert res.status_code == 200
+    data = res.json()
+    assert "verdict" in data
+    assert "tamper_risk_percentage" in data

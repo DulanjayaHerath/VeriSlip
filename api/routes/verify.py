@@ -26,16 +26,23 @@ async def verify_slip(
     Run multi-layer forensic analysis on an uploaded payment slip image.
     Automatically detects bank layout and key fields if not provided.
     """
-    if not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Uploaded file must be a valid image (JPEG, PNG, WebP).")
+    is_pdf = file.content_type == "application/pdf" or file.filename.lower().endswith(".pdf")
+    if not (file.content_type.startswith("image/") or is_pdf):
+        raise HTTPException(status_code=400, detail="Uploaded file must be a valid image (JPEG, PNG, WebP) or PDF slip.")
 
     try:
         contents = await file.read()
-        pil_img = Image.open(io.BytesIO(contents))
-        if pil_img.mode != "RGB":
-            pil_img = pil_img.convert("RGB")
+        if is_pdf:
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(contents)
+            page = pdf[0]
+            pil_img = page.render(scale=2.0).to_pil().convert("RGB")
+        else:
+            pil_img = Image.open(io.BytesIO(contents))
+            if pil_img.mode != "RGB":
+                pil_img = pil_img.convert("RGB")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to decode image file: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to decode document/image file: {str(e)}")
 
     # Run field extraction & bank template detection
     extracted_meta = field_extractor.extract_fields(pil_img, bank_hint=bank_code)
@@ -77,9 +84,15 @@ async def batch_verify_slips(
         fname = f.filename or "unknown_slip.jpg"
         try:
             contents = await f.read()
-            pil_img = Image.open(io.BytesIO(contents))
-            if pil_img.mode != "RGB":
-                pil_img = pil_img.convert("RGB")
+            if fname.lower().endswith(".pdf"):
+                import pypdfium2 as pdfium
+                pdf = pdfium.PdfDocument(contents)
+                page = pdf[0]
+                pil_img = page.render(scale=2.0).to_pil().convert("RGB")
+            else:
+                pil_img = Image.open(io.BytesIO(contents))
+                if pil_img.mode != "RGB":
+                    pil_img = pil_img.convert("RGB")
 
             # Field extraction
             extracted = field_extractor.extract_fields(pil_img)

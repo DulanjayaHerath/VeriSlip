@@ -76,8 +76,8 @@ class VeriSlipForensicEngine:
         """
         Execute multi-layer forensic analysis on payment slip image.
         """
-        # Resize if oversized for efficient, responsive inference
-        normalized_img = normalize_dimensions(pil_image, max_dim=1400)
+        # Resize if oversized for efficient, responsive inference and guarantee RGB mode
+        normalized_img = normalize_dimensions(pil_image, max_dim=1400).convert("RGB")
 
         # Run layers 1, 2, and 3
         l1_res = self.layer1.evaluate(normalized_img, bank_code=bank_code, reference_no=reference_no)

@@ -299,10 +299,12 @@ class Layer4DeepEnsemble:
             prob_val = float(torch.sigmoid(class_logits).squeeze().item())
             mask_np = torch.sigmoid(loc_logits).squeeze().cpu().numpy()
 
-        # 4. Extract bounding boxes from neural segmentation map
+        # 4. Extract bounding boxes from neural segmentation map only when tamper risk is detected
         boxes = []
-        if prob_val >= 0.35 or mask_np.mean() > 0.005:
+        if prob_val >= 0.35:
             boxes = self.extract_boxes_from_mask(mask_np, orig_w, orig_h)
+            for b in boxes:
+                b["confidence"] = round(b["confidence"] * prob_val, 2)
 
         # Deep learning score reflects neural classification probability
         peak_local_energy = float(np.max(mask_np))

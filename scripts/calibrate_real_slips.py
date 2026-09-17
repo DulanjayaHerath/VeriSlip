@@ -50,7 +50,10 @@ def load_slip_as_pil(filepath: str) -> Image.Image:
             import pypdfium2 as pdfium
             pdf = pdfium.PdfDocument(filepath)
             page = pdf[0]
-            return page.render(scale=2.0).to_pil().convert("RGB")
+            rendered_img = page.render(scale=2.0).to_pil().convert("RGB")
+            page.close()
+            pdf.close()
+            return rendered_img
         except Exception as e:
             print(f"  ⚠️ Warning: Could not render PDF {filepath}: {e}")
     return Image.open(filepath).convert("RGB")

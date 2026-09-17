@@ -8,16 +8,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
+from api.middleware.request_tracing import RequestTracingMiddleware
 from api.routes.verify import router as verify_router
 from api.routes.forensics import router as forensics_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
+from core.observability.logging import configure_json_logging
+
+configure_json_logging()
 
 app = FastAPI(
     title="VeriSlip Forensic API",
     description="AI-powered forensic tamper detection for bank transfer slips and payment receipts in P2P commerce.",
     version="1.0.0"
 )
+
+app.add_middleware(RequestTracingMiddleware)
 
 # Enable CORS for cross-origin web apps
 app.add_middleware(
@@ -26,6 +32,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Request-ID"],
 )
 
 # Include API Routers

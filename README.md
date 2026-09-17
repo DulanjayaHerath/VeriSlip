@@ -206,6 +206,7 @@ Contributions from computer vision researchers, ML engineers, and software devel
 
 * **Dual-Use Containment:** The synthetic tampering generation engine is strictly internal code for training data creation and unit testing; it is never exposed through public API endpoints or frontend interfaces.
 * **Safe Image Ingestion:** Public verification endpoints identify JPEG/PNG inputs from their actual encoded content, cap upload bytes and decoded dimensions, fail closed on Pillow decompression-bomb warnings, reject malformed/truncated/animated or unsupported images, and pass only normalized metadata-free RGB pixels into forensic analysis.
+* **Request Tracing:** Every API response includes `X-Request-ID`. Callers may provide a safe `X-Request-ID` or `X-Correlation-ID`; otherwise VeriSlip generates a UUID. Request lifecycle logs are JSON records containing the correlation ID, route template, status, and duration—never request bodies, uploaded receipts, query strings, credentials, or authorization headers.
 * **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
 * Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 

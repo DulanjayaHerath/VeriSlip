@@ -516,11 +516,51 @@ notebook = {
    "cell_type": "markdown",
    "metadata": {},
    "source": [
-    "## 7. How to Export Model to Your Local VeriSlip App\n",
-    "1. In the right-hand panel of Kaggle under **Output (/kaggle/working)**, click on `verislip_dualstream_best.pt`.\n",
-    "2. Click **Download**.\n",
-    "3. Place the file inside your local VeriSlip repository at: `weights/verislip_dualstream_best.pt`.\n",
-    "4. Done! VeriSlip's Layer 4 will automatically detect and load your trained weights for all live API and Cockpit verifications!"
+    "## 7. Package and Download Weights ZIP\n",
+    "Run this cell to package the trained model checkpoint and click the generated link to download directly in your browser."
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": None,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import os\n",
+    "import zipfile\n",
+    "import json\n",
+    "from IPython.display import FileLink, display, HTML\n",
+    "\n",
+    "zip_filename = 'verislip_trained_weights.zip'\n",
+    "\n",
+    "# Save metrics ledger\n",
+    "if 'history' in globals():\n",
+    "    with open('training_metrics.json', 'w') as f:\n",
+    "        json.dump(history, f, indent=2)\n",
+    "\n",
+    "# Package weights and metrics into zip\n",
+    "with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as z:\n",
+    "    if os.path.exists('verislip_dualstream_best.pt'):\n",
+    "        z.write('verislip_dualstream_best.pt', arcname='verislip_dualstream_best.pt')\n",
+    "        print('✓ Added verislip_dualstream_best.pt to zip archive')\n",
+    "    if os.path.exists('training_metrics.json'):\n",
+    "        z.write('training_metrics.json', arcname='training_metrics.json')\n",
+    "        print('✓ Added training_metrics.json to zip archive')\n",
+    "\n",
+    "print(f'\\n📦 {zip_filename} created successfully!')\n",
+    "print('Click the link below to download your weights:')\n",
+    "display(FileLink(zip_filename))\n",
+    "display(HTML(f'''<a href=\"{zip_filename}\" download style=\"display:inline-block; margin-top:10px; padding:10px 20px; background:#10b981; color:white; border-radius:6px; text-decoration:none; font-weight:bold;\">⬇️ Download {zip_filename}</a>'''))\n"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## 8. How to Activate Model in Your Local VeriSlip App\n",
+    "1. Unzip `verislip_trained_weights.zip` (or extract `verislip_dualstream_best.pt`).\n",
+    "2. Place `verislip_dualstream_best.pt` in your local repo at: `weights/verislip_dualstream_best.pt`.\n",
+    "3. Start or reload VeriSlip — Layer 4 will automatically load your trained model weights for real-time verification!"
    ]
   }
  ],

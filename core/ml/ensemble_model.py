@@ -113,6 +113,8 @@ if TORCH_AVAILABLE:
             loc_map = self.loc_decoder(fused_spatial)           # (B, 1, H, W)
 
             return prob, loc_map
+else:
+    DualStreamForensicNetwork = None
 
 
 class Layer4DeepEnsemble:

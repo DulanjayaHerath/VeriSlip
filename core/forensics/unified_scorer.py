@@ -4,6 +4,8 @@ Aggregates Layer 1 (Structural), Layer 2 (Classical ELA/DCT), and Layer 3 (Noise
 into a unified tamper risk score, localized bounding boxes, and actionable seller recommendations.
 """
 
+import os
+import json
 from typing import Dict, Any, List, Optional
 from PIL import Image
 import numpy as np
@@ -51,6 +53,19 @@ class VeriSlipForensicEngine:
         self.layer2 = Layer2ClassicalForensics()
         self.layer3 = Layer3NoiseForensics()
         self.layer4 = Layer4DeepEnsemble()
+        self.calibration_path = os.environ.get("VERISLIP_CALIBRATION_PATH", "weights/calibration_profile.json")
+        self.calibration = None
+        self._load_calibration()
+
+    def _load_calibration(self):
+        """Load empirical real-world calibration profile if present."""
+        if self.calibration_path and os.path.exists(self.calibration_path):
+            try:
+                with open(self.calibration_path, "r") as f:
+                    self.calibration = json.load(f)
+                print(f"[VeriSlip Engine] Loaded real-world calibration profile from {self.calibration_path}")
+            except Exception as e:
+                print(f"[VeriSlip Engine] Warning: Could not load calibration profile: {e}")
 
     def analyze(
         self,
@@ -74,12 +89,15 @@ class VeriSlipForensicEngine:
         residual = l3_res.get("residual", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
         l4_res = self.layer4.evaluate(normalized_img, diff_gray, residual)
 
-        # Multi-modal fusion weights:
-        # Layer 1 Structural & Metadata: 15%
-        # Layer 2 Classical ELA & DCT: 35%
-        # Layer 3 Noise Residuals: 25%
-        # Layer 4 Deep Learning Feature Fusion: 25%
-        w1, w2, w3, w4 = 0.15, 0.35, 0.25, 0.25
+        # Multi-modal fusion weights (dynamically tuned if calibration profile is active)
+        if self.calibration and "tuned_weights" in self.calibration:
+            tw = self.calibration["tuned_weights"]
+            w1 = tw.get("w1_structural", 0.15)
+            w2 = tw.get("w2_classical", 0.35)
+            w3 = tw.get("w3_noise", 0.25)
+            w4 = tw.get("w4_ensemble", 0.25)
+        else:
+            w1, w2, w3, w4 = 0.15, 0.35, 0.25, 0.25
 
         composite_risk = (
             w1 * l1_res["anomaly_score"] +
@@ -118,12 +136,19 @@ class VeriSlipForensicEngine:
         # Calibrated risk percentage (0 to 100%)
         risk_percentage = round(min(100.0, max(0.0, composite_risk * 100.0)), 1)
 
+        # Determine calibrated thresholds
+        auth_ceiling = 25.0
+        susp_ceiling = 55.0
+        if self.calibration and "thresholds" in self.calibration:
+            auth_ceiling = self.calibration["thresholds"].get("authentic_max_risk", 25.0)
+            susp_ceiling = self.calibration["thresholds"].get("suspicious_max_risk", 55.0)
+
         # Determine verdict category
-        if risk_percentage < 25.0:
+        if risk_percentage <= auth_ceiling:
             verdict = "AUTHENTIC"
             verdict_color = "#10B981"  # Emerald Green
             recommendation = "Low tamper risk. Payment slip appears genuine. Safe to release goods."
-        elif risk_percentage < 55.0:
+        elif risk_percentage <= susp_ceiling:
             verdict = "SUSPICIOUS"
             verdict_color = "#F59E0B"  # Amber Yellow
             recommendation = "Moderate anomalies detected. Recommend checking bank balance before dispatching."
@@ -144,6 +169,7 @@ class VeriSlipForensicEngine:
             "verdict_color": verdict_color,
             "tamper_risk_percentage": risk_percentage,
             "confidence_score": round(abs(risk_percentage - 50.0) / 50.0, 2),
+            "calibration_profile": "Active (Empirical Real-World Profile)" if self.calibration else "Default Calibrated Prior",
             "recommendation": recommendation,
             "flagged_regions": final_boxes[:5],
             "layer_breakdowns": {

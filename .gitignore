@@ -8,7 +8,11 @@ __pycache__/
 datasets/uploads/*
 !datasets/uploads/.gitkeep
 datasets/generated/*
-!datasets/generated/.gitkeep
+datasets/real_calibration/authentic/*
+!datasets/real_calibration/authentic/.gitkeep
+datasets/real_calibration/tampered/*
+!datasets/real_calibration/tampered/.gitkeep
+datasets/real_calibration/README.md
 venv/
 .env
 

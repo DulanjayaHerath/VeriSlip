@@ -27,13 +27,6 @@ class VerificationResponse(BaseModel):
     forensic_maps: Optional[Dict[str, Optional[str]]] = None
     extracted_metadata: Optional[Dict[str, Any]] = None
 
-class SyntheticSlipResponse(BaseModel):
-    bank_code: str
-    is_tampered: bool
-    tamper_type: Optional[str]
-    image_base64: str
-    metadata: Dict[str, Any]
-
 class BatchSlipItem(BaseModel):
     filename: str
     verdict: str

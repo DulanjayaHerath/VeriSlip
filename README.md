@@ -108,7 +108,7 @@ Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser to acces
 ### A. Training on Kaggle GPU (Zero Manual Labeling)
 1. Generate the synthetic benchmark dataset locally:
    ```bash
-   python3 scripts/generate_kaggle_dataset.py --samples 2000
+   VERISLIP_ENABLE_SYNTHETIC_GENERATOR=1 python3 scripts/generate_kaggle_dataset.py --samples 2000
    ```
    Outputs `verislip_kaggle_dataset.zip` containing 4,000 paired authentic & tampered images with binary segmentation masks.
 2. Upload the zip to [Kaggle Datasets](https://www.kaggle.com/datasets).
@@ -204,7 +204,7 @@ Contributions from computer vision researchers, ML engineers, and software devel
 
 ## 🔒 Security & Dual-Use Policy
 
-* **Dual-Use Containment:** The synthetic tampering generation engine is strictly internal code for training data creation and unit testing; it is never exposed through public API endpoints or frontend interfaces.
+* **Dual-Use Containment:** The synthetic tampering generation engine lives under `core/internal/` for offline training, calibration, and unit tests. It is not mounted by the API or exposed by the frontend. The engine is disabled by default and construction fails unless an authorized offline process explicitly sets `VERISLIP_ENABLE_SYNTHETIC_GENERATOR=1`. Never set this flag in a public API deployment.
 * **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
 * Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 

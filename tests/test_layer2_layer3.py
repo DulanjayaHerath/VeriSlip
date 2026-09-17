@@ -2,7 +2,7 @@
 Unit tests for Layer 2 Classical Forensics (ELA & DCT) and Layer 3 Noise Forensics.
 """
 
-from core.ml.dataset_generator import SyntheticSlipGenerator
+from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.forensics.unified_scorer import VeriSlipForensicEngine

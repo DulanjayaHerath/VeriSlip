@@ -9,7 +9,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from api.routes.verify import router as verify_router
-from api.routes.forensics import router as forensics_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
 
@@ -30,7 +29,6 @@ app.add_middleware(
 
 # Include API Routers
 app.include_router(verify_router)
-app.include_router(forensics_router)
 app.include_router(whatsapp_router)
 app.include_router(reports_router)
 

@@ -8,10 +8,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 import base64
-import io
-from PIL import Image
 
 from core.forensics.unified_scorer import VeriSlipForensicEngine
+from core.security.image_sanitizer import (
+    ImageValidationError,
+    MAX_IMAGE_UPLOAD_BYTES,
+    sanitize_image_bytes,
+)
 
 router = APIRouter(prefix="/api/v1/webhook", tags=["WhatsApp Bot"])
 engine = VeriSlipForensicEngine()
@@ -40,10 +43,18 @@ def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
         if "," in raw_b64:
             raw_b64 = raw_b64.split(",")[1]
 
-        img_bytes = base64.b64decode(raw_b64)
-        pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image base64: {str(e)}")
+        if len(raw_b64) > ((MAX_IMAGE_UPLOAD_BYTES + 2) // 3) * 4:
+            raise ImageValidationError(
+                "Image upload exceeds the permitted size.", status_code=413
+            )
+        img_bytes = base64.b64decode(raw_b64, validate=True)
+        pil_img = sanitize_image_bytes(img_bytes)
+    except ImageValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=400, detail="Image payload is not valid base64."
+        ) from None
 
     res = engine.analyze(pil_img)
     verdict = res["verdict"]

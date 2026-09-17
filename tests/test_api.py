@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from api.main import app
 import io
 from PIL import Image
+import base64
 
 client = TestClient(app)
 
@@ -41,11 +42,54 @@ def test_verify_endpoint():
     assert "tamper_risk_percentage" in payload
     assert "layer_breakdowns" in payload
 
+def test_verify_uses_image_content_not_filename_or_mime_type():
+    img = Image.new("RGB", (120, 180), color=(240, 240, 240))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+
+    res = client.post(
+        "/api/v1/verify",
+        files={"file": ("receipt.txt", buf.getvalue(), "text/plain")},
+    )
+
+    assert res.status_code == 200
+
+def test_verify_rejects_malformed_image_without_internal_details():
+    res = client.post(
+        "/api/v1/verify",
+        files={"file": ("receipt.jpg", b"not-an-image", "image/jpeg")},
+    )
+
+    assert res.status_code == 400
+    assert res.json()["detail"] == "Uploaded file is not a valid, complete JPEG or PNG image."
+
+def test_verify_rejects_unsupported_image_content():
+    img = Image.new("RGB", (20, 20), color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="GIF")
+
+    res = client.post(
+        "/api/v1/verify",
+        files={"file": ("receipt.png", buf.getvalue(), "image/png")},
+    )
+
+    assert res.status_code == 415
+
+def test_verify_rejects_oversized_upload(monkeypatch):
+    monkeypatch.setattr("api.routes.verify.MAX_IMAGE_UPLOAD_BYTES", 8)
+
+    res = client.post(
+        "/api/v1/verify",
+        files={"file": ("receipt.jpg", b"123456789", "image/jpeg")},
+    )
+
+    assert res.status_code == 413
+    assert res.json()["detail"] == "Upload exceeds the permitted size."
+
 def test_whatsapp_webhook():
     img = Image.new("RGB", (200, 400), color=(250, 250, 250))
     buf = io.BytesIO()
     img.save(buf, format="PNG")
-    import base64
     b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
 
     payload = {
@@ -59,6 +103,27 @@ def test_whatsapp_webhook():
     data = res.json()
     assert data["recipient"] == "+94771234567"
     assert "reply_text" in data
+
+def test_whatsapp_rejects_invalid_base64_without_decoder_details():
+    res = client.post(
+        "/api/v1/webhook/whatsapp",
+        json={"from_phone": "+94771234567", "image_base64": "%%%invalid%%%"},
+    )
+
+    assert res.status_code == 400
+    assert res.json()["detail"] == "Image payload is not valid base64."
+
+def test_whatsapp_rejects_valid_base64_with_invalid_image():
+    res = client.post(
+        "/api/v1/webhook/whatsapp",
+        json={
+            "from_phone": "+94771234567",
+            "image_base64": base64.b64encode(b"not-an-image").decode("ascii"),
+        },
+    )
+
+    assert res.status_code == 400
+    assert res.json()["detail"] == "Uploaded file is not a valid, complete JPEG or PNG image."
 
 def test_pdf_report_generation():
     req_data = {
@@ -103,6 +168,16 @@ def test_batch_verify_endpoint():
     assert "summary" in data
     assert data["summary"]["total_processed"] == 2
     assert len(data["items"]) == 2
+
+def test_batch_verify_rejects_invalid_item_without_leaking_details():
+    files = [("files", ("bad.jpg", b"not-an-image", "image/jpeg"))]
+
+    res = client.post("/api/v1/batch-verify", files=files)
+
+    assert res.status_code == 200
+    item = res.json()["items"][0]
+    assert item["verdict"] == "ERROR"
+    assert item["recommendation"] == "File was rejected because it is invalid or unsafe."
 
 def test_verify_pdf_slip_endpoint():
     from reportlab.pdfgen import canvas

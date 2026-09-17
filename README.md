@@ -205,6 +205,7 @@ Contributions from computer vision researchers, ML engineers, and software devel
 ## 🔒 Security & Dual-Use Policy
 
 * **Dual-Use Containment:** The synthetic tampering generation engine is strictly internal code for training data creation and unit testing; it is never exposed through public API endpoints or frontend interfaces.
+* **Safe Image Ingestion:** Public verification endpoints identify JPEG/PNG inputs from their actual encoded content, cap upload bytes and decoded dimensions, fail closed on Pillow decompression-bomb warnings, reject malformed/truncated/animated or unsupported images, and pass only normalized metadata-free RGB pixels into forensic analysis.
 * **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
 * Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 

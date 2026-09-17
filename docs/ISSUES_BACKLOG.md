@@ -1,40 +1,26 @@
-# VeriSlip: 100 Engineering & Venture Issues Backlog
+# VeriSlip: Open-Source Engineering & Research Backlog
 
-This backlog outlines **100 actionable, prioritized issues** divided across the 3 founder roles and shared engineering tracks for collaborative development on GitHub.
-
----
-
-## 👥 Track & Ownership Summary
-
-| Track | Primary Role | Issues Range | Focus Area |
-| :--- | :--- | :--- | :--- |
-| **Stream 1** | **Person 1: Forensic CV Lead** | Issues #1 – #28 | Layers 1–3: Bank Templates, ELA, DCT, Noise Residuals, Splicing |
-| **Stream 2** | **Person 2: Data & ML Lead** | Issues #29 – #56 | Synthetic Generator, PII Redaction, Layer 4 Deep Learning Ensemble |
-| **Stream 3** | **Person 3: Full-Stack & Biz Lead** | Issues #57 – #82 | FastAPI Server, Web Cockpit, WhatsApp Bot, Courier API, Monetization |
-| **Stream 4** | **Shared Engineering & Research** | Issues #83 – #100 | CI/CD, Docker, Security/Ethics, Research Paper, Seller Pilot, Layer 5 |
+This backlog outlines **100 actionable, prioritized issues** structured across 4 open-source domain tracks for collaborative development and research contributions.
 
 ---
 
-## 🚀 How to Batch Import into GitHub
+## 👥 Domain Track Summary
 
-1. Authenticate GitHub CLI:
-   ```bash
-   gh auth login
-   ```
-2. Run the automated issue creator script:
-   ```bash
-   python3 scripts/create_github_issues.py --repo YOUR_GITHUB_USERNAME/VeriSlip
-   ```
-   *(Or preview first with `python3 scripts/create_github_issues.py --dry-run`)*
+| Domain Track | Key Technologies | Scope & Focus Areas |
+| :--- | :--- | :--- |
+| **Track 1: Forensic Computer Vision** | OpenCV, NumPy, SciPy | Layers 1–3: Bank Layouts, ELA, DCT, Sensor Noise, Splicing Localization |
+| **Track 2: Machine Learning & Datasets** | PyTorch, Kaggle, CUDA | Synthetic Generator, PII Redaction, Layer 4 Deep Dual-Stream Fusion |
+| **Track 3: Backend Systems & Client APIs** | FastAPI, WhatsApp Webhooks | Microservices, Web Cockpit, Courier SDK, Batch Auditor, Forensic PDFs |
+| **Track 4: Infrastructure & Research** | GitHub Actions, Docker | CI/CD Automation, Security Governance, Empirical Calibration, Research |
 
 ---
 
 ## 📋 Complete List of 100 Issues
 
-### 🔬 Stream 1: Person 1 — Forensic Computer Vision (Issues #1 to #28)
+### 🔬 Track 1: Forensic Computer Vision & Signal Processing (Issues #1 to #28)
 
-#### #1: [FORENSICS-CV] Implement ComBank Digital template layout grid and logo anchor verification
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #1: [COMPLETED] [FORENSICS-CV] Implement ComBank Digital template layout grid and logo anchor verification
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -54,8 +40,8 @@ Create exact pixel-grid anchor coordinates, logo aspect ratio, and header layout
 - [ ] Submit PR referencing this issue.
 
 
-#### #2: [FORENSICS-CV] Implement Sampath Vishwa layout and color histogram matching
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #2: [COMPLETED] [FORENSICS-CV] Implement Sampath Vishwa layout and color histogram matching
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -75,8 +61,8 @@ Add template definitions for Sampath Vishwa app including orange branding palett
 - [ ] Submit PR referencing this issue.
 
 
-#### #3: [FORENSICS-CV] Implement Bank of Ceylon (BOC) Digi & SmartPay layout rules
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #3: [COMPLETED] [FORENSICS-CV] Implement Bank of Ceylon (BOC) Digi & SmartPay layout rules
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -96,8 +82,8 @@ Define layout parameters for BOC Digi and SmartPay receipts. Acceptance criteria
 - [ ] Submit PR referencing this issue.
 
 
-#### #4: [FORENSICS-CV] Implement Hatton National Bank (HNB) SOLO & Digital Banking rules
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #4: [COMPLETED] [FORENSICS-CV] Implement Hatton National Bank (HNB) SOLO & Digital Banking rules
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -117,8 +103,8 @@ Add support for HNB digital banking receipts including reference regex and dark 
 - [ ] Submit PR referencing this issue.
 
 
-#### #5: [FORENSICS-CV] Add template matching for Seylan Bank (Seylan Mobile Banking)
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #5: [COMPLETED] [FORENSICS-CV] Add template matching for Seylan Bank (Seylan Mobile Banking)
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -138,8 +124,8 @@ Implement template definition and field parser for Seylan Bank transfer receipts
 - [ ] Submit PR referencing this issue.
 
 
-#### #6: [FORENSICS-CV] Add template matching for Nations Trust Bank (NTB / FriMi)
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #6: [COMPLETED] [FORENSICS-CV] Add template matching for Nations Trust Bank (NTB / FriMi)
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -160,7 +146,7 @@ Support FriMi and Nations Trust Bank slip templates with signature magenta/blue 
 
 
 #### #7: [FORENSICS-CV] Add template matching for DFCC Bank and Pan Asia Bank
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:low, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -180,8 +166,8 @@ Add regex rules and color profiles for DFCC and Pan Asia Bank mobile receipts.
 - [ ] Submit PR referencing this issue.
 
 
-#### #8: [FORENSICS-CV] Implement generic CEFTS & SLIPS interbank slip layout validator
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+#### #8: [COMPLETED] [FORENSICS-CV] Implement generic CEFTS & SLIPS interbank slip layout validator
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:low, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -201,8 +187,8 @@ Validate generic interbank transfer receipts complying with LankaPay CEFTS stand
 - [ ] Submit PR referencing this issue.
 
 
-#### #9: [FORENSICS-CV] Implement reference number checksum validation for Commercial Bank
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #9: [COMPLETED] [FORENSICS-CV] Implement reference number checksum validation for Commercial Bank
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -222,8 +208,8 @@ Research and implement reference number syntax and mod-checksum rules for ComBan
 - [ ] Submit PR referencing this issue.
 
 
-#### #10: [FORENSICS-CV] Implement reference number regex and length validator for Sampath & BOC
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+#### #10: [COMPLETED] [FORENSICS-CV] Implement reference number regex and length validator for Sampath & BOC
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:low, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -243,8 +229,8 @@ Validate reference number structures for Sampath Vishwa and BOC Digi, flagging s
 - [ ] Submit PR referencing this issue.
 
 
-#### #11: [FORENSICS-CV] Build EXIF metadata parser with expanded editing software signatures
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #11: [COMPLETED] [FORENSICS-CV] Build EXIF metadata parser with expanded editing software signatures
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -264,8 +250,8 @@ Expand KNOWN_EDITING_SOFTWARE list to include Pixelmator, Photopea, VSCO, InShot
 - [ ] Submit PR referencing this issue.
 
 
-#### #12: [FORENSICS-CV] Add PNG chunk metadata inspection for software and author signatures
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #12: [COMPLETED] [FORENSICS-CV] Add PNG chunk metadata inspection for software and author signatures
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:low, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -285,8 +271,8 @@ Parse PNG textual chunks (tEXt, zTXt, iTXt) to identify software signatures inje
 - [ ] Submit PR referencing this issue.
 
 
-#### #13: [FORENSICS-CV] Implement timestamp sanity checks against displayed slip dates
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #13: [COMPLETED] [FORENSICS-CV] Implement timestamp sanity checks against displayed slip dates
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -306,8 +292,8 @@ Cross-reference file creation/modification timestamps with receipt displayed dat
 - [ ] Submit PR referencing this issue.
 
 
-#### #14: [FORENSICS-CV] Mobile screenshot aspect ratio and DPI resolution classifier
-* **Role:** `person1-cv` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+#### #14: [COMPLETED] [FORENSICS-CV] Mobile screenshot aspect ratio and DPI resolution classifier
+* **Domain:** `Computer Vision` | **Layer:** `Layer 1` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:cv-forensics, milestone:phase-1, priority:low, layer:layer-1, contributions-welcome`
 
 ### Overview
@@ -327,8 +313,8 @@ Detect non-standard smartphone resolutions, upscaling artifacts, and desktop bro
 - [ ] Submit PR referencing this issue.
 
 
-#### #15: [FORENSICS-CV] Implement multi-scale Error Level Analysis (ELA) with adaptive quality factors
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
+#### #15: [COMPLETED] [FORENSICS-CV] Implement multi-scale Error Level Analysis (ELA) with adaptive quality factors
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:high, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -349,7 +335,7 @@ Evaluate image across multiple JPEG compression quality factors (Q75, Q85, Q90, 
 
 
 #### #16: [FORENSICS-CV] Implement chromatic vs luminance ELA difference decomposition
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:high, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -369,8 +355,8 @@ Decompose ELA analysis into Y (luminance) and CbCr (chrominance) channels. Splic
 - [ ] Submit PR referencing this issue.
 
 
-#### #17: [FORENSICS-CV] Build 8x8 block-wise 2D-DCT AC frequency coefficient histogram analyzer
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
+#### #17: [COMPLETED] [FORENSICS-CV] Build 8x8 block-wise 2D-DCT AC frequency coefficient histogram analyzer
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:high, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -391,7 +377,7 @@ Extract DCT coefficients for primary AC frequencies (1,2) and (2,1) across 8x8 b
 
 
 #### #18: [FORENSICS-CV] Implement double-JPEG compression grid alignment and shift detector
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:high, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -412,7 +398,7 @@ Detect non-aligned 8x8 JPEG block grids which occur when a cropped slip or splic
 
 
 #### #19: [FORENSICS-CV] Implement copy-move forgery detection using ORB/SIFT keypoint matching
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-3, priority:high, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -433,7 +419,7 @@ Detect cloned digits or pasted bank logos by clustering matched feature points b
 
 
 #### #20: [FORENSICS-CV] Implement block-based DCT correlation for dense copy-move detection
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-3, priority:high, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -453,8 +439,8 @@ Divide image into overlapping blocks and compute lexicographic sorting of DCT co
 - [ ] Submit PR referencing this issue.
 
 
-#### #21: [FORENSICS-CV] Build font stroke-width and edge anti-aliasing consistency checker
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #21: [COMPLETED] [FORENSICS-CV] Build font stroke-width and edge anti-aliasing consistency checker
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -475,7 +461,7 @@ Measure Laplacian edge energy and gradient profile across text characters to det
 
 
 #### #22: [FORENSICS-CV] Implement text baseline alignment and spacing disparity detector
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -496,7 +482,7 @@ Detect vertical jitter, misaligned baseline bounding boxes, and uneven kerning i
 
 
 #### #23: [FORENSICS-CV] Implement Spatial Rich Models (SRM) high-pass filtering kernels
-* **Role:** `person1-cv` | **Layer:** `Layer 3` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 3` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-3, priority:high, layer:layer-3, contributions-welcome`
 
 ### Overview
@@ -516,8 +502,8 @@ Apply standard 3x3 and 5x5 SRM linear and non-linear filter kernels to extract s
 - [ ] Submit PR referencing this issue.
 
 
-#### #24: [FORENSICS-CV] Calibrate noise residual variance estimation for flat UI backgrounds
-* **Role:** `person1-cv` | **Layer:** `Layer 3` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #24: [COMPLETED] [FORENSICS-CV] Calibrate noise residual variance estimation for flat UI backgrounds
+* **Domain:** `Computer Vision` | **Layer:** `Layer 3` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-3, contributions-welcome`
 
 ### Overview
@@ -537,8 +523,8 @@ Ensure edge-masked background regions calculate baseline noise variance without 
 - [ ] Submit PR referencing this issue.
 
 
-#### #25: [FORENSICS-CV] Implement local noise variance discontinuity clustering
-* **Role:** `person1-cv` | **Layer:** `Layer 3` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #25: [COMPLETED] [FORENSICS-CV] Implement local noise variance discontinuity clustering
+* **Domain:** `Computer Vision` | **Layer:** `Layer 3` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:medium, layer:layer-3, contributions-welcome`
 
 ### Overview
@@ -558,8 +544,8 @@ Cluster neighboring outlier blocks to form coherent bounding boxes around erased
 - [ ] Submit PR referencing this issue.
 
 
-#### #26: [FORENSICS-CV] Detect median filter smoothing traces from brush / blur tools
-* **Role:** `person1-cv` | **Layer:** `Layer 3` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+#### #26: [COMPLETED] [FORENSICS-CV] Detect median filter smoothing traces from brush / blur tools
+* **Domain:** `Computer Vision` | **Layer:** `Layer 3` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:cv-forensics, milestone:phase-3, priority:high, layer:layer-3, contributions-welcome`
 
 ### Overview
@@ -579,8 +565,8 @@ Analyze residual difference histograms to detect when an attacker applied a blur
 - [ ] Submit PR referencing this issue.
 
 
-#### #27: [FORENSICS-CV] Build visual side-by-side forensic heatmap generator (Jet/Inferno/Viridis)
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #27: [COMPLETED] [FORENSICS-CV] Build visual side-by-side forensic heatmap generator (Jet/Inferno/Viridis)
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:cv-forensics, milestone:phase-2, priority:low, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -601,7 +587,7 @@ Generate publication-ready composite images showing original slip side-by-side w
 
 
 #### #28: [FORENSICS-CV] Optimize OpenCV forensic feature extraction pipeline for <500ms latency
-* **Role:** `person1-cv` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
+* **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-3, priority:medium, layer:layer-2, contributions-welcome`
 
 ### Overview
@@ -624,10 +610,10 @@ Vectorize numpy loops and optimize image downsamping for high-throughput API exe
 
 ---
 
-### 🧠 Stream 2: Person 2 — Data Engineering & Deep Learning (Issues #29 to #56)
+### 🧠 Track 2: Machine Learning & Synthetic Datasets (Issues #29 to #56)
 
-#### #29: [ML-DATA] Expand Synthetic Slip Generator to support all 5 top Sri Lankan bank templates
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #29: [COMPLETED] [ML-DATA] Expand Synthetic Slip Generator to support all 5 top Sri Lankan bank templates
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-1, priority:medium, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -647,8 +633,8 @@ Add high-fidelity vector rendering for ComBank, Sampath Vishwa, BOC Digi, HNB SO
 - [ ] Submit PR referencing this issue.
 
 
-#### #30: [ML-DATA] Implement multi-tier tampering attack: Novice skill level
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #30: [COMPLETED] [ML-DATA] Implement multi-tier tampering attack: Novice skill level
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-1, priority:medium, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -668,8 +654,8 @@ Simulate novice edits: obvious font mismatches, misaligned text, uncompressed PN
 - [ ] Submit PR referencing this issue.
 
 
-#### #31: [ML-DATA] Implement multi-tier tampering attack: Intermediate skill level
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #31: [COMPLETED] [ML-DATA] Implement multi-tier tampering attack: Intermediate skill level
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:medium, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -690,7 +676,7 @@ Simulate intermediate edits: matched font family, approximate color match, and s
 
 
 #### #32: [ML-DATA] Implement multi-tier tampering attack: Expert / Skilled level
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:high, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -710,8 +696,8 @@ Simulate skilled adversary: matched font weight, anti-aliasing smoothing, matchi
 - [ ] Submit PR referencing this issue.
 
 
-#### #33: [ML-DATA] Implement synthetic amount manipulation attack module
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+#### #33: [COMPLETED] [ML-DATA] Implement synthetic amount manipulation attack module
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-1, priority:low, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -731,8 +717,8 @@ Simulate replacing transaction amounts with 10x or 100x inflated values while ge
 - [ ] Submit PR referencing this issue.
 
 
-#### #34: [ML-DATA] Implement synthetic reference number tampering module
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+#### #34: [COMPLETED] [ML-DATA] Implement synthetic reference number tampering module
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-1, priority:low, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -753,7 +739,7 @@ Simulate forged reference numbers with spliced digits or altered prefixes.
 
 
 #### #35: [ML-DATA] Implement synthetic beneficiary name & account swapping module
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:low, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -774,7 +760,7 @@ Simulate swapping beneficiary names and masked account numbers on receipts.
 
 
 #### #36: [ML-DATA] Implement date/timestamp modification attack module
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:low, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -795,7 +781,7 @@ Simulate recycling old payment slips by doctoring the transaction timestamp and 
 
 
 #### #37: [ML-DATA] Build COCO & Pascal VOC annotation exporter for synthetic dataset
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:medium, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -815,8 +801,8 @@ Export generated tampered receipts with standard COCO JSON format bounding boxes
 - [ ] Submit PR referencing this issue.
 
 
-#### #38: [ML-DATA] Implement automated dataset generation CLI script with configurable sample count
-* **Role:** `person2-ml` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #38: [COMPLETED] [ML-DATA] Implement automated dataset generation CLI script with configurable sample count
+* **Domain:** `Machine Learning` | **Layer:** `Synthetic Data` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:low, layer:synthetic-data, contributions-welcome`
 
 ### Overview
@@ -837,7 +823,7 @@ Create script  with balanced authentic and tampered distributions.
 
 
 #### #39: [ML-DATA] Build automated PII redaction pipeline for collected real receipts
-* **Role:** `person2-ml` | **Layer:** `Dataset` | **Milestone:** `Phase 1: Foundations` | **Priority:** `High`
+* **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 1: Foundations` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-1, priority:high, layer:dataset, contributions-welcome`
 
 ### Overview
@@ -858,7 +844,7 @@ Automatically detect, blur, or synthesize real customer names, account numbers, 
 
 
 #### #40: [ML-DATA] Collect and curate initial benchmark set of 200 permission-cleared genuine slips
-* **Role:** `person2-ml` | **Layer:** `Dataset` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:medium, layer:dataset, contributions-welcome`
 
 ### Overview
@@ -878,8 +864,8 @@ Gather consent-cleared slips from team transactions and merchant friends across 
 - [ ] Submit PR referencing this issue.
 
 
-#### #41: [ML-DATA] Create stratified dataset train/validation/test splits by bank and skill tier
-* **Role:** `person2-ml` | **Layer:** `Dataset` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #41: [COMPLETED] [ML-DATA] Create stratified dataset train/validation/test splits by bank and skill tier
+* **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:medium, layer:dataset, contributions-welcome`
 
 ### Overview
@@ -900,7 +886,7 @@ Establish strict train/val/test splits ensuring no bank template leakage to test
 
 
 #### #42: [ML-DATA] Create adversarial benchmark test set with human-edited slips (Photoshop/Canva)
-* **Role:** `person2-ml` | **Layer:** `Dataset` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+* **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:high, layer:dataset, contributions-welcome`
 
 ### Overview
@@ -921,7 +907,7 @@ Manually tamper 50 genuine slips using real photo editing software to create a g
 
 
 #### #43: [ML-DATA] Implement dataset integrity and checksum verification script
-* **Role:** `person2-ml` | **Layer:** `Dataset` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+* **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-2, priority:low, layer:dataset, contributions-welcome`
 
 ### Overview
@@ -941,8 +927,8 @@ Verify SHA-256 hashes and image validity for all dataset samples to prevent corr
 - [ ] Submit PR referencing this issue.
 
 
-#### #44: [ML-DATA] Create dataset documentation and data card following ethical research standards
-* **Role:** `person2-ml` | **Layer:** `Dataset` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+#### #44: [COMPLETED] [ML-DATA] Create dataset documentation and data card following ethical research standards
+* **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
 * **Labels:** `domain:ml-data, milestone:phase-4, priority:low, layer:dataset, contributions-welcome`
 
 ### Overview
@@ -962,8 +948,8 @@ Document dataset provenance, redaction methodology, distribution statistics, and
 - [ ] Submit PR referencing this issue.
 
 
-#### #45: [ML-DATA] Design PyTorch dual-stream fusion model architecture (RGB + Forensic Maps)
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+#### #45: [COMPLETED] [ML-DATA] Design PyTorch dual-stream fusion model architecture (RGB + Forensic Maps)
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:high, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -984,7 +970,7 @@ Build a PyTorch model accepting 3-channel RGB image alongside 3-channel forensic
 
 
 #### #46: [ML-DATA] Implement EfficientNet-B0 backbone feature extractor for RGB stream
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1004,8 +990,8 @@ Use pretrained EfficientNet-B0 or ConvNeXt-Tiny to extract 512-dim visual repres
 - [ ] Submit PR referencing this issue.
 
 
-#### #47: [ML-DATA] Implement CNN feature extractor for multi-channel forensic map stream
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
+#### #47: [COMPLETED] [ML-DATA] Implement CNN feature extractor for multi-channel forensic map stream
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1025,8 +1011,8 @@ Build a lightweight 4-layer convolutional network extracting high-frequency tamp
 - [ ] Submit PR referencing this issue.
 
 
-#### #48: [ML-DATA] Implement cross-attention fusion layer combining visual and forensic features
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+#### #48: [COMPLETED] [ML-DATA] Implement cross-attention fusion layer combining visual and forensic features
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:high, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1046,8 +1032,8 @@ Fuse RGB features with forensic features using cross-attention or gated feature 
 - [ ] Submit PR referencing this issue.
 
 
-#### #49: [ML-DATA] Implement binary classification head with temperature calibration
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
+#### #49: [COMPLETED] [ML-DATA] Implement binary classification head with temperature calibration
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1067,8 +1053,8 @@ Train classification head with Platt scaling / temperature scaling to output tru
 - [ ] Submit PR referencing this issue.
 
 
-#### #50: [ML-DATA] Implement U-Net / FPN segmentation head for pixel-level tamper localization
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+#### #50: [COMPLETED] [ML-DATA] Implement U-Net / FPN segmentation head for pixel-level tamper localization
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:high, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1088,8 +1074,8 @@ Add segmentation decoder predicting binary tampering mask highlighting exact for
 - [ ] Submit PR referencing this issue.
 
 
-#### #51: [ML-DATA] Implement combined loss function: Focal Loss + Dice Loss for class imbalance
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
+#### #51: [COMPLETED] [ML-DATA] Implement combined loss function: Focal Loss + Dice Loss for class imbalance
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1109,8 +1095,8 @@ Handle sparse tampered pixels using combined Focal and Dice loss formulation.
 - [ ] Submit PR referencing this issue.
 
 
-#### #52: [ML-DATA] Build PyTorch training and validation pipeline with TensorBoard logging
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
+#### #52: [COMPLETED] [ML-DATA] Build PyTorch training and validation pipeline with TensorBoard logging
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1131,7 +1117,7 @@ Write training loop with learning rate scheduling, early stopping, and metric lo
 
 
 #### #53: [ML-DATA] Evaluate Layer 4 model performance across skill tiers (Novice, Intermediate, Expert)
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-4, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1152,7 +1138,7 @@ Generate evaluation tables reporting Precision, Recall, F1, and ROC-AUC per diff
 
 
 #### #54: [ML-DATA] Conduct ablation study: Classical layers vs Deep Learning vs Fusion Ensemble
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-4, priority:high, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1173,7 +1159,7 @@ Demonstrate that the ensemble outperforms any single classical or learned detect
 
 
 #### #55: [ML-DATA] Quantize PyTorch model to INT8 / ONNX format for rapid CPU inference
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-4, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1193,8 +1179,8 @@ Export model to ONNX runtime with INT8 dynamic quantization for <100ms inference
 - [ ] Submit PR referencing this issue.
 
 
-#### #56: [ML-DATA] Package Layer 4 inference module into unified engine pipeline
-* **Role:** `person2-ml` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+#### #56: [COMPLETED] [ML-DATA] Package Layer 4 inference module into unified engine pipeline
+* **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
 * **Labels:** `domain:ml-data, milestone:phase-4, priority:medium, layer:layer-4, contributions-welcome`
 
 ### Overview
@@ -1217,10 +1203,10 @@ Integrate trained model checkpoint into  and connect with .
 
 ---
 
-### 🌐 Stream 3: Person 3 — Backend, Product & Monetization (Issues #57 to #82)
+### 🌐 Track 3: Backend Systems, Client APIs & Integrations (Issues #57 to #82)
 
 #### #57: [BACKEND-API] Implement API Key authentication and multi-tier rate limiting
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:medium, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1241,7 +1227,7 @@ Add API key middleware with Redis or in-memory token bucket limiting free tier t
 
 
 #### #58: [BACKEND-API] Implement asynchronous background task processing for heavy forensic scans
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:medium, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1262,7 +1248,7 @@ Use FastAPI background tasks or Celery/RQ for processing high-resolution slips w
 
 
 #### #59: [BACKEND-API] Add structured JSON logging with request tracing and correlation IDs
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1283,7 +1269,7 @@ Implement structured logging with correlation IDs for tracing verification reque
 
 
 #### #60: [BACKEND-API] Implement merchant telemetry and fraud analytics aggregation endpoints
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1304,7 +1290,7 @@ Add  returning daily scan volume, fraud detection rate, and common tampered bank
 
 
 #### #61: [BACKEND-API] Implement webhook notification dispatcher for asynchronous order verification
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1325,7 +1311,7 @@ Enable merchants to register webhook URLs to receive verification callbacks when
 
 
 #### #62: [BACKEND-API] Add image sanitization and virus/bomb prevention middleware
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:medium, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1345,8 +1331,8 @@ Validate image file headers, maximum dimensions, decompression bomb thresholds, 
 - [ ] Submit PR referencing this issue.
 
 
-#### #63: [BACKEND-API] Implement OpenAPI / Swagger documentation enhancements and interactive examples
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #63: [COMPLETED] [BACKEND-API] Implement OpenAPI / Swagger documentation enhancements and interactive examples
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1366,8 +1352,8 @@ Provide rich example payloads and detailed field descriptions on  and .
 - [ ] Submit PR referencing this issue.
 
 
-#### #64: [BACKEND-API] Implement CORS policies and production security headers
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #64: [COMPLETED] [BACKEND-API] Implement CORS policies and production security headers
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1387,8 +1373,8 @@ Configure secure CORS origins, HSTS, X-Content-Type-Options, and Content-Securit
 - [ ] Submit PR referencing this issue.
 
 
-#### #65: [BACKEND-API] Add health check probe with detailed component readiness diagnostics
-* **Role:** `person3-fullstack` | **Layer:** `Backend API` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+#### #65: [COMPLETED] [BACKEND-API] Add health check probe with detailed component readiness diagnostics
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-1, priority:low, layer:backend-api, contributions-welcome`
 
 ### Overview
@@ -1408,8 +1394,8 @@ Enhance  endpoint to verify model weights loaded, memory status, and disk availa
 - [ ] Submit PR referencing this issue.
 
 
-#### #66: [BACKEND-API] Implement Meta WhatsApp Cloud API webhook receiver and signature verification
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `High`
+#### #66: [COMPLETED] [BACKEND-API] Implement Meta WhatsApp Cloud API webhook receiver and signature verification
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `High`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:high, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1430,7 +1416,7 @@ Build production endpoint for Meta WhatsApp Business Cloud API with HMAC SHA-256
 
 
 #### #67: [BACKEND-API] Implement WhatsApp media downloader and temporary image buffer
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1451,7 +1437,7 @@ Download customer media attachments from WhatsApp media endpoints securely into 
 
 
 #### #68: [BACKEND-API] Implement WhatsApp conversational state machine and onboarding message flow
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1471,8 +1457,8 @@ Handle seller onboarding, balance check commands (balance), and help menus in En
 - [ ] Submit PR referencing this issue.
 
 
-#### #69: [BACKEND-API] Build automated WhatsApp image annotation returning red-boxed tamper slips
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+#### #69: [COMPLETED] [BACKEND-API] Build automated WhatsApp image annotation returning red-boxed tamper slips
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1493,7 +1479,7 @@ When fraud is detected, draw red bounding boxes on the slip image and send it ba
 
 
 #### #70: [BACKEND-API] Implement merchant subscription credit balance tracker for WhatsApp bot
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1513,8 +1499,8 @@ Track checks used per phone number, notifying user when free quota is reached wi
 - [ ] Submit PR referencing this issue.
 
 
-#### #71: [BACKEND-API] Add mock WhatsApp interactive test dashboard for local developer testing
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #71: [COMPLETED] [BACKEND-API] Add mock WhatsApp interactive test dashboard for local developer testing
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1535,7 +1521,7 @@ Refine Web Cockpit WhatsApp simulator tab to allow testing custom phone numbers 
 
 
 #### #72: [BACKEND-API] Integrate Sri Lankan SMS fallback notification via Dialog/Mobitel SMS gateway
-* **Role:** `person3-fullstack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `WhatsApp Bot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-4, priority:low, layer:whatsapp-bot, contributions-welcome`
 
 ### Overview
@@ -1555,8 +1541,8 @@ Send SMS alert to seller if a high-risk fraud attempt occurs while seller is off
 - [ ] Submit PR referencing this issue.
 
 
-#### #73: [BACKEND-API] Implement interactive zoom and pan controls on inspection canvas
-* **Role:** `person3-fullstack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #73: [COMPLETED] [BACKEND-API] Implement interactive zoom and pan controls on inspection canvas
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:web-frontend, contributions-welcome`
 
 ### Overview
@@ -1576,8 +1562,8 @@ Allow users to zoom in up to 400% on highlighted tamper bounding boxes to inspec
 - [ ] Submit PR referencing this issue.
 
 
-#### #74: [BACKEND-API] Add side-by-side split screen view comparing original slip and ELA heatmap
-* **Role:** `person3-fullstack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+#### #74: [COMPLETED] [BACKEND-API] Add side-by-side split screen view comparing original slip and ELA heatmap
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:medium, layer:web-frontend, contributions-welcome`
 
 ### Overview
@@ -1598,7 +1584,7 @@ Add slider handle to swipe between raw screenshot and forensic heatmap view.
 
 
 #### #75: [BACKEND-API] Build merchant history drawer with past verification search and filter
-* **Role:** `person3-fullstack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:web-frontend, contributions-welcome`
 
 ### Overview
@@ -1618,8 +1604,8 @@ Allow merchants to view previously checked slips with search by reference number
 - [ ] Submit PR referencing this issue.
 
 
-#### #76: [BACKEND-API] Add light/dark theme toggle and mobile-responsive viewport tuning
-* **Role:** `person3-fullstack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
+#### #76: [COMPLETED] [BACKEND-API] Add light/dark theme toggle and mobile-responsive viewport tuning
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:web-frontend, contributions-welcome`
 
 ### Overview
@@ -1640,7 +1626,7 @@ Optimize CSS for mobile browser viewing on seller smartphones.
 
 
 #### #77: [BACKEND-API] Implement keyboard shortcuts for rapid merchant triage (Space: Accept, X: Flag)
-* **Role:** `person3-fullstack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Low`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Web Frontend` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:low, layer:web-frontend, contributions-welcome`
 
 ### Overview
@@ -1661,7 +1647,7 @@ Power-seller shortcuts for high-speed review of multiple slips during peak sales
 
 
 #### #78: [BACKEND-API] Implement dedicated Courier Rider API endpoint 
-* **Role:** `person3-fullstack` | **Layer:** `Courier B2B` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Courier B2B` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:courier-b2b, contributions-welcome`
 
 ### Overview
@@ -1682,7 +1668,7 @@ Streamlined response payload optimized for mobile courier apps with simple boole
 
 
 #### #79: [BACKEND-API] Build WooCommerce plugin boilerplate for direct bank transfer auto-verification
-* **Role:** `person3-fullstack` | **Layer:** `E-Commerce` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `High`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `E-Commerce` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `High`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:high, layer:e-commerce, contributions-welcome`
 
 ### Overview
@@ -1703,7 +1689,7 @@ Create WordPress/WooCommerce plugin that intercepts order checkout receipt uploa
 
 
 #### #80: [BACKEND-API] Build Shopify Webhook app integration for manual payment screening
-* **Role:** `person3-fullstack` | **Layer:** `E-Commerce` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `E-Commerce` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
 * **Labels:** `domain:backend-api, milestone:phase-4, priority:high, layer:e-commerce, contributions-welcome`
 
 ### Overview
@@ -1723,8 +1709,8 @@ Develop Shopify app listening to order creation events and screening attached wi
 - [ ] Submit PR referencing this issue.
 
 
-#### #81: [BACKEND-API] Implement formal PDF Forensic Audit Report generator with cryptographic seal
-* **Role:** `person3-fullstack` | **Layer:** `Audit Report` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+#### #81: [COMPLETED] [BACKEND-API] Implement formal PDF Forensic Audit Report generator with cryptographic seal
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Audit Report` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:medium, layer:audit-report, contributions-welcome`
 
 ### Overview
@@ -1745,7 +1731,7 @@ Generate publication-grade PDF report with timestamp, SHA-256 hash, ELA diagrams
 
 
 #### #82: [BACKEND-API] Implement payment gateway integration (PayHere / Stripe / Genie) for Pro subscriptions
-* **Role:** `person3-fullstack` | **Layer:** `Monetization` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `High`
+* **Domain:** `Backend & Full-Stack` | **Layer:** `Monetization` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `High`
 * **Labels:** `domain:backend-api, milestone:phase-3, priority:high, layer:monetization, contributions-welcome`
 
 ### Overview
@@ -1768,10 +1754,10 @@ Integrate local Sri Lankan payment gateways for charging LKR 1,490/mo Pro subscr
 
 ---
 
-### ⚙️ Stream 4: Shared Systems, DevOps, Research Paper & Pilot (Issues #83 to #100)
+### ⚙️ Track 4: Cloud Infrastructure, Security & Applied Research (Issues #83 to #100)
 
-#### #83: [INFRA-RESEARCH] Setup GitHub Actions CI pipeline running pytest and code coverage
-* **Role:** `shared` | **Layer:** `DevOps` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+#### #83: [COMPLETED] [INFRA-RESEARCH] Setup GitHub Actions CI pipeline running pytest and code coverage
+* **Domain:** `Cloud & Security` | **Layer:** `DevOps` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-1, priority:medium, layer:devops, contributions-welcome`
 
 ### Overview
@@ -1792,7 +1778,7 @@ Automate unit tests on every pull request with pytest, codecov, and linting chec
 
 
 #### #84: [INFRA-RESEARCH] Setup Flake8, Black, and isort pre-commit hooks
-* **Role:** `shared` | **Layer:** `DevOps` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
+* **Domain:** `Cloud & Security` | **Layer:** `DevOps` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Low`
 * **Labels:** `domain:infra-research, milestone:phase-1, priority:low, layer:devops, contributions-welcome`
 
 ### Overview
@@ -1813,7 +1799,7 @@ Maintain code style and automated formatting across all team contributions.
 
 
 #### #85: [INFRA-RESEARCH] Create multi-stage Dockerfile for FastAPI backend and frontend static assets
-* **Role:** `shared` | **Layer:** `DevOps` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `DevOps` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-2, priority:medium, layer:devops, contributions-welcome`
 
 ### Overview
@@ -1834,7 +1820,7 @@ Build lightweight production Docker container (<400MB) with non-root user.
 
 
 #### #86: [INFRA-RESEARCH] Create Docker Compose configuration with Redis and Nginx reverse proxy
-* **Role:** `shared` | **Layer:** `DevOps` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `DevOps` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-2, priority:medium, layer:devops, contributions-welcome`
 
 ### Overview
@@ -1855,7 +1841,7 @@ Provide single-command local development and production orchestration ().
 
 
 #### #87: [INFRA-RESEARCH] Configure deployment pipeline to cloud host (Render / Railway / AWS EC2)
-* **Role:** `shared` | **Layer:** `DevOps` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `DevOps` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-3, priority:medium, layer:devops, contributions-welcome`
 
 ### Overview
@@ -1876,7 +1862,7 @@ Deploy staging environment for live team and merchant beta testing.
 
 
 #### #88: [INFRA-RESEARCH] Setup Prometheus metrics and Grafana dashboard for API latency monitoring
-* **Role:** `shared` | **Layer:** `DevOps` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+* **Domain:** `Cloud & Security` | **Layer:** `DevOps` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
 * **Labels:** `domain:infra-research, milestone:phase-4, priority:low, layer:devops, contributions-welcome`
 
 ### Overview
@@ -1897,7 +1883,7 @@ Monitor request latency, layer execution times, and memory utilization.
 
 
 #### #89: [INFRA-RESEARCH] Implement dual-use containment: lock down synthetic tampering generator
-* **Role:** `shared` | **Layer:** `Security` | **Milestone:** `Phase 1: Foundations` | **Priority:** `High`
+* **Domain:** `Cloud & Security` | **Layer:** `Security` | **Milestone:** `Phase 1: Foundations` | **Priority:** `High`
 * **Labels:** `domain:infra-research, milestone:phase-1, priority:high, layer:security, contributions-welcome`
 
 ### Overview
@@ -1918,7 +1904,7 @@ Ensure synthetic tampering code is strictly internal, isolated from public API e
 
 
 #### #90: [INFRA-RESEARCH] Implement automated PII scrubbing on all request logs and stored samples
-* **Role:** `shared` | **Layer:** `Security` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
+* **Domain:** `Cloud & Security` | **Layer:** `Security` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `High`
 * **Labels:** `domain:infra-research, milestone:phase-2, priority:high, layer:security, contributions-welcome`
 
 ### Overview
@@ -1939,7 +1925,7 @@ Hash bank account numbers and redact personal names before persisting any audit 
 
 
 #### #91: [INFRA-RESEARCH] Implement rate-limiting and IP reputation against adversarial probing
-* **Role:** `shared` | **Layer:** `Security` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `Security` | **Milestone:** `Phase 3: Product & Integrations` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-3, priority:medium, layer:security, contributions-welcome`
 
 ### Overview
@@ -1960,7 +1946,7 @@ Prevent fraudsters from querying the API repeatedly to reverse-engineer evasion 
 
 
 #### #92: [INFRA-RESEARCH] Perform security review on file upload handling and path traversal vulnerabilities
-* **Role:** `shared` | **Layer:** `Security` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `Security` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-2, priority:medium, layer:security, contributions-welcome`
 
 ### Overview
@@ -1981,7 +1967,7 @@ Audit file uploads against SVG script injection, path traversal, and decompressi
 
 
 #### #93: [INFRA-RESEARCH] Conduct literature review on financial document forgery vs natural image forensics
-* **Role:** `shared` | **Layer:** `Research Paper` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `Research Paper` | **Milestone:** `Phase 1: Foundations` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-1, priority:medium, layer:research-paper, contributions-welcome`
 
 ### Overview
@@ -2002,7 +1988,7 @@ Compile comprehensive bibliography and related work section covering ELA, copy-m
 
 
 #### #94: [INFRA-RESEARCH] Draft Research Paper: Problem Formulation & Threat Model section
-* **Role:** `shared` | **Layer:** `Research Paper` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `Research Paper` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-2, priority:medium, layer:research-paper, contributions-welcome`
 
 ### Overview
@@ -2023,7 +2009,7 @@ Formulate mathematical threat model characterizing the Sri Lankan P2P payment fr
 
 
 #### #95: [INFRA-RESEARCH] Draft Research Paper: Multi-Layer Architecture & Methodology section
-* **Role:** `shared` | **Layer:** `Research Paper` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
+* **Domain:** `Cloud & Security` | **Layer:** `Research Paper` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:infra-research, milestone:phase-3, priority:high, layer:research-paper, contributions-welcome`
 
 ### Overview
@@ -2043,8 +2029,8 @@ Document mathematical formulations for Layer 1, Layer 2 (ELA/DCT), Layer 3 (Nois
 - [ ] Submit PR referencing this issue.
 
 
-#### #96: [INFRA-RESEARCH] Generate experimental results tables, ROC curves, and confusion matrices
-* **Role:** `shared` | **Layer:** `Research Paper` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+#### #96: [COMPLETED] [INFRA-RESEARCH] Generate experimental results tables, ROC curves, and confusion matrices
+* **Domain:** `Cloud & Security` | **Layer:** `Research Paper` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
 * **Labels:** `domain:infra-research, milestone:phase-4, priority:high, layer:research-paper, contributions-welcome`
 
 ### Overview
@@ -2065,7 +2051,7 @@ Produce publication figures comparing single layers against the ensemble across 
 
 
 #### #97: [INFRA-RESEARCH] Finalize conference submission draft for IEEE MERCon / ICTer
-* **Role:** `shared` | **Layer:** `Research Paper` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Domain:** `Cloud & Security` | **Layer:** `Research Paper` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
 * **Labels:** `domain:infra-research, milestone:phase-4, priority:high, layer:research-paper, contributions-welcome`
 
 ### Overview
@@ -2086,7 +2072,7 @@ Format paper into IEEE two-column template, polish figures, and complete peer-re
 
 
 #### #98: [INFRA-RESEARCH] Run 2-week closed beta pilot with 10 Sri Lankan social media sellers
-* **Role:** `shared` | **Layer:** `GTM & Pilot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `GTM & Pilot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-4, priority:medium, layer:gtm-&-pilot, contributions-welcome`
 
 ### Overview
@@ -2107,7 +2093,7 @@ Distribute WhatsApp bot to friendly Instagram/FB Marketplace sellers; collect us
 
 
 #### #99: [INFRA-RESEARCH] Draft B2B proposal and pilot deck for Sri Lankan courier logistics operators
-* **Role:** `shared` | **Layer:** `GTM & Pilot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+* **Domain:** `Cloud & Security` | **Layer:** `GTM & Pilot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
 * **Labels:** `domain:infra-research, milestone:phase-4, priority:low, layer:gtm-&-pilot, contributions-welcome`
 
 ### Overview
@@ -2128,7 +2114,7 @@ Create presentation deck highlighting COD rider fraud prevention ROI for Domex, 
 
 
 #### #100: [INFRA-RESEARCH] Formulate technical roadmap for Layer 5: LankaPay / CEFTS API Direct Verification Gateway
-* **Role:** `shared` | **Layer:** `GTM & Pilot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Domain:** `Cloud & Security` | **Layer:** `GTM & Pilot` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
 * **Labels:** `domain:infra-research, milestone:phase-4, priority:medium, layer:gtm-&-pilot, contributions-welcome`
 
 ### Overview

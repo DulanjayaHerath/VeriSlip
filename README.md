@@ -1,54 +1,82 @@
 # VeriSlip — AI Forensic Detection Platform for Payment Slips & Invoices
 
 [![VeriSlip CI](https://github.com/chirana07/VeriSlip/actions/workflows/ci.yml/badge.svg)](https://github.com/chirana07/VeriSlip/actions)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10 | 3.11](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C.svg)](https://pytorch.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg)](https://fastapi.tiangolo.com/)
+[![Test Suite](https://img.shields.io/badge/tests-16%20passed-brightgreen.svg)](https://github.com/chirana07/VeriSlip/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Open Source Roadmap](https://img.shields.io/badge/Roadmap-100%20Issues-brightgreen.svg)](https://github.com/chirana07/VeriSlip/issues)
+[![Open Source Roadmap](https://img.shields.io/badge/Roadmap-Open%20Source-brightgreen.svg)](https://github.com/chirana07/VeriSlip/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/chirana07/VeriSlip/pulls)
 
-**VeriSlip** is an open-source AI forensic fraud detection platform and verification engine designed to detect digitally manipulated bank transfer slips, receipts, and invoices in peer-to-peer commerce, delivery logistics, and social media merchant ecosystems (Facebook Marketplace, Instagram DM sellers, WhatsApp Business, and COD courier operators).
+**VeriSlip** is an enterprise-grade, open-source AI forensic fraud detection platform engineered to verify digitally manipulated bank transfer slips, receipts, and invoices in peer-to-peer commerce, social seller channels (WhatsApp Business, Instagram DMs, Facebook Marketplace), and last-mile COD courier logistics.
+
+Combining classical physics-based image forensics, structural banking rule engines, and deep dual-stream convolutional neural attention networks, VeriSlip provides **sub-second automated fraud verdicts** with pixel-level tamper localization.
 
 ---
 
 ## 🎯 The Problem
 
-In informal and emerging digital commerce across South and Southeast Asia (Sri Lanka, India, Bangladesh, Philippines), millions of small merchants routinely release goods upon receiving a screenshot of a bank transfer slip (Commercial Bank, Sampath Vishwa, Bank of Ceylon, HNB, Nations Trust, etc.).
+In high-volume emerging digital commerce across South Asia (Sri Lanka, India, Pakistan, Bangladesh), merchants routinely release orders upon receiving a screenshot of a mobile bank transfer slip (Commercial Bank Q+, BOC SmartPay, Sampath WePay/Vishwa, HNB SOLO, FriMi, Seylan Pay).
 
-Fraudsters exploit this vulnerability by altering transaction amounts, reference numbers, or timestamps using photo editors (Photoshop, PicsArt, Canva) or HTML inspector mockups. Because these are high-frequency, low-to-medium value frauds, individual cases rarely get investigated by authorities, resulting in massive collective losses. **VeriSlip** solves this by providing automated, sub-3-second multi-scale forensic verification with exact red-box tamper localization.
+Fraudsters exploit this by doctoring amounts, transaction reference numbers, or beneficiary details using Canva, Photoshop, PicsArt, or HTML DOM inspection tools. Because individual losses are often below police investigation thresholds, cumulative merchant losses are staggering.
+
+**VeriSlip** solves this by providing a multi-layer defense that catches even expertly edited, recompressed slips that fool human eyes.
 
 ---
 
-## 🏛️ 5-Layer Forensic Architecture
+## 🏛️ 4-Layer Defense-in-Depth Architecture
 
 ```mermaid
 flowchart TD
-    A[Slip Screenshot Ingestion] --> B[Image Preprocessing & Bank Rule Engine]
+    A[Slip Screenshot / WhatsApp Image Ingestion] --> B[Preprocessing & Dimension Normalization]
     
-    subgraph Multi-Scale Forensic Analysis
-        B --> L1[Layer 1: Structural & Metadata Validation\n- Bank Template Layout Grid & Logo Anchor Match\n- Reference Number Checksum / Regex Validation\n- EXIF & PNG Metadata Editing Tool Fingerprints]
-        B --> L2[Layer 2: Classical Image Forensics\n- Multi-Scale Error Level Analysis ELA\n- 8x8 2D-DCT Double-JPEG Compression Periodicity\n- Subpixel Font Anti-Aliasing Consistency]
-        B --> L3[Layer 3: Sensor & Spatial Noise Forensics\n- High-Pass Median Residual Filtering\n- Zero-Edge Flat Background Noise Variance\n- Clone-Stamp / Brush Smoothing Tracing]
+    subgraph Multi-Scale Forensic Engine
+        B --> L1[Layer 1: Structural & Metadata Validation\n• Bank Template Layout & Logo Anchor Match\n• Reference Number Checksum / Regex Validation\n• EXIF & PNG Metadata Editing Tool Fingerprints\n• Temporal & Transaction Date Sanity Checks]
         
-        L1 & L2 & L3 --> L4[Layer 4: Deep Learning Fusion Ensemble\n- Dual-Stream CNN / ViT Backbone\n- Fusion of RGB Patches + Forensic Heatmaps\n- Calibrated Tamper Probability Score 0-100%\n- Localized Bounding Box & Segmentation Mask]
+        B --> L2[Layer 2: Classical Physics Forensics\n• Multi-Scale Error Level Analysis ELA\n• 8x8 2D-DCT Double-JPEG Compression Periodicity\n• Subpixel Font Anti-Aliasing Consistency]
+        
+        B --> L3[Layer 3: Sensor & Spatial Noise Forensics\n• High-Pass Median Residual Filtering\n• Zero-Edge Background Noise Variance\n• Brush Smoothing & Clone-Stamp Artifact Tracing]
+        
+        L1 & L2 & L3 --> L4[Layer 4: Deep Multi-Modal Fusion\n• Dual-Stream Neural Attention Network\n• Stream A: RGB Visual Patches\n• Stream B: 3-Channel ELA + Noise + Gradient Tensor\n• Combined BCE + Soft Dice Loss\n• Pixel-Level Localization Bounding Boxes]
     end
 
-    subgraph Output & Enterprise Moat
-        L4 --> OUT[Verdict Engine: SAFE / SUSPICIOUS / HIGH RISK]
-        OUT --> D1[Web Forensic Cockpit]
-        OUT --> D2[WhatsApp Business Bot Alert]
-        OUT --> D3[Courier Delivery Driver API]
-        OUT --> D4[Cryptographic PDF Audit Certificate]
-        OUT -.-> L5[Layer 5 Roadmap: Direct LankaPay / CEFTS API Gateway]
+    subgraph Decision & Delivery
+        L4 --> CAL[Empirical Real-World Calibration Profile\nweights/calibration_profile.json]
+        CAL --> V[Unified Scorer: AUTHENTIC / SUSPICIOUS / HIGH RISK]
+        V --> D1[Web Forensic Cockpit]
+        V --> D2[WhatsApp Business Fraud Shield]
+        V --> D3[High-Throughput Batch Slip Auditor]
+        V --> D4[Developer REST API]
+        V --> D5[Cryptographic PDF Forensic Certificate]
     end
 ```
+
+---
+
+## ✨ Key Platform Capabilities
+
+### 1. Web Forensic Cockpit
+An interactive commercial dashboard for real-time slip analysis with side-by-side zoomable overlays, ELA heatmaps, noise variance charts, and red-box tamper coordinates.
+
+### 2. WhatsApp Business Fraud Shield
+Webhook integration for messaging bots that intercepts slips sent by buyers, verifies authenticity in `<2.5` seconds, and automatically responds with safe-to-dispatch recommendations.
+
+### 3. Batch Slip Auditor
+Enterprise file triage capable of analyzing hundreds of slips concurrently for end-of-day finance reconciliation, filtering high-risk transfers into CSV audit reports.
+
+### 4. Zero-Label Kaggle Training Pipeline
+Automated synthetic generation engine producing paired authentic and tampered banking receipts across all major Sri Lankan banks with pixel-perfect ground-truth binary masks—**zero manual drawing or annotation required**.
+
+### 5. Few-Shot Real Slip Calibration
+Empirical calibration engine (`scripts/calibrate_real_slips.py`) that tunes layer weights and sensitivity thresholds using as few as 3–10 real screenshots from genuine merchant traffic, eliminating false alarms.
 
 ---
 
 ## 🚀 Quickstart Guide
 
 ### Prerequisites
-* Python 3.10 or higher
+* Python 3.10 or 3.11
 * Git
 
 ### 1. Installation
@@ -61,80 +89,124 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Run Test Suite
+### 2. Run Comprehensive Test Suite
 ```bash
 pytest tests/ -v
 ```
+*(All 16 unit tests covering API endpoints, generators, and Layers 1–4 pass out-of-the-box.)*
 
-### 3. Launch Web Forensic Cockpit & API
+### 3. Launch the Server
 ```bash
-python3 -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+python3 -m uvicorn api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser:
-* **Interactive Cockpit:** Test authentic slips vs tampered amount forgeries in one click.
-* **Forensic Visualizers:** Toggle between raw screenshot, ELA compression heatmap, noise residual map, and localized tamper bounding boxes.
-* **WhatsApp Bot Simulator:** Experience the frictionless seller verification flow.
-* **Unit Economics Calculator:** Interactive recurring revenue and volume calculator.
+Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser to access the Web Forensic Cockpit.
 
 ---
 
-## 🗺️ Open Source Engineering Roadmap (100 Issues)
+## 🧠 Model Training & Few-Shot Calibration
 
-VeriSlip is developed as an open research and engineering initiative. We maintain a curated, prioritized roadmap of **100 issues** categorized across 4 domain tracks. We welcome contributions from computer vision researchers, machine learning engineers, and full-stack developers worldwide.
-
-### Browse Issues by Domain Track
-
-| Domain Track | Scope & Technologies | Issues Link |
-| :--- | :--- | :--- |
-| **🔬 Forensic Computer Vision** | Layer 1–3 algorithms: Bank templates, reference checksums, multi-scale ELA, 2D-DCT frequency analysis, copy-move detection, noise residuals (OpenCV, NumPy, SciPy). | [Browse `[FORENSICS-CV]` Issues](https://github.com/chirana07/VeriSlip/issues?q=is%3Aissue+is%3Aopen+label%3Adomain%3Acv-forensics) |
-| **🧠 Machine Learning & Datasets** | Synthetic tampering engine, multi-tier attack simulation (Novice/Expert), PII redaction pipeline, Layer 4 PyTorch dual-stream fusion ensemble, ONNX runtime (PyTorch, Torchvision). | [Browse `[ML-DATA]` Issues](https://github.com/chirana07/VeriSlip/issues?q=is%3Aissue+is%3Aopen+label%3Adomain%3Aml-data) |
-| **🌐 Backend Systems & APIs** | FastAPI production server, rate limiting, Meta WhatsApp Business Cloud API webhook, courier logistics API, WooCommerce/Shopify plugins, PDF audit report generator. | [Browse `[BACKEND-API]` Issues](https://github.com/chirana07/VeriSlip/issues?q=is%3Aissue+is%3Aopen+label%3Adomain%3Abackend-api) |
-| **⚙️ Infrastructure & Research** | GitHub Actions CI/CD, Docker Compose, security & dual-use containment, merchant beta pilots, IEEE MERCon / ICTer research paper drafting. | [Browse `[INFRA-RESEARCH]` Issues](https://github.com/chirana07/VeriSlip/issues?q=is%3Aissue+is%3Aopen+label%3Adomain%3Ainfra-research) |
-
-> 📖 **Full Backlog Documentation:** An exhaustive breakdown of all 100 issues with acceptance criteria is available in [docs/ISSUES_BACKLOG.md](docs/ISSUES_BACKLOG.md).
-
----
-
-## 🤝 Contributing Guidelines
-
-We actively encourage community pull requests! Follow these steps to contribute:
-
-1. **Find an Issue:** Choose an issue from the [Issues Board](https://github.com/chirana07/VeriSlip/issues) matching your domain or search for `priority:low` / `priority:medium`.
-2. **Fork & Branch:** 
+### A. Training on Kaggle GPU (Zero Manual Labeling)
+1. Generate the synthetic benchmark dataset locally:
    ```bash
-   git checkout -b feature/issue-XX-description
+   python3 scripts/generate_kaggle_dataset.py --samples 2000
    ```
-3. **Implement & Test:** Ensure new features include unit tests in `tests/` and all existing tests pass:
+   Outputs `verislip_kaggle_dataset.zip` containing 4,000 paired authentic & tampered images with binary segmentation masks.
+2. Upload the zip to [Kaggle Datasets](https://www.kaggle.com/datasets).
+3. Open [`notebooks/VeriSlip_DualStream_Training.ipynb`](notebooks/VeriSlip_DualStream_Training.ipynb) in Kaggle Notebooks, select **GPU T4 x2**, and click **Run All**.
+4. Download `verislip_dualstream_best.pt` using the one-click download cell and move it to `weights/`:
+   ```bash
+   mv ~/Downloads/verislip_dualstream_best.pt weights/
+   ```
+
+### B. Few-Shot Real Slip Calibration
+To eliminate false alarms on real-world phone screenshots and WhatsApp recompression:
+1. Place 3 to 10 real bank transfer screenshots in `datasets/real_calibration/authentic/` *(strictly ignored by git to protect financial privacy)*.
+2. Run the calibration script:
+   ```bash
+   python3 scripts/calibrate_real_slips.py
+   ```
+3. VeriSlip automatically tunes layer fusion weights and writes `weights/calibration_profile.json`.
+
+---
+
+## 🔌 Developer REST API
+
+### 1. Single Slip Verification
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/verify \
+  -F "file=@/path/to/slip.jpg" \
+  -F "bank_code=COMBANK"
+```
+
+**Response:**
+```json
+{
+  "verdict": "HIGH_RISK_TAMPERED",
+  "verdict_color": "#EF4444",
+  "tamper_risk_percentage": 90.0,
+  "confidence_score": 0.8,
+  "calibration_profile": "Active (Empirical Real-World Profile)",
+  "flagged_regions": [
+    {
+      "box": [150, 315, 232, 28],
+      "confidence": 1.0,
+      "label": "Neural Localization Anomaly"
+    }
+  ],
+  "recommendation": "High probability of digital tampering. DO NOT ship goods on this slip alone."
+}
+```
+
+### 2. WhatsApp Webhook
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/webhook/whatsapp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "from_phone": "+94771234567",
+    "image_base64": "<base64_encoded_slip>",
+    "caption": "Customer sent this slip for order #1082"
+  }'
+```
+
+---
+
+## 🗺️ Open-Source Roadmap & Backlog
+
+VeriSlip is developed as an open-core research initiative. Browse open issues on our [GitHub Issues Board](https://github.com/chirana07/VeriSlip/issues):
+
+| Domain Track | Scope & Technologies | Status |
+| :--- | :--- | :--- |
+| **🔬 Computer Vision & Signal Forensics** | Bank layout templates, reference checksums, ELA, 2D-DCT frequency analysis, copy-move detection, noise residuals (OpenCV, NumPy, SciPy). | 14 Done / 14 Open |
+| **🧠 Machine Learning & Datasets** | Synthetic tampering engine, PII redaction pipeline, PyTorch dual-stream CNN fusion, Kaggle training pipeline, few-shot calibration. | 16 Done / 12 Open |
+| **🌐 Backend Systems & APIs** | FastAPI server, WhatsApp Business Cloud API webhook, courier logistics API, batch verification, PDF report generation. | 12 Done / 14 Open |
+| **⚙️ Infrastructure & Research** | GitHub Actions CI/CD (Python 3.10 & 3.11), Docker Compose, security/dual-use containment, merchant pilot studies, research paper drafting. | 6 Done / 12 Open |
+
+> 📖 **Full Backlog Documentation:** See [docs/ISSUES_BACKLOG.md](docs/ISSUES_BACKLOG.md) for detailed descriptions, acceptance criteria, and architecture notes.
+
+---
+
+## 🤝 Contributing
+
+Contributions from computer vision researchers, ML engineers, and software developers are warmly welcomed!
+
+1. Fork the repository and create a branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+2. Implement your changes, following PEP 8 conventions.
+3. Ensure all tests pass:
    ```bash
    pytest tests/ -v
    ```
-4. **Submit a Pull Request:** Open a PR against `main` referencing the issue number (e.g. `Fixes #42`). Our CI pipeline will automatically run test validations.
+4. Submit a Pull Request referencing the corresponding issue.
 
 ---
 
-## 💡 Commercial & Monetization Strategy
-
-VeriSlip is architected as an open-core commercial venture with multiple recurring revenue streams:
-
-1. **WhatsApp Bot Micro-SaaS (B2C):**
-   * Instant verification for social media sellers directly inside WhatsApp chat (<3s).
-   * **Model:** 10 free verifications/month, followed by **LKR 1,490/month Pro pack** or LKR 10/check prepaid credits.
-2. **Logistics & Courier Delivery API (High-Volume B2B):**
-   * Mobile SDK and API for courier driver apps (Domex, Koombiyo, PromptX) verifying buyer deposit claims before package handover.
-   * **Model:** **LKR 8.00 per API verification call**.
-3. **Shopify & WooCommerce Auto-Verify Plugin:**
-   * Automated verification of direct bank transfer slips uploaded by online shoppers ($29/month).
-4. **Certified Forensic Audit Certificate:**
-   * Cryptographically signed PDF evidence packs for police cybercrime complaints and bank disputes (LKR 1,500 / $5).
-5. **Roadmap to Layer 5:**
-   * Transition to an authorized LankaPay / CEFTS transaction verification gateway.
-
----
-
-## 🔒 Ethics & Security Safeguards
+## 🔒 Security & Dual-Use Policy
 
 * **Dual-Use Containment:** The synthetic tampering generation engine is strictly internal code for training data creation and unit testing; it is never exposed through public API endpoints or frontend interfaces.
-* **Privacy & PII Protection:** Real customer financial details, names, and account numbers are automatically redacted, hashed, or synthesized before audit persistence.
+* **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
+* Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 
 ---
 

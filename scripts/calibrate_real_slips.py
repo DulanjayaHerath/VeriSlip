@@ -44,19 +44,27 @@ def find_images_in_dir(directory: str) -> List[str]:
 
 
 def load_slip_as_pil(filepath: str) -> Image.Image:
-    """Load an image or render page 1 of a bank PDF slip to PIL RGB Image."""
+    """Load an image or render page 1 of a bank PDF slip to PIL RGB Image with metadata preserved."""
     if filepath.lower().endswith(".pdf"):
         try:
             import pypdfium2 as pdfium
             pdf = pdfium.PdfDocument(filepath)
             page = pdf[0]
             rendered_img = page.render(scale=2.0).to_pil().convert("RGB")
+            try:
+                rendered_img.info["pdf_metadata"] = pdf.get_metadata_dict()
+            except Exception:
+                pass
             page.close()
             pdf.close()
             return rendered_img
         except Exception as e:
             print(f"  ⚠️ Warning: Could not render PDF {filepath}: {e}")
-    return Image.open(filepath).convert("RGB")
+    raw_img = Image.open(filepath)
+    info_dict = raw_img.info.copy() if hasattr(raw_img, "info") else {}
+    conv_img = raw_img.convert("RGB")
+    conv_img.info = info_dict
+    return conv_img
 
 
 def create_realistic_spliced_copy(img: Image.Image) -> Image.Image:

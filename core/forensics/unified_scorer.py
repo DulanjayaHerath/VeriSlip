@@ -77,7 +77,9 @@ class VeriSlipForensicEngine:
         Execute multi-layer forensic analysis on payment slip image.
         """
         # Resize if oversized for efficient, responsive inference and guarantee RGB mode
+        orig_info = getattr(pil_image, "info", {}).copy()
         normalized_img = normalize_dimensions(pil_image, max_dim=1400).convert("RGB")
+        normalized_img.info = orig_info
 
         # Run layers 1, 2, and 3
         l1_res = self.layer1.evaluate(normalized_img, bank_code=bank_code, reference_no=reference_no)
@@ -112,15 +114,17 @@ class VeriSlipForensicEngine:
 
         # Collect candidate bounding boxes from Layer 2, Layer 3, and Layer 4
         candidate_boxes = []
-        for box in l2_res.get("detected_regions", []):
-            candidate_boxes.append(box)
+        if l2_res.get("is_anomalous", False):
+            for box in l2_res.get("detected_regions", []):
+                candidate_boxes.append(box)
 
-        for outlier in l3_res.get("outlier_blocks", []):
-            candidate_boxes.append({
-                "box": outlier["box"],
-                "confidence": round(min(0.92, outlier["z_score"] * 0.20), 2),
-                "label": "Noise Residual Break"
-            })
+        if l3_res.get("is_anomalous", False):
+            for outlier in l3_res.get("outlier_blocks", []):
+                candidate_boxes.append({
+                    "box": outlier["box"],
+                    "confidence": round(min(0.90, outlier["z_score"] * 0.15) * l3_res["anomaly_score"], 2),
+                    "label": "Noise Residual Break"
+                })
 
         for box in l4_res.get("detected_regions", []):
             candidate_boxes.append(box)

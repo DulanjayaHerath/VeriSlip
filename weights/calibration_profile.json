@@ -2,24 +2,24 @@
   "calibration_status": "CALIBRATED_REAL_WORLD",
   "sample_count": {
     "authentic": 30,
-    "tampered": 3,
+    "tampered": 9,
     "is_user_provided": true
   },
   "baselines": {
-    "mean_ela_variance": 1.666,
+    "mean_ela_variance": 1.665,
     "mean_noise_variance": 55.709,
     "layer_means": {
       "layer1": 0.09,
       "layer2": 0.073,
       "layer3": 0.006,
-      "layer4": 0.065
+      "layer4": 0.066
     }
   },
   "tuned_weights": {
-    "w1_structural": 0.25,
-    "w2_classical": 0.25,
-    "w3_noise": 0.25,
-    "w4_ensemble": 0.25
+    "w1_structural": 0.567,
+    "w2_classical": 0.04,
+    "w3_noise": 0.203,
+    "w4_ensemble": 0.19
   },
   "thresholds": {
     "authentic_max_risk": 24.1,

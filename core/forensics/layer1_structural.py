@@ -57,7 +57,20 @@ class Layer1StructuralValidator:
             else:
                 notes.append("Standard digital screenshot (no EXIF metadata).")
         except Exception as e:
-            notes.append(f"Metadata read note: {str(e)}")
+            notes.append(f"EXIF read note: {str(e)}")
+
+        # Check image info dictionary (PNG tEXt/iTXt, XMP chunks, PDF document metadata)
+        try:
+            if hasattr(pil_image, "info") and isinstance(pil_image.info, dict):
+                for k, v in pil_image.info.items():
+                    val_str = str(v).lower()
+                    for tool in KNOWN_EDITING_SOFTWARE:
+                        if tool in val_str and tool not in editing_software_detected:
+                            editing_software_detected.append(tool)
+                            is_suspicious = True
+                            notes.append(f"Document metadata traces editing software: {tool.capitalize()}")
+        except Exception as e:
+            notes.append(f"Metadata info read note: {str(e)}")
 
         return {
             "has_exif": bool(exif_data),

@@ -37,10 +37,17 @@ async def verify_slip(
             pdf = pdfium.PdfDocument(contents)
             page = pdf[0]
             pil_img = page.render(scale=2.0).to_pil().convert("RGB")
+            try:
+                pil_img.info["pdf_metadata"] = pdf.get_metadata_dict()
+            except Exception:
+                pass
+            page.close()
+            pdf.close()
         else:
-            pil_img = Image.open(io.BytesIO(contents))
-            if pil_img.mode != "RGB":
-                pil_img = pil_img.convert("RGB")
+            raw_img = Image.open(io.BytesIO(contents))
+            info_dict = raw_img.info.copy() if hasattr(raw_img, "info") else {}
+            pil_img = raw_img.convert("RGB") if raw_img.mode != "RGB" else raw_img
+            pil_img.info = info_dict
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to decode document/image file: {str(e)}")
 
@@ -89,10 +96,17 @@ async def batch_verify_slips(
                 pdf = pdfium.PdfDocument(contents)
                 page = pdf[0]
                 pil_img = page.render(scale=2.0).to_pil().convert("RGB")
+                try:
+                    pil_img.info["pdf_metadata"] = pdf.get_metadata_dict()
+                except Exception:
+                    pass
+                page.close()
+                pdf.close()
             else:
-                pil_img = Image.open(io.BytesIO(contents))
-                if pil_img.mode != "RGB":
-                    pil_img = pil_img.convert("RGB")
+                raw_img = Image.open(io.BytesIO(contents))
+                info_dict = raw_img.info.copy() if hasattr(raw_img, "info") else {}
+                pil_img = raw_img.convert("RGB") if raw_img.mode != "RGB" else raw_img
+                pil_img.info = info_dict
 
             # Field extraction
             extracted = field_extractor.extract_fields(pil_img)

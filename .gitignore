@@ -15,7 +15,10 @@ venv/
 # Weights & Dataset Artifacts
 weights/*.pt
 weights/*.pth
+weights/verislip_trained_weights/
+weights/training_metrics.json
 !weights/.gitkeep
 !weights/README.md
 kaggle_dataset/
+verislip_dataset/
 *.zip

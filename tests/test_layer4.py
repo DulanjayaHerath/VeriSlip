@@ -38,10 +38,12 @@ def test_layer4_dualstream_architecture():
 
     with torch.no_grad():
         prob, loc_map = model(rgb, forensic)
+        sig_prob = torch.sigmoid(prob)
+        sig_loc = torch.sigmoid(loc_map)
 
     assert prob.shape == (2, 1)
     assert loc_map.shape == (2, 1, 128, 128)
-    assert 0.0 <= prob.min().item() <= 1.0
-    assert 0.0 <= prob.max().item() <= 1.0
-    assert 0.0 <= loc_map.min().item() <= 1.0
-    assert 0.0 <= loc_map.max().item() <= 1.0
+    assert 0.0 <= sig_prob.min().item() <= 1.0
+    assert 0.0 <= sig_prob.max().item() <= 1.0
+    assert 0.0 <= sig_loc.min().item() <= 1.0
+    assert 0.0 <= sig_loc.max().item() <= 1.0

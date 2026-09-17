@@ -586,7 +586,7 @@ Generate publication-ready composite images showing original slip side-by-side w
 - [ ] Submit PR referencing this issue.
 
 
-#### #28: [FORENSICS-CV] Optimize OpenCV forensic feature extraction pipeline for <500ms latency
+#### #28: [COMPLETED] [FORENSICS-CV] Optimize OpenCV forensic feature extraction pipeline for <500ms latency
 * **Domain:** `Computer Vision` | **Layer:** `Layer 2` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:cv-forensics, milestone:phase-3, priority:medium, layer:layer-2, contributions-welcome`
 
@@ -885,7 +885,7 @@ Establish strict train/val/test splits ensuring no bank template leakage to test
 - [ ] Submit PR referencing this issue.
 
 
-#### #42: [ML-DATA] Create adversarial benchmark test set with human-edited slips (Photoshop/Canva)
+#### #42: [COMPLETED] [ML-DATA] Create adversarial benchmark test set with human-edited slips (Photoshop/Canva)
 * **Domain:** `Machine Learning` | **Layer:** `Dataset` | **Milestone:** `Phase 3: ML & Advanced Forensics` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-3, priority:high, layer:dataset, contributions-welcome`
 
@@ -1137,7 +1137,7 @@ Generate evaluation tables reporting Precision, Recall, F1, and ROC-AUC per diff
 - [ ] Submit PR referencing this issue.
 
 
-#### #54: [ML-DATA] Conduct ablation study: Classical layers vs Deep Learning vs Fusion Ensemble
+#### #54: [COMPLETED] [ML-DATA] Conduct ablation study: Classical layers vs Deep Learning vs Fusion Ensemble
 * **Domain:** `Machine Learning` | **Layer:** `Layer 4` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
 * **Labels:** `domain:ml-data, milestone:phase-4, priority:high, layer:layer-4, contributions-welcome`
 

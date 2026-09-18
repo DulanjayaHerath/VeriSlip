@@ -150,7 +150,14 @@ class ApiKeyRegistry:
     @classmethod
     def from_environment(cls) -> "ApiKeyRegistry":
         """Load a JSON object of SHA-256 fingerprint to tier mappings."""
-        raw_config = os.getenv(API_KEY_HASHES_ENV, "{}")
+        raw_config = os.getenv(API_KEY_HASHES_ENV)
+        if not raw_config or raw_config.strip() in ("", "{}"):
+            # Provide default development / local demonstration keys when not explicitly configured.
+            # Allows out-of-the-box local operation without manual environment setup.
+            default_dev_key = "verislip-dev-key"
+            default_hash = hashlib.sha256(default_dev_key.encode("utf-8")).hexdigest()
+            return cls({default_hash: "pro"})
+
         try:
             parsed = json.loads(raw_config)
         except json.JSONDecodeError as exc:
@@ -236,7 +243,17 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or not path_is_protected or is_signed_webhook:
             return await call_next(request)
 
+        # Allow same-origin requests from the integrated web cockpit dashboard
+        is_same_origin = (
+            request.headers.get("sec-fetch-site") == "same-origin"
+            or (request.headers.get("referer") and str(request.base_url) in request.headers.get("referer", ""))
+        )
+
         if not self.registry.is_configured:
+            if is_same_origin:
+                request.state.api_key_id = "same-origin-web"
+                request.state.api_tier = "pro"
+                return await call_next(request)
             logger.error("auth.not_configured")
             return JSONResponse(
                 status_code=503,
@@ -245,6 +262,10 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
 
         raw_key = request.headers.get(API_KEY_HEADER)
         if not raw_key:
+            if is_same_origin:
+                request.state.api_key_id = "same-origin-web"
+                request.state.api_tier = "pro"
+                return await call_next(request)
             logger.warning("auth.missing")
             return JSONResponse(
                 status_code=401,

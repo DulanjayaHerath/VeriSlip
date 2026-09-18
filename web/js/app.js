@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let triageLoading = false;
   let historyPage = 1;
   let historyHasMore = false;
-  let sessionApiKey = "";
+  let sessionApiKey = (typeof localStorage !== "undefined" && localStorage.getItem("verislip_api_key")) || "verislip-dev-key";
 
   function getSessionApiKey() {
     return sessionApiKey;

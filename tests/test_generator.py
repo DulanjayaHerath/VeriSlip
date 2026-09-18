@@ -55,3 +55,47 @@ def test_tampered_amount_generation():
     assert tamper_meta["tamper_type"] == "ALTER_AMOUNT"
     assert len(tamper_meta["ground_truth_boxes"]) > 0
     assert tamper_meta["ground_truth_boxes"][0]["label"] == "Forged Transaction Amount"
+
+
+def test_tampered_beneficiary_and_account_swapping():
+    generator = SyntheticSlipGenerator(width=400, height=700)
+    auth_img, auth_meta = generator.generate_authentic_slip(bank_code="BOC")
+
+    tamp_ben_img, tamp_ben_meta = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="SWAP_BENEFICIARY",
+        new_beneficiary_name="Sunil Perera",
+    )
+    assert tamp_ben_img is not None
+    assert tamp_ben_meta["is_tampered"] is True
+    assert tamp_ben_meta["tampered_beneficiary"] == "Sunil Perera"
+    assert any(b["label"] == "Swapped Beneficiary Name" for b in tamp_ben_meta["ground_truth_boxes"])
+
+    tamp_acc_img, tamp_acc_meta = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="SWAP_ACCOUNT",
+        new_account="XXXX-XXXX-1122",
+    )
+    assert tamp_acc_img is not None
+    assert tamp_acc_meta["is_tampered"] is True
+    assert tamp_acc_meta["tampered_account"] == "XXXX-XXXX-1122"
+    assert any(b["label"] == "Swapped Beneficiary Account" for b in tamp_acc_meta["ground_truth_boxes"])
+
+
+def test_tampered_date_spoofing():
+    generator = SyntheticSlipGenerator(width=400, height=700)
+    auth_img, auth_meta = generator.generate_authentic_slip(bank_code="HNB")
+
+    tamp_date_img, tamp_date_meta = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="ALTER_DATE",
+        new_date="2026-09-18 15:45:00",
+    )
+    assert tamp_date_img is not None
+    assert tamp_date_meta["is_tampered"] is True
+    assert tamp_date_meta["tampered_date_time"] == "2026-09-18 15:45:00"
+    assert any(b["label"] == "Spoofed Transaction Timestamp" for b in tamp_date_meta["ground_truth_boxes"])
+

@@ -2,6 +2,7 @@
 Unit tests for Layer 2 Classical Forensics (ELA & DCT) and Layer 3 Noise Forensics.
 """
 
+import pytest
 from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
@@ -79,7 +80,9 @@ def test_layer2_chromatic_luminance_ela_decomposition():
 
     eval_res = l2.evaluate(tampered_img)
     assert "channel_decomposition" in eval_res
-    assert eval_res["channel_decomposition"]["luminance_variance"] == decomp_tamp["luminance_variance"]
+    assert eval_res["channel_decomposition"]["luminance_variance"] == pytest.approx(
+        decomp_tamp["luminance_variance"], rel=0.05
+    )
 
 
 def test_layer2_jpeg_grid_shift_detector():

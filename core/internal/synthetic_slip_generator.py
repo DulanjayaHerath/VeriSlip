@@ -154,7 +154,8 @@ class SyntheticSlipGenerator:
         authentic_slip: Image.Image,
         metadata: Dict[str, Any],
         tamper_type: str = "ALTER_AMOUNT",
-        new_amount: float = 125000.00
+        new_amount: float = 125000.00,
+        **kwargs: Any
     ) -> Tuple[Image.Image, Dict[str, Any]]:
         """
         Simulate real-world fraud tampering on an authentic slip:
@@ -195,13 +196,13 @@ class SyntheticSlipGenerator:
             })
             tamper_metadata["tampered_amount"] = new_amount
 
-        elif tamper_type == "ALTER_REFERENCE":
+        elif tamper_type in ("ALTER_REFERENCE", "SPOOF_REFERENCE"):
             bbox = metadata["field_bboxes"]["Reference No"]
             x1, y1, x2, y2 = bbox
 
             draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
             font_tampered = get_font(14)
-            fake_ref = f"TXN{random.randint(1000000000, 9999999999)}"
+            fake_ref = kwargs.get("new_reference", f"TXN{random.randint(1000000000, 9999999999)}")
             draw.text((x1 + 5, y1 + 2), fake_ref, fill=(20, 20, 20), font=font_tampered)
 
             flagged_boxes.append({
@@ -211,6 +212,57 @@ class SyntheticSlipGenerator:
                 "tampered_value": fake_ref
             })
             tamper_metadata["tampered_reference"] = fake_ref
+
+        elif tamper_type in ("SWAP_BENEFICIARY", "ALTER_BENEFICIARY"):
+            bbox = metadata["field_bboxes"].get("Beneficiary")
+            if bbox:
+                x1, y1, x2, y2 = bbox
+                draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+                font_tampered = get_font(14)
+                fake_beneficiary = kwargs.get("new_beneficiary_name", "K. M. Wickramasinghe")
+                draw.text((x1 + 5, y1 + 2), fake_beneficiary, fill=(20, 20, 20), font=font_tampered)
+
+                flagged_boxes.append({
+                    "box": [x1, y1, x2 - x1, y2 - y1],
+                    "label": "Swapped Beneficiary Name",
+                    "original_value": metadata.get("beneficiary_name", ""),
+                    "tampered_value": fake_beneficiary
+                })
+                tamper_metadata["tampered_beneficiary"] = fake_beneficiary
+
+        elif tamper_type in ("SWAP_ACCOUNT", "ALTER_ACCOUNT"):
+            bbox = metadata["field_bboxes"].get("To Account")
+            if bbox:
+                x1, y1, x2, y2 = bbox
+                draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+                font_tampered = get_font(14)
+                fake_account = kwargs.get("new_account", "XXXX-XXXX-9901")
+                draw.text((x1 + 5, y1 + 2), fake_account, fill=(20, 20, 20), font=font_tampered)
+
+                flagged_boxes.append({
+                    "box": [x1, y1, x2 - x1, y2 - y1],
+                    "label": "Swapped Beneficiary Account",
+                    "original_value": "XXXX-XXXX-8921",
+                    "tampered_value": fake_account
+                })
+                tamper_metadata["tampered_account"] = fake_account
+
+        elif tamper_type in ("ALTER_DATE", "SPOOF_TIMESTAMP", "ALTER_TIMESTAMP"):
+            bbox = metadata["field_bboxes"].get("Date & Time")
+            if bbox:
+                x1, y1, x2, y2 = bbox
+                draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+                font_tampered = get_font(14)
+                fake_date = kwargs.get("new_date", "2026-09-18 11:20:45")
+                draw.text((x1 + 5, y1 + 2), fake_date, fill=(20, 20, 20), font=font_tampered)
+
+                flagged_boxes.append({
+                    "box": [x1, y1, x2 - x1, y2 - y1],
+                    "label": "Spoofed Transaction Timestamp",
+                    "original_value": metadata.get("date_str", ""),
+                    "tampered_value": fake_date
+                })
+                tamper_metadata["tampered_date_time"] = fake_date
 
         # Re-save with JPEG compression and inject editing software EXIF metadata
         cv2_img = cv2.cvtColor(np.array(tampered), cv2.COLOR_RGB2BGR)

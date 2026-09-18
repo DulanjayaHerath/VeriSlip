@@ -3,7 +3,9 @@ Verification API Route for VeriSlip.
 Receives bank slip image uploads, runs multi-layer forensic detection, and returns verdicts.
 """
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from functools import partial
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
+from starlette.concurrency import run_in_threadpool
 from typing import Optional, List
 from core.forensics.unified_scorer import VeriSlipForensicEngine
 from core.forensics.ocr_extractor import ReceiptFieldExtractor
@@ -12,11 +14,25 @@ from core.security.image_sanitizer import (
     MAX_IMAGE_UPLOAD_BYTES,
     sanitize_image_bytes,
 )
-from api.schemas.detection import VerificationResponse, BatchVerificationResponse, BatchSlipItem, BatchVerificationSummary
+from core.jobs.forensic_jobs import ForensicJobManager, JobQueueFullError
+from core.observability.logging import get_correlation_id
+from api.schemas.detection import (
+    VerificationResponse,
+    BatchVerificationResponse,
+    BatchSlipItem,
+    BatchVerificationSummary,
+    ForensicJobSubmissionResponse,
+    ForensicJobStatusResponse,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["Verification"])
 engine = VeriSlipForensicEngine()
 field_extractor = ReceiptFieldExtractor()
+job_manager = ForensicJobManager()
+
+
+class ForensicAnalysisError(RuntimeError):
+    """Internal marker for safely handled forensic engine failures."""
 
 
 async def _read_bounded_upload(file: UploadFile) -> bytes:
@@ -33,6 +49,51 @@ def _is_pdf(contents: bytes) -> bool:
     """Identify PDFs by their file signature, never their name or MIME type."""
     return contents.startswith(b"%PDF-")
 
+
+def _decode_document(contents: bytes):
+    """Decode and sanitize an upload on a worker thread."""
+    if not _is_pdf(contents):
+        return sanitize_image_bytes(contents)
+
+    import pypdfium2 as pdfium
+
+    pdf = pdfium.PdfDocument(contents)
+    page = None
+    try:
+        page = pdf[0]
+        image = page.render(scale=2.0).to_pil().convert("RGB")
+        try:
+            image.info["pdf_metadata"] = pdf.get_metadata_dict()
+        except Exception:
+            pass
+        return image
+    finally:
+        if page is not None:
+            page.close()
+        pdf.close()
+
+
+def _analyze_image(
+    pil_img,
+    bank_code: Optional[str] = None,
+    reference_no: Optional[str] = None,
+    include_heatmaps: bool = True,
+):
+    """Run OCR and forensic inference away from the FastAPI event loop."""
+    extracted_meta = field_extractor.extract_fields(pil_img, bank_hint=bank_code)
+    effective_bank = bank_code or extracted_meta["detected_bank_code"]
+    try:
+        results = engine.analyze(
+            pil_image=pil_img,
+            bank_code=effective_bank,
+            reference_no=reference_no,
+            include_heatmaps=include_heatmaps,
+        )
+    except Exception:
+        raise ForensicAnalysisError from None
+    results["extracted_metadata"] = extracted_meta
+    return results
+
 @router.post("/verify", response_model=VerificationResponse)
 async def verify_slip(
     file: UploadFile = File(..., description="Payment slip or screenshot image file"),
@@ -45,19 +106,7 @@ async def verify_slip(
     """
     try:
         contents = await _read_bounded_upload(file)
-        if _is_pdf(contents):
-            import pypdfium2 as pdfium
-            pdf = pdfium.PdfDocument(contents)
-            page = pdf[0]
-            pil_img = page.render(scale=2.0).to_pil().convert("RGB")
-            try:
-                pil_img.info["pdf_metadata"] = pdf.get_metadata_dict()
-            except Exception:
-                pass
-            page.close()
-            pdf.close()
-        else:
-            pil_img = sanitize_image_bytes(contents)
+        pil_img = await run_in_threadpool(_decode_document, contents)
     except ImageValidationError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
     except Exception:
@@ -65,23 +114,60 @@ async def verify_slip(
             status_code=400, detail="Uploaded document could not be decoded safely."
         ) from None
 
-    # Run field extraction & bank template detection
-    extracted_meta = field_extractor.extract_fields(pil_img, bank_hint=bank_code)
-    effective_bank = bank_code or extracted_meta["detected_bank_code"]
-
-    # Run multi-layer forensics
     try:
-        results = engine.analyze(
-            pil_image=pil_img,
-            bank_code=effective_bank,
-            reference_no=reference_no
+        return await run_in_threadpool(
+            _analyze_image, pil_img, bank_code, reference_no, True
         )
-        results["extracted_metadata"] = extracted_meta
-        return results
-    except Exception:
+    except ForensicAnalysisError:
         raise HTTPException(
             status_code=500, detail="Forensic analysis could not be completed."
         ) from None
+
+
+@router.post(
+    "/verify/jobs", response_model=ForensicJobSubmissionResponse, status_code=202
+)
+async def submit_verification_job(
+    request: Request,
+    file: UploadFile = File(..., description="Payment slip or screenshot image file"),
+    bank_code: Optional[str] = Form(None),
+    reference_no: Optional[str] = Form(None),
+):
+    """Sanitize an upload, then queue heavy OCR and forensic analysis."""
+    try:
+        contents = await _read_bounded_upload(file)
+        pil_img = await run_in_threadpool(_decode_document, contents)
+    except ImageValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Uploaded document could not be decoded safely."
+        ) from None
+
+    correlation_id = get_correlation_id() or request.state.correlation_id
+    owner_key_id = request.state.api_key_id
+    task = partial(_analyze_image, pil_img, bank_code, reference_no, True)
+    try:
+        job = job_manager.submit(owner_key_id, correlation_id, task)
+    except JobQueueFullError:
+        raise HTTPException(
+            status_code=503, detail="Forensic job capacity is temporarily unavailable."
+        ) from None
+    return {
+        "job_id": job.job_id,
+        "status": job.status,
+        "status_url": f"/api/v1/verify/jobs/{job.job_id}",
+        "correlation_id": job.correlation_id,
+    }
+
+
+@router.get("/verify/jobs/{job_id}", response_model=ForensicJobStatusResponse)
+async def get_verification_job(request: Request, job_id: str):
+    """Return a queued job only to the API key that created it."""
+    job = job_manager.get(job_id, request.state.api_key_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Forensic job was not found.")
+    return job
 
 @router.post("/batch-verify", response_model=BatchVerificationResponse)
 async def batch_verify_slips(
@@ -107,30 +193,12 @@ async def batch_verify_slips(
         fname = f.filename or "unknown_slip.jpg"
         try:
             contents = await _read_bounded_upload(f)
-            if _is_pdf(contents):
-                import pypdfium2 as pdfium
-                pdf = pdfium.PdfDocument(contents)
-                page = pdf[0]
-                pil_img = page.render(scale=2.0).to_pil().convert("RGB")
-                try:
-                    pil_img.info["pdf_metadata"] = pdf.get_metadata_dict()
-                except Exception:
-                    pass
-                page.close()
-                pdf.close()
-            else:
-                pil_img = sanitize_image_bytes(contents)
-
-            # Field extraction
-            extracted = field_extractor.extract_fields(pil_img)
-            effective_bank = extracted["detected_bank_code"]
-
-            # Forensics (lightweight without heavy heatmaps serialization for batch speed)
-            res = engine.analyze(
-                pil_image=pil_img,
-                bank_code=effective_bank,
-                include_heatmaps=False
+            pil_img = await run_in_threadpool(_decode_document, contents)
+            res = await run_in_threadpool(
+                _analyze_image, pil_img, None, None, False
             )
+            extracted = res["extracted_metadata"]
+            effective_bank = extracted["detected_bank_code"]
 
             v = res["verdict"]
             risk_pct = res["tamper_risk_percentage"]

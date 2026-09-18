@@ -27,6 +27,21 @@ class VerificationResponse(BaseModel):
     forensic_maps: Optional[Dict[str, Optional[str]]] = None
     extracted_metadata: Optional[Dict[str, Any]] = None
 
+class ForensicJobSubmissionResponse(BaseModel):
+    job_id: str
+    status: str
+    status_url: str
+    correlation_id: str
+
+class ForensicJobStatusResponse(BaseModel):
+    job_id: str
+    status: str
+    correlation_id: str
+    created_at: float
+    updated_at: float
+    result: Optional[VerificationResponse] = None
+    error: Optional[str] = None
+
 class BatchSlipItem(BaseModel):
     filename: str
     verdict: str

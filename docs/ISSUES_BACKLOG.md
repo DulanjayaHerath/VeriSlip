@@ -2346,4 +2346,219 @@ In busy physical retail environments (supermarkets, wholesale hardware stores), 
 - [ ] Fallback support for manual keyboard input.
 - [ ] Document voice command syntax in the Web Cockpit help modal.
 
+---
+
+### 🏆 Next-Generation Research & Award-Winning Capabilities (Issues #119 to #133)
+
+#### #119: [ML-XAI] Explainable AI (XAI) Grad-CAM Visual Attribution & Counterfactual Evidence Generator
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 (Deep Neural Attribution)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:high, layer:layer-4`
+
+### Overview
+To achieve legal defensibility and commercial trust in dispute resolution, forensic models must not behave as black boxes. Implement Explainable AI (XAI) capabilities using Gradient-weighted Class Activation Mapping (Grad-CAM) and Integrated Gradients on the Layer 4 DualStream CNN. Visualizes the precise neural decision boundary attribution on the slip, accompanied by a counterfactual synthetic reconstruction displaying what the slip would have looked like in its pristine, authentic state.
+
+### Acceptance Criteria
+- [ ] Implement `core/forensics/xai_gradcam.py` with hook management on Layer 4 feature extractors.
+- [ ] Generate smoothed visual heatmaps exported as PNG overlays and base64 payloads.
+- [ ] Integrate attribution heatmaps into `/api/v1/verify` and the Web Cockpit view toggles.
+- [ ] Unit tests verifying gradient computation and bounding box IoU alignment (>0.75 on synthetic ground truth).
+- [ ] Document attribution interpretation guidelines in `docs/XAI_METHODOLOGY.md`.
+
+
+#### #120: [SECURITY-CRYPTO] Zero-Knowledge Proof (zk-SNARK) Verification Engine for Privacy-Preserving B2B Audits
+* **Domain:** `DevOps, Security & Academic Research` | **Layer:** `Cryptographic Privacy Layer` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:shared, milestone:phase-4, priority:high`
+
+### Overview
+Enterprises and high-value merchants often need to prove to third-party auditors, escrow agents, or logistics providers that a payment slip is authentic, exceeds a required threshold amount, and is addressed to the merchant, without disclosing sensitive personal identifiable information (PII), full customer names, or remaining bank account balances. Designs a Zero-Knowledge Succinct Non-Interactive Argument of Knowledge (zk-SNARK) verification circuit using Circom and snarkjs.
+
+### Acceptance Criteria
+- [ ] Write Circom circuit `circuits/slip_verifier.circom` with Groth16 trusted setup.
+- [ ] Implement proof generation and verification wrapper in `core/crypto/zk_verifier.py`.
+- [ ] Expose REST endpoint for verifying proofs with 100% cryptographic soundness.
+- [ ] Comprehensive unit tests verifying valid proofs pass and altered amounts fail constraint validation.
+
+
+#### #121: [FORENSICS-CV] Anti-Spoofing Screen Moire & Sub-Pixel LCD Grid Interference Discriminator
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 2 (Anti-Spoofing & Frequency Harmonics)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:high, layer:layer-2`
+
+### Overview
+A prevalent attack vector in Sri Lankan peer-to-peer commerce involves fraudsters displaying a forged digital slip on a tablet, smartphone, or laptop screen, and presenting it to a cashier or photographing it to simulate a physical camera capture. Implements an anti-spoofing detector that detects physical LCD/OLED display screen re-photographing via 2D Gabor filter banks and sub-pixel Moire interference pattern analysis.
+
+### Acceptance Criteria
+- [ ] Implement `core/forensics/anti_spoof.py` with 2D-FFT spectral peak analyzer.
+- [ ] Differentiate genuine paper/digital screenshots from phone-on-screen recaptures.
+- [ ] Test on 50+ real screen recaptures across IPS, OLED, and TN panels with >92% accuracy.
+- [ ] Add unit tests verifying synthetic Moire pattern identification.
+
+
+#### #122: [FINTECH-CORE] LankaQR EMVCo-Compliant Dynamic QR Code Cross-Verification Engine
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Layer 1 & 5 (LankaQR Cross-Validation)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:high, layer:backend-api`
+
+### Overview
+Central Bank of Sri Lanka (CBSL) mandated LankaQR standards (based on EMVCo Merchant-Presented QR specifications) on all electronic payment receipts and POS slips. Forgers frequently manipulate the printed receipt text but fail to update the embedded QR code payload. Implements an automated QR code parsing and cryptographic checksum verification engine that extracts dynamic transaction parameters and cross-checks them against OCR text.
+
+### Acceptance Criteria
+- [ ] Implement `core/templates/lankaqr_parser.py` parsing standard EMVCo TLV formats.
+- [ ] Add CRC-16 checksum computation and validation function.
+- [ ] Return `lankaqr_validation` metadata in `/api/v1/verify` response payload.
+- [ ] Unit tests with valid LankaQR strings, tampered amounts, and corrupt CRCs.
+
+
+#### #123: [ML-GRAPH] Graph Neural Network (GNN) Engine for Inter-Merchant Fraud Syndicate Ring Detection
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 & Graph Intelligence` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:high, layer:layer-4`
+
+### Overview
+Organized financial fraud rings rarely attack a single merchant in isolation; they systematically circulate mutated variants of the same base forged slip across dozens of online shops, changing only the store name or invoice number. Designs a Graph Neural Network (GNN) fraud intelligence engine using PyTorch Geometric (PyG) that models transactions as a heterogeneous bipartite graph, identifying dense fraud clusters and coordinated syndicate rings.
+
+### Acceptance Criteria
+- [ ] Implement graph constructor and PyG data loaders in `core/analytics/syndicate_graph.py`.
+- [ ] Build sub-graph cluster detection identifying repeated account/pHash components.
+- [ ] Expose syndicate risk index in `/api/v1/analytics/syndicate-risk`.
+- [ ] Simulation test script demonstrating detection of a simulated 5-merchant fraud ring.
+
+
+#### #124: [CLIENT-WASM] Hardware-Accelerated Client-Side WebAssembly / WebGPU Inference Engine
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Client-Side Web Cockpit` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:medium, layer:web-frontend`
+
+### Overview
+To enable instantaneous, zero-latency feedback (<15ms) and guarantee 100% data privacy for bank customers whose financial confidentiality prevents uploading slips to external cloud servers, develops an in-browser inference runtime using ONNX Runtime Web (WASM / WebGPU). Layer 1 structural analysis, Layer 2 Error Level Analysis, and a quantized MobileNetV4 tamper backbone execute entirely client-side.
+
+### Acceptance Criteria
+- [ ] Create `web/js/wasm_engine.js` integrating ONNX Runtime Web.
+- [ ] Port ELA heatmap generation to HTML5 Canvas WebGL shader for real-time rendering.
+- [ ] Validate equivalent detection accuracy between Python backend and WebAssembly runtime.
+- [ ] Measure client inference latency (<25ms on average laptop browser).
+
+
+#### #125: [FORENSICS-CV] Sub-Pixel Glyph Anti-Aliasing Profile & Font Rasterization Discriminator
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 1 (Font Rasterization & Sub-Pixel Geometry)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:high, layer:layer-1`
+
+### Overview
+Every operating system and document editing software employs distinct sub-pixel font rasterization algorithms (e.g., Apple CoreText sub-pixel anti-aliasing, Android FreeType gamma-corrected rasterization, Windows DirectWrite ClearType, and HTML5 Canvas browser smoothing). When a fraudster alters an amount on an Android ComBank slip using Photoshop or web-based Canva, the sub-pixel luminance transitions of the forged glyphs clash with the native operating system's font rendering profile. Implements sub-pixel glyph boundary analysis.
+
+### Acceptance Criteria
+- [ ] Implement `core/forensics/font_anti_aliasing.py`.
+- [ ] Detect spliced numbers rendered with alien font engines with >88% precision.
+- [ ] Add unit tests verifying gradient profile divergence on genuine vs pasted characters.
+- [ ] Document technical breakdown in `docs/SUBPIXEL_RASTERIZATION.md`.
+
+
+#### #126: [COMPLIANCE-LEGAL] Automated Digital Signature (PAdES / X.509 PKI) for Legal Admissibility under Sri Lankan ETA No. 19 of 2006
+* **Domain:** `DevOps, Security & Academic Research` | **Layer:** `Cryptographic Evidence Packaging` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:shared, milestone:phase-4, priority:high`
+
+### Overview
+Under the Sri Lankan Electronic Transactions Act No. 19 of 2006 (and international eIDAS standards), digital audit evidence submitted in commercial dispute arbitrations or police Criminal Investigation Department (CID) cybercrime cases must guarantee non-repudiation and cryptographic integrity. Enhances the PDF audit report generator to digitally sign exported audit certificates using X.509 PKI certificates with PAdES-B-LT (Long-Term Validation) compliance and RFC 3161 cryptographic timestamps.
+
+### Acceptance Criteria
+- [ ] Implement `core/security/pdf_signer.py` supporting PAdES cryptographic signing.
+- [ ] Add optional PKI signature generation to `/api/v1/report/audit-pdf`.
+- [ ] Unit tests validating signature structure and tampering invalidation behavior.
+- [ ] Include setup instructions for corporate X.509 certificates in `docs/PKI_SIGNING.md`.
+
+
+#### #127: [ML-DEFENSE] Adversarial Purification Defense against PGD / FGSM Evasion Attacks
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 (Adversarial Defense)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:medium, layer:layer-4`
+
+### Overview
+Sophisticated cybercriminals can construct imperceptible adversarial perturbations using algorithms such as Projected Gradient Descent (PGD) or Fast Gradient Sign Method (FGSM) to intentionally deceive deep learning forensic classifiers into labeling a forged slip as authentic. Implements an adversarial purification defense layer that purifies input images before they reach the Layer 4 DualStream CNN.
+
+### Acceptance Criteria
+- [ ] Implement `core/ml/adversarial_defense.py` with purification transforms.
+- [ ] Add benchmark script `tests/test_adversarial_robustness.py` evaluating PGD attacks.
+- [ ] Demonstrate >80% retention of tamper detection accuracy under adversarial attacks.
+- [ ] Maintain latency impact under 30ms on inference pipeline.
+
+
+#### #128: [FORENSICS-CV] Real-Time 30 FPS Document Camera & Video Stream Forensic Scanner
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Real-Time Video Forensics` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:medium, layer:layer-1`
+
+### Overview
+In retail counters, pawnshops, jewelry merchants, and commercial bank branches, cashiers frequently audit physical paper deposit slips presented by walk-in customers under overhead document cameras or webcams. Processing static screenshots one by one is too slow for rush-hour queues. Builds a real-time OpenCV video stream pipeline running at 30 FPS that projects interactive augmented reality bounding boxes around tampered areas as slips pass under the camera lens.
+
+### Acceptance Criteria
+- [ ] Build `scripts/live_stream_scanner.py` for standalone document camera auditing.
+- [ ] Integrate live camera streaming tab into Web Cockpit with WebRTC.
+- [ ] Maintain consistent 30 FPS throughput with motion trigger gating.
+- [ ] Unit tests verifying motion detection thresholding and frame buffer recycling.
+
+
+#### #129: [ML-AUGMENT] Physics-Based Print-and-Scan Degradation Simulation for Synthetic Dataset Hardening
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Synthetic Dataset Hardening` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:medium, layer:dataset`
+
+### Overview
+Models trained exclusively on pristine digital synthetic slips experience domain shift when deployed on low-cost thermal printer receipts or scanned paper slips. Develops a physics-based print-and-scan simulator that models the physical and optical degradation mechanisms occurring when a digital receipt is printed and rescanned, expanding synthetic training data diversity.
+
+### Acceptance Criteria
+- [ ] Implement `core/internal/print_scan_simulator.py` modeling ink bleed, halftoning, and sensor noise.
+- [ ] Add CLI flag `--simulate-print-scan` to dataset generation scripts.
+- [ ] Generate 500+ hardened print-scan samples for Kaggle dataset enrichment.
+- [ ] Unit tests verifying statistical noise distributions of simulated print-scans.
+
+
+#### #130: [INTEL-FEED] Real-Time Fraud Threat Intelligence Feed with STIX/TAXII 2.1 Standard Integration
+* **Domain:** `DevOps, Security & Academic Research` | **Layer:** `National Threat Intelligence` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:shared, milestone:phase-4, priority:medium`
+
+### Overview
+Fraud syndicates frequently distribute newly forged slip templates across multiple e-commerce sectors simultaneously. To empower national cybersecurity coordination, establishes an automated threat intelligence feed using the OASIS STIX 2.1 (Structured Threat Information Expression) and TAXII 2.1 protocols, publishing anonymized indicators of compromise (IoCs) to Sri Lanka CERT|CC, the Central Bank Financial Intelligence Unit (FIU), and member commercial banks.
+
+### Acceptance Criteria
+- [ ] Implement `core/threat_intel/stix_exporter.py` generating valid STIX 2.1 JSON bundles.
+- [ ] Expose TAXII 2.1 collections endpoint in `api/routes/threat_intel.py`.
+- [ ] Add unit tests validating STIX bundle schema conformance with `stix2` validator.
+- [ ] Document integration guide for cybersecurity incident responders in `docs/THREAT_INTEL.md`.
+
+
+#### #131: [ML-ACTIVE] Human-in-the-Loop (HITL) Active Learning Subsystem with Uncertainty Sampling
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 (Active Learning & Continual Adaptation)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:medium, layer:layer-4`
+
+### Overview
+Static machine learning models gradually suffer from concept drift as fraudsters invent novel editing methods. Implements a continuous Human-in-the-Loop (HITL) Active Learning subsystem that automatically identifies ambiguous, edge-case slips using prediction entropy and margin sampling, queues them for human expert review, and automatically triggers LoRA fine-tuning when labeled batches accumulate.
+
+### Acceptance Criteria
+- [ ] Implement uncertainty computation in `core/ml/active_learning.py`.
+- [ ] Create `/api/v1/active-learning/queue` endpoint for ambiguous slips.
+- [ ] Implement LoRA adapter checkpoint updating mechanism.
+- [ ] Unit tests for entropy calculation and queue dispatching.
+
+
+#### #132: [FORENSICS-CV] Digital Steganography & Banking App Micro-Watermark Extraction
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 3 (Steganography & Digital Watermarks)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:low, layer:layer-3`
+
+### Overview
+Certain modern banking applications (such as ComBank Digital, NTB FriMi, and Seylan Mobile) embed subtle digital watermarks, micro-patterns, or least-significant-bit (LSB) steganographic checksums in their generated receipt bitmaps to protect against forgery. Re-saved or edited images generated by photo editing tools inevitably strip or corrupt these fragile watermarks. Builds a digital steganography and micro-pattern extraction module.
+
+### Acceptance Criteria
+- [ ] Implement `core/forensics/steganography.py` supporting bitplane slicing and DCT watermark recovery.
+- [ ] Profile authentic watermarks for Commercial Bank and FriMi receipts.
+- [ ] Flag localized watermark disruptions within bounding boxes.
+- [ ] Unit tests verifying watermark integrity on authentic and edited sample images.
+
+
+#### #133: [INFRA-BENCH] Multi-Modal Forensic Benchmark Suite & Evaluation Leaderboard for Academic Publication
+* **Domain:** `DevOps, Security & Academic Research` | **Layer:** `Academic Benchmarking & Peer-Review` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:shared, milestone:phase-4, priority:high`
+
+### Overview
+To substantiate VeriSlip's standing as an award-winning research contribution and prepare a peer-reviewed paper for submission to venues such as IEEE Transactions on Information Forensics and Security (TIFS) or CVPR Workshops, builds an exhaustive, reproducible benchmarking harness comparing VeriSlip against global state-of-the-art forensic architectures (MantraNet, BusterNet, TruFor, CAT-Net) on the Sri Lankan Banking Slip Dataset.
+
+### Acceptance Criteria
+- [ ] Implement automated benchmark pipeline in `benchmarks/run_academic_eval.py`.
+- [ ] Compute comparative metrics against baseline forensic models.
+- [ ] Output publication-grade LaTeX tables and ROC/PR curve vector graphs in `benchmarks/output/`.
+- [ ] Document full experimental protocol and reproducibility instructions in `benchmarks/README.md`.
+
+
 

@@ -198,7 +198,24 @@ curl -X POST http://127.0.0.1:8000/api/v1/courier/verify \
   }'
 ```
 
-### 3. WhatsApp Webhook
+### 3. Shopify manual-payment webhook
+
+Configure Shopify's `orders/create` topic to send signed events to
+`POST /api/v1/integrations/shopify/webhooks/orders-create`. The route verifies
+`X-Shopify-Hmac-Sha256` against the exact raw body and intentionally uses that
+signature instead of merchant API-key authentication. Manual bank-transfer
+orders can provide an HTTPS proof URL in `payment_proof_url`, or in a
+`note_attributes`/`metafields` entry named `payment_proof_url`,
+`payment_receipt_url`, `receipt_url`, `slip_url`, or `bank_slip_url`.
+
+Proof downloads are limited to configured Shopify media hosts, kept in memory,
+bounded to the normal image limit, sanitized, and queued on the existing
+forensic worker pool. Shopify webhook IDs provide bounded retry idempotency.
+Configure `VERISLIP_SHOPIFY_WEBHOOK_SECRET` through a secret manager and use
+`VERISLIP_SHOPIFY_MEDIA_HOSTS` only for trusted HTTPS media hosts. Never put a
+real secret in `.env.example` or source control.
+
+### 4. WhatsApp Webhook
 The webhook accepts either the existing `image_base64` field or a WhatsApp Cloud
 API `media_id`. Media-ID downloads require `VERISLIP_WHATSAPP_ACCESS_TOKEN`, are
 kept in memory, bounded to the normal upload limit, and are sanitized before

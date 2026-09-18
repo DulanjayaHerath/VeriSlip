@@ -21,6 +21,7 @@ from starlette.responses import Response
 
 API_KEY_HEADER = "X-API-Key"
 API_KEY_HASHES_ENV = "VERISLIP_API_KEY_HASHES"
+SIGNED_WEBHOOK_PATHS = frozenset({"/api/v1/integrations/shopify/webhooks/orders-create"})
 logger = logging.getLogger("verislip.auth")
 
 
@@ -213,7 +214,10 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
         path_is_protected = request.url.path == self.protected_prefix or (
             request.url.path.startswith(f"{self.protected_prefix}/")
         )
-        if request.method == "OPTIONS" or not path_is_protected:
+        is_signed_webhook = (
+            request.method == "POST" and request.url.path in SIGNED_WEBHOOK_PATHS
+        )
+        if request.method == "OPTIONS" or not path_is_protected or is_signed_webhook:
             return await call_next(request)
 
         if not self.registry.is_configured:

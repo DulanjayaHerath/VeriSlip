@@ -61,7 +61,7 @@ def health_check():
         "status": "healthy",
         "service": "VeriSlip Forensic Engine",
         "version": "1.0.0",
-        "supported_banks": ["COMBANK", "SAMPATH", "BOC", "HNB", "PEOPLES", "SEYLAN", "NTB_FRIMI", "GENERIC_CEFTS"]
+        "supported_banks": ["COMBANK", "SAMPATH", "BOC", "HNB", "PEOPLES", "DFCC", "PAN_ASIA", "SEYLAN", "NTB_FRIMI", "GENERIC_CEFTS"]
     }
 
 # Mount static web directory

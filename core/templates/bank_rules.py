@@ -128,6 +128,40 @@ BANK_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "currency": "LKR",
         "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
     },
+    "DFCC": {
+        "bank_name": "DFCC Bank PLC",
+        "app_name": "DFCC Pay / Virtual Wallet",
+        "primary_color_rgb": (205, 32, 44),  # DFCC Red
+        "ref_patterns": [
+            r"^(?:DFCC|TXN)?[0-9]{10,16}$",
+            r"^[A-Z0-9]{12,18}$"
+        ],
+        "mandatory_fields": [
+            "Reference",
+            "Beneficiary",
+            "Amount",
+            "Date"
+        ],
+        "currency": "LKR",
+        "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+    },
+    "PAN_ASIA": {
+        "bank_name": "Pan Asia Banking Corporation PLC",
+        "app_name": "Pan Asia Mobile / PABC Internet Banking",
+        "primary_color_rgb": (242, 101, 34),  # Pan Asia Orange
+        "ref_patterns": [
+            r"^(?:PABC|TXN)?[0-9]{8,14}$",
+            r"^[0-9]{10,14}$"
+        ],
+        "mandatory_fields": [
+            "Reference",
+            "To Account",
+            "Amount",
+            "Date"
+        ],
+        "currency": "LKR",
+        "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+    },
     "GENERIC_CEFTS": {
         "bank_name": "CEFTS / LankaPay Interbank",
         "app_name": "Generic Payment Slip",
@@ -157,6 +191,10 @@ def identify_bank_from_text(text: str) -> str:
         return "PEOPLES"
     elif "HATTON NATIONAL" in text_upper or "HNB" in text_upper or "SOLO" in text_upper:
         return "HNB"
+    elif "DFCC" in text_upper:
+        return "DFCC"
+    elif "PAN ASIA" in text_upper or "PABC" in text_upper:
+        return "PAN_ASIA"
     elif "SEYLAN" in text_upper:
         return "SEYLAN"
     elif "FRIMI" in text_upper or "NATIONS TRUST" in text_upper or "NTB" in text_upper:

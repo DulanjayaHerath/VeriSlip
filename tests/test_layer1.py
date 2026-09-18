@@ -11,12 +11,23 @@ def test_bank_identification():
     assert identify_bank_from_text("Sampath Vishwa Internet Banking") == "SAMPATH"
     assert identify_bank_from_text("BOC Digi Payment Receipt") == "BOC"
     assert identify_bank_from_text("Hatton National Bank SOLO") == "HNB"
+    assert identify_bank_from_text("DFCC Virtual Wallet Payment") == "DFCC"
+    assert identify_bank_from_text("Pan Asia Mobile Banking Transfer") == "PAN_ASIA"
+    assert identify_bank_from_text("People's Bank PeoplesPay Transfer") == "PEOPLES"
     assert identify_bank_from_text("Unknown Bank XYZ") == "GENERIC_CEFTS"
 
 def test_reference_number_validation():
     # Valid Commercial bank reference
     com_res = validate_reference_number("COMBANK", "TXN1098234812")
     assert com_res["valid"] is True
+
+    # Valid DFCC reference
+    dfcc_res = validate_reference_number("DFCC", "DFCC1029384756")
+    assert dfcc_res["valid"] is True
+
+    # Valid Pan Asia reference
+    pabc_res = validate_reference_number("PAN_ASIA", "PABC90817263")
+    assert pabc_res["valid"] is True
 
     # Obvious fake sequential reference
     fake_res = validate_reference_number("COMBANK", "123456789")

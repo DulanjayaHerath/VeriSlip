@@ -110,6 +110,24 @@ BANK_TEMPLATES: Dict[str, Dict[str, Any]] = {
         "currency": "LKR",
         "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
     },
+    "PEOPLES": {
+        "bank_name": "People's Bank",
+        "app_name": "People's Wave / PeoplesPay",
+        "primary_color_rgb": (180, 20, 30),  # People's Bank Red
+        "ref_patterns": [
+            r"^[0-9]{16,22}$",
+            r"^(?:PB|TRC)?[0-9]{10,22}$"
+        ],
+        "mandatory_fields": [
+            "Pay from",
+            "Pay to",
+            "Amount",
+            "Total debit amount",
+            "Trace No"
+        ],
+        "currency": "LKR",
+        "amount_pattern": r"(?:LKR|Rs\.?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?)",
+    },
     "GENERIC_CEFTS": {
         "bank_name": "CEFTS / LankaPay Interbank",
         "app_name": "Generic Payment Slip",
@@ -135,6 +153,8 @@ def identify_bank_from_text(text: str) -> str:
         return "SAMPATH"
     elif "BANK OF CEYLON" in text_upper or "BOC" in text_upper or "SMARTPAY" in text_upper:
         return "BOC"
+    elif "PEOPLE'S BANK" in text_upper or "PEOPLES" in text_upper or "PEOPLESPAY" in text_upper:
+        return "PEOPLES"
     elif "HATTON NATIONAL" in text_upper or "HNB" in text_upper or "SOLO" in text_upper:
         return "HNB"
     elif "SEYLAN" in text_upper:

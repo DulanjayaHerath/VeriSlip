@@ -5,6 +5,7 @@ __pycache__/
 *.swp
 *.DS_Store
 ~$*
+core/forensics/bin/
 datasets/uploads/*
 !datasets/uploads/.gitkeep
 datasets/generated/*

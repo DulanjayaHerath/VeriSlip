@@ -11,10 +11,13 @@ from PIL import Image
 import numpy as np
 
 from core.forensics.layer1_structural import Layer1StructuralValidator
+from core.forensics.layer1_semantic import Layer1SemanticValidator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
+from core.forensics.layer2_occlusion import Layer2OcclusionDetector
 from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.forensics.font_kerning import CharacterAlignmentValidator
 from core.ml.ensemble_model import Layer4DeepEnsemble
+from core.forensics.ocr_extractor import ReceiptFieldExtractor
 from core.forensics.utils import normalize_dimensions, pil_to_base64
 
 def merge_bounding_boxes(boxes: List[Dict[str, Any]], iou_thresh: float = 0.3) -> List[Dict[str, Any]]:
@@ -51,10 +54,13 @@ class VeriSlipForensicEngine:
 
     def __init__(self):
         self.layer1 = Layer1StructuralValidator()
+        self.layer1_semantic = Layer1SemanticValidator()
         self.layer2 = Layer2ClassicalForensics()
+        self.layer2_occlusion = Layer2OcclusionDetector()
         self.layer3 = Layer3NoiseForensics()
         self.layer4 = Layer4DeepEnsemble()
         self.font_validator = CharacterAlignmentValidator()
+        self.field_extractor = ReceiptFieldExtractor()
         self.calibration_path = os.environ.get("VERISLIP_CALIBRATION_PATH", "weights/calibration_profile.json")
         self.calibration = None
         self._load_calibration()
@@ -90,6 +96,11 @@ class VeriSlipForensicEngine:
         l3_res = self.layer3.evaluate(normalized_img)
         font_res = self.font_validator.evaluate(normalized_img)
 
+        # Run Layer 1.5 Semantic Financial Validator & Layer 2.5 Occlusion Detector
+        ocr_tokens = self.field_extractor.extract_ocr_tokens(normalized_img)
+        l1_sem_res = self.layer1_semantic.evaluate(ocr_tokens, bank_code=bank_code)
+        l2_occ_res = self.layer2_occlusion.evaluate(normalized_img)
+
         # Run Layer 4 Deep Learning Ensemble
         diff_gray = l2_res.get("diff_gray", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
         residual = l3_res.get("residual", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
@@ -119,10 +130,21 @@ class VeriSlipForensicEngine:
             l1_res["anomaly_score"] > 0.15 or
             l2_res["anomaly_score"] > 0.15 or
             l3_res["anomaly_score"] > 0.20 or
+            font_res["anomaly_score"] > 0.40 or
+            l1_sem_res["anomaly_score"] > 0.40
+        )
+        l2_occ_corroborated = (
+            l1_sem_res["is_anomalous"] or
+            l1_res["metadata_analysis"]["is_suspicious"] or
+            l2_res["anomaly_score"] > 0.20 or
+            l3_res["anomaly_score"] > 0.25 or
+            l4_res["anomaly_score"] > 0.65 or
             font_res["anomaly_score"] > 0.40
         )
         peak_signals = [
             weighted_risk,
+            l1_sem_res["anomaly_score"] if l1_sem_res["is_anomalous"] else 0.0,
+            l2_occ_res["anomaly_score"] * 0.95 if (l2_occ_res["is_anomalous"] and l2_occ_corroborated) else 0.0,
             l2_res["anomaly_score"] * 0.90 if l2_res["anomaly_score"] > 0.30 else 0.0,
             l3_res["anomaly_score"] * 0.90 if l3_res["anomaly_score"] > 0.35 else 0.0,
             l4_res["anomaly_score"] * 0.92 if (l4_res["anomaly_score"] > 0.70 and l4_corroborated) else 0.0,
@@ -134,8 +156,25 @@ class VeriSlipForensicEngine:
         if l1_res["metadata_analysis"]["is_suspicious"]:
             composite_risk = max(composite_risk, 0.75)
 
+        # Decisive Semantic override (Mathematical & Temporal paradoxes are impossible in authentic receipts)
+        if l1_sem_res["is_anomalous"]:
+            composite_risk = max(composite_risk, l1_sem_res["anomaly_score"])
+
+        # Corroborated Occlusion override
+        if l2_occ_res["is_anomalous"] and l2_occ_corroborated:
+            composite_risk = max(composite_risk, l2_occ_res["anomaly_score"])
+
         # Collect candidate bounding boxes from all layers
         candidate_boxes = []
+
+        # Layer 1.5 Semantic regions
+        for box in l1_sem_res.get("detected_regions", []):
+            candidate_boxes.append(box)
+
+        # Layer 2.5 Occlusion patches
+        for box in l2_occ_res.get("detected_regions", []):
+            candidate_boxes.append(box)
+
         if l2_res.get("is_anomalous", False):
             for box in l2_res.get("detected_regions", []):
                 candidate_boxes.append(box)
@@ -165,11 +204,12 @@ class VeriSlipForensicEngine:
                 l2_res["anomaly_score"] > 0.15 or
                 l3_res["anomaly_score"] > 0.20 or
                 l4_res["anomaly_score"] > 0.65 or
+                l1_sem_res["is_anomalous"] or
                 l1_res["metadata_analysis"]["is_suspicious"]
             )
             if top_box_conf > 0.70 and has_corroborating_evidence:
                 composite_risk = max(composite_risk, 0.55 + 0.35 * top_box_conf)
-            elif top_box_conf > 0.85:
+            elif top_box_conf > 0.85 and (l2_res["anomaly_score"] > 0.12 or l3_res["anomaly_score"] > 0.15):
                 composite_risk = max(composite_risk, 0.60)
 
         # Calibrated risk percentage (0 to 100%)
@@ -198,6 +238,8 @@ class VeriSlipForensicEngine:
 
         # Collect all findings
         all_findings = []
+        all_findings.extend(l1_sem_res.get("findings", []))
+        all_findings.extend(l2_occ_res.get("findings", []))
         all_findings.extend(l1_res.get("findings", []))
         all_findings.extend(l2_res.get("findings", []))
         all_findings.extend(l3_res.get("findings", []))
@@ -220,12 +262,22 @@ class VeriSlipForensicEngine:
                     "metadata": l1_res["metadata_analysis"],
                     "layout": l1_res["layout_analysis"]
                 },
+                "layer1_semantic": {
+                    "score": l1_sem_res["anomaly_score"],
+                    "is_anomalous": l1_sem_res["is_anomalous"],
+                    "findings": l1_sem_res["findings"]
+                },
                 "layer2_classical": {
                     "score": l2_res["anomaly_score"],
                     "is_anomalous": l2_res["is_anomalous"],
                     "ela_variance": l2_res["ela_variance"],
                     "findings": l2_res["findings"],
                     "double_compression": l2_res["double_compression_analysis"]
+                },
+                "layer2_occlusion": {
+                    "score": l2_occ_res["anomaly_score"],
+                    "is_anomalous": l2_occ_res["is_anomalous"],
+                    "findings": l2_occ_res["findings"]
                 },
                 "layer3_noise": {
                     "score": l3_res["anomaly_score"],

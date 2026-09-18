@@ -257,6 +257,9 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
 
         request.state.api_key_id = key_id
         request.state.api_tier = tier
+        request.state.rate_limit_limit = result.limit
+        request.state.rate_limit_remaining = result.remaining
+        request.state.rate_limit_reset = result.reset_at
         response = await call_next(request)
         response.headers.update(headers)
         return response

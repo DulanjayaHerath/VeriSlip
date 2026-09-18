@@ -274,4 +274,6 @@ def test_webhook_requires_exactly_one_image_source():
         "/api/v1/webhook/whatsapp", json={"from_phone": "+94770000000"}
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Provide exactly one of image_base64 or media_id."
+    assert response.json()["detail"] == (
+        "Provide exactly one non-empty text, image_base64, or media_id value."
+    )

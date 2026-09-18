@@ -177,6 +177,14 @@ For a WhatsApp-hosted attachment, replace `image_base64` with `"media_id":
 "<numeric_media_id>"`. Configure the access token through a deployment secret;
 never place it in source control or logs.
 
+Text messages use the same webhook by supplying `text` and an optional stable
+`message_id`. New sellers receive onboarding, while returning sellers can use
+`help` and `balance`; English, Sinhala (`සිංහල`), and Tamil (`தமிழ்`) are
+supported. Repeated message IDs are answered idempotently. Local conversation
+state is bounded and expiring and stores only hashed seller/message identifiers.
+Deployments with multiple API workers should replace the process-local store
+with shared storage.
+
 ---
 
 ## 🗺️ Open-Source Roadmap & Backlog

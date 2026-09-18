@@ -7,11 +7,16 @@ delivering instantaneous fraud risk verdicts and highlighted tamper warnings.
 import base64
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from core.forensics.unified_scorer import VeriSlipForensicEngine
+from core.integrations.whatsapp_conversation import (
+    ConversationState,
+    QuotaSnapshot,
+    conversation_store,
+)
 from core.integrations.whatsapp_media import (
     WhatsAppMediaError,
     download_whatsapp_image,
@@ -27,33 +32,77 @@ engine = VeriSlipForensicEngine()
 
 
 class WhatsAppMessagePayload(BaseModel):
-    from_phone: str = Field(..., description="Seller phone number, e.g. +94771234567")
+    from_phone: str = Field(
+        ..., min_length=3, max_length=32, description="Seller phone number"
+    )
     image_base64: Optional[str] = Field(
         None, description="Base64 encoded image forwarded by seller"
     )
     media_id: Optional[str] = Field(None, description="WhatsApp Cloud API media ID")
+    text: Optional[str] = Field(
+        None, max_length=2_000, description="Seller command or conversation message"
+    )
+    message_id: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=128,
+        description="Stable WhatsApp message ID used for idempotency",
+    )
     caption: Optional[str] = Field(None, description="Optional caption from buyer/seller")
 
 
 class WhatsAppResponsePayload(BaseModel):
     recipient: str
     reply_text: str
-    verdict: str
-    tamper_risk_percentage: float
-    flagged_box_count: int
+    verdict: Optional[str] = None
+    tamper_risk_percentage: Optional[float] = None
+    flagged_box_count: Optional[int] = None
+    conversation_state: ConversationState = ConversationState.READY
+    language: str = "en"
+    duplicate: bool = False
 
 
 @router.post("/whatsapp", response_model=WhatsAppResponsePayload)
-async def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
+async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request):
     """
-    Handle WhatsApp slip submission from a merchant.
-    Returns simulated WhatsApp text response that would be sent back to the seller.
+    Handle seller commands or securely verify one WhatsApp receipt image.
+
+    Exactly one of ``text``, ``image_base64``, or ``media_id`` is accepted.
+    Conversation state stores only pseudonymous hashes, while receipt images
+    continue through the bounded downloader and image sanitizer.
     """
-    if bool(payload.image_base64) == bool(payload.media_id):
+    source_count = sum(
+        value is not None
+        for value in (payload.text, payload.image_base64, payload.media_id)
+    )
+    if source_count != 1 or (payload.text is not None and not payload.text.strip()):
         raise HTTPException(
             status_code=400,
-            detail="Provide exactly one of image_base64 or media_id.",
+            detail="Provide exactly one non-empty text, image_base64, or media_id value.",
         )
+
+    if payload.text is not None:
+        quota = QuotaSnapshot(
+            tier=getattr(request.state, "api_tier", "unknown"),
+            limit=getattr(request.state, "rate_limit_limit", 0),
+            remaining=getattr(request.state, "rate_limit_remaining", 0),
+            reset_at=getattr(request.state, "rate_limit_reset", 0),
+        )
+        reply = conversation_store.process(
+            payload.from_phone,
+            payload.text,
+            quota,
+            message_id=payload.message_id,
+        )
+        return {
+            "recipient": payload.from_phone,
+            "reply_text": reply.text,
+            "conversation_state": reply.state,
+            "language": reply.language.value,
+            "duplicate": reply.duplicate,
+        }
+
+    language = conversation_store.seller_language(payload.from_phone)
 
     try:
         if payload.media_id:
@@ -118,5 +167,8 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
         "reply_text": reply,
         "verdict": verdict,
         "tamper_risk_percentage": risk,
-        "flagged_box_count": flagged_count
+        "flagged_box_count": flagged_count,
+        "conversation_state": ConversationState.READY,
+        "language": language.value,
+        "duplicate": False,
     }

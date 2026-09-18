@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Callable, List, Optional, Protocol
 
+from core.observability.logging import scrub_pii
+
 
 def _bounded_env_int(name: str, default: int, minimum: int, maximum: int) -> int:
     try:
@@ -111,7 +113,7 @@ class InMemoryVerificationHistoryStore:
     ) -> VerificationHistoryRecord:
         """Store only display metadata, never receipt bytes or forensic payloads."""
         now = self._clock().astimezone(timezone.utc)
-        reference = reference_no.strip()[:128] if reference_no else None
+        reference = scrub_pii(reference_no.strip())[:128] if reference_no else None
         record = VerificationHistoryRecord(
             verification_id=str(uuid.uuid4()),
             created_at=now,

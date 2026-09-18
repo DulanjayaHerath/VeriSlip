@@ -4,12 +4,23 @@ Simulates and handles incoming WhatsApp media messages from social media sellers
 delivering instantaneous fraud risk verdicts and highlighted tamper warnings.
 """
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
 import base64
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from core.forensics.unified_scorer import VeriSlipForensicEngine
+from core.integrations.whatsapp_conversation import (
+    ConversationState,
+    QuotaSnapshot,
+    conversation_store,
+)
+from core.integrations.whatsapp_media import (
+    WhatsAppMediaError,
+    download_whatsapp_image,
+)
 from core.security.image_sanitizer import (
     ImageValidationError,
     MAX_IMAGE_UPLOAD_BYTES,
@@ -19,36 +30,98 @@ from core.security.image_sanitizer import (
 router = APIRouter(prefix="/api/v1/webhook", tags=["WhatsApp Bot"])
 engine = VeriSlipForensicEngine()
 
+
 class WhatsAppMessagePayload(BaseModel):
-    from_phone: str = Field(..., description="Seller phone number, e.g. +94771234567")
-    image_base64: str = Field(..., description="Base64 encoded image forwarded by seller")
+    from_phone: str = Field(
+        ..., min_length=3, max_length=32, description="Seller phone number"
+    )
+    image_base64: Optional[str] = Field(
+        None, description="Base64 encoded image forwarded by seller"
+    )
+    media_id: Optional[str] = Field(None, description="WhatsApp Cloud API media ID")
+    text: Optional[str] = Field(
+        None, max_length=2_000, description="Seller command or conversation message"
+    )
+    message_id: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=128,
+        description="Stable WhatsApp message ID used for idempotency",
+    )
     caption: Optional[str] = Field(None, description="Optional caption from buyer/seller")
+
 
 class WhatsAppResponsePayload(BaseModel):
     recipient: str
     reply_text: str
-    verdict: str
-    tamper_risk_percentage: float
-    flagged_box_count: int
+    verdict: Optional[str] = None
+    tamper_risk_percentage: Optional[float] = None
+    flagged_box_count: Optional[int] = None
+    conversation_state: ConversationState = ConversationState.READY
+    language: str = "en"
+    duplicate: bool = False
+
 
 @router.post("/whatsapp", response_model=WhatsAppResponsePayload)
-def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
+async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request):
     """
-    Handle WhatsApp slip submission from a merchant.
-    Returns simulated WhatsApp text response that would be sent back to the seller.
-    """
-    try:
-        # Strip header if present
-        raw_b64 = payload.image_base64
-        if "," in raw_b64:
-            raw_b64 = raw_b64.split(",")[1]
+    Handle seller commands or securely verify one WhatsApp receipt image.
 
-        if len(raw_b64) > ((MAX_IMAGE_UPLOAD_BYTES + 2) // 3) * 4:
-            raise ImageValidationError(
-                "Image upload exceeds the permitted size.", status_code=413
-            )
-        img_bytes = base64.b64decode(raw_b64, validate=True)
-        pil_img = sanitize_image_bytes(img_bytes)
+    Exactly one of ``text``, ``image_base64``, or ``media_id`` is accepted.
+    Conversation state stores only pseudonymous hashes, while receipt images
+    continue through the bounded downloader and image sanitizer.
+    """
+    source_count = sum(
+        value is not None
+        for value in (payload.text, payload.image_base64, payload.media_id)
+    )
+    if source_count != 1 or (payload.text is not None and not payload.text.strip()):
+        raise HTTPException(
+            status_code=400,
+            detail="Provide exactly one non-empty text, image_base64, or media_id value.",
+        )
+
+    if payload.text is not None:
+        quota = QuotaSnapshot(
+            tier=getattr(request.state, "api_tier", "unknown"),
+            limit=getattr(request.state, "rate_limit_limit", 0),
+            remaining=getattr(request.state, "rate_limit_remaining", 0),
+            reset_at=getattr(request.state, "rate_limit_reset", 0),
+        )
+        reply = conversation_store.process(
+            payload.from_phone,
+            payload.text,
+            quota,
+            message_id=payload.message_id,
+        )
+        return {
+            "recipient": payload.from_phone,
+            "reply_text": reply.text,
+            "conversation_state": reply.state,
+            "language": reply.language.value,
+            "duplicate": reply.duplicate,
+        }
+
+    language = conversation_store.seller_language(payload.from_phone)
+
+    try:
+        if payload.media_id:
+            pil_img = await download_whatsapp_image(payload.media_id)
+        else:
+            assert payload.image_base64 is not None
+            # Strip a data-URI header if present.
+            raw_b64 = payload.image_base64
+            if "," in raw_b64:
+                raw_b64 = raw_b64.split(",", 1)[1]
+
+            if len(raw_b64) > ((MAX_IMAGE_UPLOAD_BYTES + 2) // 3) * 4:
+                raise ImageValidationError(
+                    "Image upload exceeds the permitted size.", status_code=413
+                )
+            img_bytes = base64.b64decode(raw_b64, validate=True)
+            pil_img = await run_in_threadpool(sanitize_image_bytes, img_bytes)
+    except WhatsAppMediaError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
     except ImageValidationError as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
     except (ValueError, TypeError):
@@ -56,7 +129,7 @@ def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
             status_code=400, detail="Image payload is not valid base64."
         ) from None
 
-    res = engine.analyze(pil_img)
+    res = await run_in_threadpool(engine.analyze, pil_img)
     verdict = res["verdict"]
     risk = res["tamper_risk_percentage"]
     flagged_count = len(res["flagged_regions"])
@@ -94,5 +167,8 @@ def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
         "reply_text": reply,
         "verdict": verdict,
         "tamper_risk_percentage": risk,
-        "flagged_box_count": flagged_count
+        "flagged_box_count": flagged_count,
+        "conversation_state": ConversationState.READY,
+        "language": language.value,
+        "duplicate": False,
     }

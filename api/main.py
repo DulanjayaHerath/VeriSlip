@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from api.middleware.request_tracing import RequestTracingMiddleware
-from api.middleware.rate_limiter import RateLimitMiddleware
+from api.middleware.rate_limiter import ApiKeyRateLimitMiddleware
 from api.routes.verify import router as verify_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
@@ -26,8 +26,8 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.add_middleware(ApiKeyRateLimitMiddleware)
 app.add_middleware(RequestTracingMiddleware)
-app.add_middleware(RateLimitMiddleware, max_requests=300, window_seconds=60)
 
 # Enable CORS for cross-origin web apps
 app.add_middleware(
@@ -36,7 +36,13 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
+    expose_headers=[
+        "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+        "Retry-After",
+    ],
 )
 
 # Include API Routers

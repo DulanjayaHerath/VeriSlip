@@ -1,6 +1,17 @@
-"""Shared test configuration for explicitly authorized synthetic fixtures."""
+"""Shared test configuration for explicit, non-production test capabilities."""
 
+import hashlib
+import json
+import os
 import pytest
+
+
+TEST_API_KEYS = {
+    hashlib.sha256(b"test-free-key").hexdigest(): "free",
+    hashlib.sha256(b"test-pro-key").hexdigest(): "pro",
+}
+os.environ["VERISLIP_API_KEY_HASHES"] = json.dumps(TEST_API_KEYS)
+os.environ.pop("REDIS_URL", None)
 
 
 @pytest.fixture(autouse=True)

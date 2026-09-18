@@ -11,6 +11,7 @@ services:
     environment:
       - PORT=8000
       - REDIS_URL=redis://redis:6379/0
+      - VERISLIP_API_KEY_HASHES=${VERISLIP_API_KEY_HASHES}
       - VERISLIP_ENV=production
     ports:
       - "8000:8000"

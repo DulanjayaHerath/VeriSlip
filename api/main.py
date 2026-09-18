@@ -9,9 +9,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 from api.middleware.request_tracing import RequestTracingMiddleware
+from api.middleware.rate_limiter import RateLimitMiddleware
 from api.routes.verify import router as verify_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
+from api.routes.integrations import router as integrations_router
+from api.routes.analytics import router as analytics_router
+from api.routes.courier import router as courier_router
 from core.observability.logging import configure_json_logging
 
 configure_json_logging()
@@ -23,6 +27,7 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestTracingMiddleware)
+app.add_middleware(RateLimitMiddleware, max_requests=300, window_seconds=60)
 
 # Enable CORS for cross-origin web apps
 app.add_middleware(
@@ -31,13 +36,16 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Request-ID"],
+    expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],
 )
 
 # Include API Routers
 app.include_router(verify_router)
 app.include_router(whatsapp_router)
 app.include_router(reports_router)
+app.include_router(integrations_router)
+app.include_router(analytics_router)
+app.include_router(courier_router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():

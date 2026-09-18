@@ -53,6 +53,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const riskScoreText = document.getElementById("risk-score-text");
   const recText = document.getElementById("rec-text");
   const btnDownloadReport = document.getElementById("btn-download-report");
+  const btnTriageApprove = document.getElementById("btn-triage-approve");
+  const btnTriageFlag = document.getElementById("btn-triage-flag");
 
   const l1Score = document.getElementById("l1-score");
   const l1Desc = document.getElementById("l1-desc");
@@ -927,6 +929,83 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     });
+  });
+
+  // ==========================================
+  // 10. MERCHANT RAPID TRIAGE & KEYBOARD SHORTCUTS
+  // ==========================================
+  function showToast(type, message) {
+    const container = document.getElementById("toast-container");
+    if (!container) return;
+    const toast = document.createElement("div");
+    toast.className = `toast-item ${type}`;
+    const icon = type === "success" ? "✓" : type === "danger" ? "✕" : "ℹ";
+    toast.innerHTML = `<span style="font-weight:bold; font-size:1.1em;">${icon}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(100%)";
+      toast.style.transition = "all 0.3s ease";
+      setTimeout(() => toast.remove(), 300);
+    }, 2800);
+  }
+
+  if (btnTriageApprove) {
+    btnTriageApprove.addEventListener("click", () => {
+      if (!currentBase64) {
+        showToast("info", "Please load or scan a payment slip first.");
+        return;
+      }
+      showToast("success", "Order Approved: Payment slip marked verified authentic.");
+    });
+  }
+
+  if (btnTriageFlag) {
+    btnTriageFlag.addEventListener("click", () => {
+      if (!currentBase64) {
+        showToast("info", "Please load or scan a payment slip first.");
+        return;
+      }
+      showToast("danger", "Fraud Flagged: Payment slip placed on fraud hold.");
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+
+    if (e.code === "Space") {
+      e.preventDefault();
+      if (btnTriageApprove) btnTriageApprove.click();
+    } else if (e.key === "x" || e.key === "X") {
+      e.preventDefault();
+      if (btnTriageFlag) btnTriageFlag.click();
+    } else if (e.key === "1") {
+      setView("original");
+      showToast("info", "Switched to: Original Slip");
+    } else if (e.key === "2") {
+      setView("tamper");
+      showToast("info", "Switched to: Flagged Forgery");
+    } else if (e.key === "3") {
+      setView("ela");
+      showToast("info", "Switched to: ELA Heatmap");
+    } else if (e.key === "4") {
+      setView("noise");
+      showToast("info", "Switched to: Noise Residuals");
+    } else if (e.key === "z" || e.key === "Z") {
+      if (currentZoom >= 1.8) {
+        resetZoom();
+        showToast("info", "Canvas Zoom Reset (1.0x)");
+      } else {
+        applyZoom(0.3);
+        showToast("info", `Canvas Zoom: ${Math.round(currentZoom * 100)}%`);
+      }
+    } else if (e.key === "r" || e.key === "R") {
+      if (btnRunScan && !btnRunScan.disabled) {
+        showToast("info", "Executing Forensic Analysis Pipeline...");
+        btnRunScan.click();
+      }
+    }
   });
 
   function setLoading(isLoading) {

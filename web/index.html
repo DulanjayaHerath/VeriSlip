@@ -214,6 +214,25 @@
                   </svg>
                   Export Forensic Audit Report
                 </button>
+
+                <!-- Merchant Rapid Triage Actions -->
+                <div class="triage-action-group" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
+                  <span style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Merchant Rapid Triage</span>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-triage-approve" style="flex: 1; border-color: rgba(16, 185, 129, 0.4); color: var(--accent-emerald);">
+                      ✓ Accept <span class="kbd-badge"><kbd>Space</kbd></span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-triage-flag" style="flex: 1; border-color: rgba(239, 68, 68, 0.4); color: var(--accent-rose);">
+                      ✕ Flag <span class="kbd-badge"><kbd>X</kbd></span>
+                    </button>
+                  </div>
+                  <div class="keyboard-hints" style="margin-top: 4px; justify-content: center;">
+                    <span>Keys:</span>
+                    <span class="kbd-badge"><kbd>1-4</kbd> Views</span>
+                    <span class="kbd-badge"><kbd>Z</kbd> Zoom</span>
+                    <span class="kbd-badge"><kbd>R</kbd> Scan</span>
+                  </div>
+                </div>
               </div>
 
               <!-- Multi-Layer Technical Breakdowns -->
@@ -648,6 +667,7 @@
     </main>
   </div>
 
+  <div id="toast-container" class="toast-container"></div>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -192,3 +192,75 @@ def test_verify_pdf_slip_endpoint():
     data = res.json()
     assert "verdict" in data
     assert "tamper_risk_percentage" in data
+
+
+def test_woocommerce_verification():
+    img = Image.new("RGB", (200, 400), color=(255, 255, 255))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    files = {"file": ("slip.png", buf, "image/png")}
+    data = {"order_id": "#WC-9901", "order_amount_lkr": 25000.0}
+
+    res = client.post("/api/v1/integrations/woocommerce/verify", files=files, data=data)
+    assert res.status_code == 200
+    res_data = res.json()
+    assert res_data["order_id"] == "#WC-9901"
+    assert "recommended_order_action" in res_data
+    assert "new_order_status" in res_data
+    assert "webhook_response" in res_data
+
+
+def test_analytics_overview():
+    res = client.get("/api/v1/analytics/overview")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "operational"
+    assert "kpi_metrics" in data
+    assert "bank_distribution" in data
+    assert "top_tampering_techniques" in data
+
+
+def test_courier_verify_endpoint():
+    img = Image.new("RGB", (300, 600), color=(255, 255, 255))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    b64_str = base64.b64encode(buf.getvalue()).decode("ascii")
+
+    payload = {
+        "waybill_id": "WB-882910",
+        "expected_cod_amount": 12500.0,
+        "slip_base64": b64_str,
+        "target_bank": "COMBANK"
+    }
+
+    res = client.post("/api/v1/courier/verify", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["waybill_id"] == "WB-882910"
+    assert "can_handover_package" in data
+    assert "rider_action" in data
+    assert "risk_level" in data
+    assert "risk_percentage" in data
+
+
+def test_webhook_dispatcher_hmac_signature():
+    from core.notifications.webhook_dispatcher import WebhookDispatcher
+    dispatcher = WebhookDispatcher(secret_key="test_secret_123")
+    payload = dispatcher.build_event_payload("order.verified", {"order_id": 101, "risk": 0.05})
+    assert payload["event"] == "order.verified"
+    assert "event_id" in payload
+    assert payload["data"]["order_id"] == 101
+
+    sig = dispatcher.generate_signature(b'{"test": 123}')
+    assert len(sig) == 64  # SHA256 hex string
+
+
+def test_rate_limiter_middleware_headers():
+    res = client.get("/api/v1/analytics/overview")
+    assert res.status_code == 200
+    assert "X-RateLimit-Limit" in res.headers
+    assert "X-RateLimit-Remaining" in res.headers
+
+

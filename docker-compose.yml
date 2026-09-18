@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  verislip-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: verislip:latest
+    container_name: verislip-api
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - REDIS_URL=redis://redis:6379/0
+      - VERISLIP_ENV=production
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - verislip-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: verislip-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - verislip-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: verislip-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - verislip-api
+    networks:
+      - verislip-network
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  verislip-network:
+    driver: bridge

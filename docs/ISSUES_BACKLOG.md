@@ -2133,3 +2133,217 @@ Document architectural transition from image forensics to an authorized programm
 - [ ] Adhere to project linting and documentation guidelines.
 - [ ] Submit PR referencing this issue.
 
+---
+
+### 🚀 Future Enhancements & Strategic Backlog (Issues #104 to #118)
+
+#### #104: [ML-DATA] Multi-lingual OCR with Sinhala and Tamil character baseline alignment anomaly detection
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 (OCR & Semantic Reasoning)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:medium, layer:layer-4`
+
+### Overview
+Integrate multi-lingual optical character recognition supporting Sinhala (Unicode U+0D80–U+0DFF) and Tamil (Unicode U+0B80–U+0BFF) scripts with Tesseract traineddata. Evaluate character baseline alignment and font kerning variance to detect spliced text in regional Sri Lankan bank receipts (People's Bank, BOC, Regional Development Bank).
+
+### Acceptance Criteria
+- [ ] Support Sinhala (`sin`) and Tamil (`tam`) language packs in OCR extractor.
+- [ ] Detect baseline height shifts and character spacing outliers indicating spliced font inserts.
+- [ ] Add unit tests verifying correct script extraction on sample multilingual receipts.
+- [ ] Maintain zero performance degradation on standard English/Sinhala mixed slips.
+
+
+#### #105: [FORENSICS-CV] Automated perspective rectification & Hough quad transform for angled camera slips
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 1 (Structural Pre-processing)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:high, layer:layer-1`
+
+### Overview
+Delivery couriers and store clerks frequently photograph receipts at skewed angles with perspective distortion and glare. Implement automated paper corner quad detection using Hough line transforms and convex hull analysis, followed by homography warp perspective correction before forensic signal evaluation.
+
+### Acceptance Criteria
+- [ ] Detect receipt contour boundaries and extract the 4 corner points.
+- [ ] Apply `cv2.getPerspectiveTransform` and `cv2.warpPerspective` to normalize aspect ratio to standard A4/mobile receipt dimensions.
+- [ ] Fall back gracefully to raw unwarped image if confidence < 0.6.
+- [ ] Add test cases with 15° to 45° skewed test slips verifying successful unwarping.
+
+
+#### #106: [ML-DATA] Integrate lightweight Vision-Language Model (VLM) for multimodal semantic consistency audit
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 (Deep Reasoning)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:high, layer:layer-4`
+
+### Overview
+Integrate a quantized local Vision-Language Model (such as Qwen2-VL-2B or Llama-3.2-Vision via ONNX/llama.cpp) to conduct cognitive cross-examination of slip text claims against visual design elements (e.g., verifying that the reported bank branch code matches the account prefix, or that transaction date syntax matches national holiday banking rules).
+
+### Acceptance Criteria
+- [ ] Create an inference pipeline for quantized VLM models without requiring heavy GPU clusters.
+- [ ] Design structured JSON output prompt for slip semantic plausibility verification.
+- [ ] Combine VLM confidence with Layer 1-3 classical signal scores in unified scorer.
+- [ ] Unit tests for semantic inconsistency detection (e.g. invalid branch names).
+
+
+#### #107: [FORENSICS-CV] Photo-Response Non-Uniformity (PRNU) camera sensor noise fingerprinting
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 3 (Sensor Noise & PRNU)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:medium, layer:layer-3`
+
+### Overview
+Physical smartphone camera sensors possess microscopic silicon imperfections producing a unique Photo-Response Non-Uniformity (PRNU) noise pattern. Implement PRNU sensor noise extraction using wavelet decomposition to distinguish whether a slip photo came from a genuine physical camera sensor or was digitally assembled in Adobe Photoshop/Canva.
+
+### Acceptance Criteria
+- [ ] Implement DWT (Discrete Wavelet Transform) noise residual filter to estimate sensor pattern noise.
+- [ ] Measure cross-correlation between slip noise floor and reference camera sensor profiles.
+- [ ] Flag digital canvas renders lacking physical silicon sensor noise artifacts.
+- [ ] Unit tests verifying PRNU noise variance thresholds.
+
+
+#### #108: [BACKEND-API] Build Shopify Merchant App Extension for Automated Manual Bank Transfer (BACS) Triage
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Backend API & E-Commerce` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:medium, layer:backend-api`
+
+### Overview
+Build an embedded Shopify Admin App extension that automatically processes order attachments for Manual Bank Deposit orders. When a customer uploads a slip via the order confirmation page, the app calls `/api/v1/integrations/woocommerce/verify` (or Shopify variant) and tags the order `verislip:authentic` or `verislip:fraud_hold`.
+
+### Acceptance Criteria
+- [ ] Implement Shopify webhook handler for `orders/create` and `orders/updated`.
+- [ ] Automatically download receipt attachments from order notes or customer uploads.
+- [ ] Apply order tag transitions (`verislip:authentic`, `verislip:manual_review`, `verislip:fraud_hold`).
+- [ ] Provide test suite with mocked Shopify API responses.
+
+
+#### #109: [INFRA-RESEARCH] Cryptographic SHA-256 Merkle Audit Ledger for Legal Admissibility in Commercial Disputes
+* **Domain:** `DevOps, Security & Academic Research` | **Layer:** `Cryptographic Audit` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:shared, milestone:phase-4, priority:high`
+
+### Overview
+Design and implement an immutable, append-only Merkle tree audit log storing SHA-256 slip fingerprints, forensic verdicts, pixel bounding box coordinates, and merchant digital signatures. Provides non-repudiation and chain-of-custody verification required for Sri Lankan commercial court and police CID cybercrime investigations.
+
+### Acceptance Criteria
+- [ ] Implement Merkle tree leaf generation hashing slip SHA-256 + timestamp + layer scores.
+- [ ] Generate cryptographic proof of inclusion (Merkle audit receipt) in PDF reports.
+- [ ] Provide verification utility verifying proof integrity against Merkle root.
+- [ ] Unit tests covering leaf addition, proof generation, and tamper detection.
+
+
+#### #110: [FORENSICS-CV] Thermal POS Paper Degradation vs Digital Splice Frequency Discriminator
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 2 (Frequency & Compression Analysis)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:medium, layer:layer-2`
+
+### Overview
+Supermarket, fuel station, and CDM (Cash Deposit Machine) receipts printed on thermal paper naturally fade over time due to heat, light, and friction. Implement a 2D Fourier frequency domain discriminator that distinguishes continuous thermal fade gradients from sharp digital erase and inpaint splices.
+
+### Acceptance Criteria
+- [ ] Implement 2D FFT spectrum analyzer targeting high-frequency transition borders.
+- [ ] Distinguish gradual thermal dye fading from discontinuous digital brush splices.
+- [ ] Add test cases with real faded POS receipts vs digitally altered POS receipts.
+- [ ] Document sensitivity parameters in layer 2 module docstrings.
+
+
+#### #111: [ML-DATA] Generative AI Adversarial Benchmark Suite (Diffusion & ControlNet Inpainting)
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Adversarial Evaluation & Benchmarking` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:high, layer:dataset`
+
+### Overview
+Generative AI tools (Stable Diffusion Inpainting, ControlNet, Flux) can synthesize highly deceptive receipts. Create an automated adversarial benchmark generator that evaluates Layer 2 (ELA), Layer 3 (Noise Residuals), and Layer 4 (Dual-Stream CNN) against diffusion-generated forgeries, reporting TPR, FPR, and AUROC curve degradation.
+
+### Acceptance Criteria
+- [ ] Curate 200+ GenAI inpainting adversarial test cases with varying prompt guidance.
+- [ ] Benchmark VeriSlip detection rate against GenAI vs classical pixel doctoring.
+- [ ] Identify frequency artifact signatures left by latent diffusion decoders.
+- [ ] Publish automated benchmarking script and summary report in `benchmarks/`.
+
+
+#### #112: [BACKEND-API] Cross-Platform Courier Mobile SDK (Flutter / React Native) for Delivery Riders
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Mobile Client SDK` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:medium, layer:backend-api`
+
+### Overview
+Package the Courier Rider Fast-Triage API (`/api/v1/courier/verify`) into a lightweight, drop-in Flutter / React Native library for delivery logistics operators (PromptX, Koombiyo, Domex, PickMe Flash). Features built-in camera framing guidelines, blur detection, and offline token caching.
+
+### Acceptance Criteria
+- [ ] Expose native camera view with green/red receipt alignment rect overlay.
+- [ ] Implement client-side Laplacian variance blur check before upload.
+- [ ] Integrate with `/api/v1/courier/verify` returning binary `can_handover_package` verdict.
+- [ ] Provide example Flutter/React Native integration demo app.
+
+
+#### #113: [BACKEND-API] Browser Extension (Chrome & Firefox) for Rapid Merchant WhatsApp Web Triage
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Web Frontend & Extensions` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:low, layer:web-frontend`
+
+### Overview
+Build a lightweight browser extension for Chrome and Firefox allowing customer support agents to right-click payment receipt images directly in WhatsApp Web, Gmail, or Facebook Messenger and immediately view forensic risk scores in a slide-out overlay.
+
+### Acceptance Criteria
+- [ ] Manifest v3 extension with context menu item: "Audit with VeriSlip".
+- [ ] Capture image data URI and dispatch to VeriSlip API.
+- [ ] Display quick slide-out sidebar with risk score percentage, bank name, and tamper tags.
+- [ ] One-click button to open full Forensic Cockpit view.
+
+
+#### #114: [ML-DATA] Privacy-Preserving Federated Learning for Inter-Merchant Fraud Ring Detection
+* **Domain:** `Machine Learning & Datasets` | **Layer:** `Layer 4 (Federated Neural Fusion)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person2-ml, milestone:phase-4, priority:medium, layer:layer-4`
+
+### Overview
+Multiple merchants often encounter the same fraud ring circulating forged slips across different shops. Design a federated learning architecture using Flower or PySyft where merchant nodes train local CNN tamper detection weights on recent slips without sharing customer PII or transaction values with centralized servers.
+
+### Acceptance Criteria
+- [ ] Implement Federated Averaging (FedAvg) client and server modules.
+- [ ] Ensure local training operates strictly on normalized image patches with PII redacted.
+- [ ] Benchmark convergence rate and accuracy vs centralized training.
+- [ ] Add simulation script in `scripts/federated_training_sim.py`.
+
+
+#### #115: [FORENSICS-CV] Double JPEG Compression Grid Shift Detector (Block Artifact Grid - BAG)
+* **Domain:** `Forensic Computer Vision` | **Layer:** `Layer 2 (DCT Block Grid Analysis)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:person1-cv, milestone:phase-4, priority:medium, layer:layer-2`
+
+### Overview
+When an attacker crops an altered amount from one slip and splices it onto another, the 8x8 DCT grid alignment of the spliced patch rarely aligns with the original background grid. Implement Block Artifact Grid (BAG) analysis to pinpoint 8x8 pixel grid phase shifts across text bounding boxes.
+
+### Acceptance Criteria
+- [ ] Extract 8x8 block boundary discontinuity signal across luminance channels.
+- [ ] Detect grid phase displacement between text regions and background canvas.
+- [ ] Output a binary grid-discrepancy mask highlighted in Layer 2 diagnostics.
+- [ ] Add unit test verifying grid shift detection on spliced synthetic test images.
+
+
+#### #116: [BACKEND-API] LankaPay CEFTS ISO 8583 / ISO 20022 Direct Clearing Settlement Bridge
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Layer 5 (National Clearing Gateway)` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `High`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:high, layer:backend-api`
+
+### Overview
+Develop the architectural blueprint and ISO 8583 / ISO 20022 message parser enabling licensed financial institutions and payment gateways to query the national CEFTS clearing switch in real-time to match slip transaction reference numbers against settled interbank transfers.
+
+### Acceptance Criteria
+- [ ] Define ISO 8583 message specification parser for financial transaction verification.
+- [ ] Provide mock sandbox clearing gateway server simulating LankaPay responses.
+- [ ] Link OCR-extracted reference numbers and timestamps to clearing lookup requests.
+- [ ] Unit tests for clearing lookup reconciliation.
+
+
+#### #117: [INFRA-RESEARCH] Automated Continuous Forensic Benchmarking Dashboard with Streamlit
+* **Domain:** `DevOps, Security & Academic Research` | **Layer:** `Benchmarking & Observability` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Medium`
+* **Labels:** `enhancement, role:shared, milestone:phase-4, priority:medium`
+
+### Overview
+Build an automated evaluation dashboard using Streamlit that regularly executes against the official Kaggle slip dataset, visualizing ROC-AUC curves, Precision-Recall curves, confusion matrices, and latency across all 5 detection layers, flagging performance regressions in CI.
+
+### Acceptance Criteria
+- [ ] Create `scripts/benchmark_dashboard.py` with Streamlit interface.
+- [ ] Display layer-by-layer ROC-AUC, F1 score, and processing time per slip.
+- [ ] Allow interactive threshold tuning and inspect false positive/false negative cases.
+- [ ] Include run instructions in `docs/BENCHMARKING.md`.
+
+
+#### #118: [BACKEND-API] Voice-Guided Hands-Free Receipt Audit for High-Speed Retail POS Checkouts
+* **Domain:** `Backend Systems & Client APIs` | **Layer:** `Web Cockpit & Voice UX` | **Milestone:** `Phase 4: Research & GTM` | **Priority:** `Low`
+* **Labels:** `enhancement, role:person3-fullstack, milestone:phase-4, priority:low, layer:web-frontend`
+
+### Overview
+In busy physical retail environments (supermarkets, wholesale hardware stores), cashiers need hands-free verification. Implement a voice-driven interface using Web Speech API / local Whisper where the cashier speaks the reference number and amount (e.g. 'Verify ComBank 15,000 reference 4821'), and VeriSlip returns audio confirmation and visual indicator.
+
+### Acceptance Criteria
+- [ ] Web Speech API voice recognition trigger in the Forensic Cockpit.
+- [ ] Audio tone and speech synthesizer feedback ('Slip verified authentic' / 'Warning: Tampering detected').
+- [ ] Fallback support for manual keyboard input.
+- [ ] Document voice command syntax in the Web Cockpit help modal.
+
+

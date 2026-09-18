@@ -13,6 +13,7 @@ import numpy as np
 from core.forensics.layer1_structural import Layer1StructuralValidator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
+from core.forensics.font_kerning import CharacterAlignmentValidator
 from core.ml.ensemble_model import Layer4DeepEnsemble
 from core.forensics.utils import normalize_dimensions, pil_to_base64
 
@@ -53,6 +54,7 @@ class VeriSlipForensicEngine:
         self.layer2 = Layer2ClassicalForensics()
         self.layer3 = Layer3NoiseForensics()
         self.layer4 = Layer4DeepEnsemble()
+        self.font_validator = CharacterAlignmentValidator()
         self.calibration_path = os.environ.get("VERISLIP_CALIBRATION_PATH", "weights/calibration_profile.json")
         self.calibration = None
         self._load_calibration()
@@ -82,10 +84,11 @@ class VeriSlipForensicEngine:
         normalized_img = normalize_dimensions(pil_image, max_dim=1400).convert("RGB")
         normalized_img.info = orig_info
 
-        # Run layers 1, 2, and 3
+        # Run layers 1, 2, and 3 + Font Alignment Validator
         l1_res = self.layer1.evaluate(normalized_img, bank_code=bank_code, reference_no=reference_no)
         l2_res = self.layer2.evaluate(normalized_img)
         l3_res = self.layer3.evaluate(normalized_img)
+        font_res = self.font_validator.evaluate(normalized_img)
 
         # Run Layer 4 Deep Learning Ensemble
         diff_gray = l2_res.get("diff_gray", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
@@ -95,25 +98,43 @@ class VeriSlipForensicEngine:
         # Multi-modal fusion weights (dynamically tuned if calibration profile is active)
         if self.calibration and "tuned_weights" in self.calibration:
             tw = self.calibration["tuned_weights"]
-            w1 = tw.get("w1_structural", 0.15)
-            w2 = tw.get("w2_classical", 0.35)
+            w1 = tw.get("w1_structural", 0.20)
+            w2 = tw.get("w2_classical", 0.25)
             w3 = tw.get("w3_noise", 0.25)
-            w4 = tw.get("w4_ensemble", 0.25)
+            w4 = tw.get("w4_ensemble", 0.30)
         else:
-            w1, w2, w3, w4 = 0.15, 0.35, 0.25, 0.25
+            w1, w2, w3, w4 = 0.20, 0.25, 0.25, 0.30
 
-        composite_risk = (
+        weighted_risk = (
             w1 * l1_res["anomaly_score"] +
             w2 * l2_res["anomaly_score"] +
             w3 * l3_res["anomaly_score"] +
             w4 * l4_res["anomaly_score"]
         )
 
+        # Non-Diluting Max-Pooled Fusion:
+        # Decisive anomalies override linear dilution, preventing missed tampering
+        l4_corroborated = (
+            len(l4_res.get("detected_regions", [])) > 0 or
+            l1_res["anomaly_score"] > 0.15 or
+            l2_res["anomaly_score"] > 0.15 or
+            l3_res["anomaly_score"] > 0.20 or
+            font_res["anomaly_score"] > 0.40
+        )
+        peak_signals = [
+            weighted_risk,
+            l2_res["anomaly_score"] * 0.90 if l2_res["anomaly_score"] > 0.30 else 0.0,
+            l3_res["anomaly_score"] * 0.90 if l3_res["anomaly_score"] > 0.35 else 0.0,
+            l4_res["anomaly_score"] * 0.92 if (l4_res["anomaly_score"] > 0.70 and l4_corroborated) else 0.0,
+            font_res["anomaly_score"] * 0.85 if font_res["anomaly_score"] > 0.65 else 0.0
+        ]
+        composite_risk = max(peak_signals)
+
         # Boost risk if editing software was definitively identified in file metadata
         if l1_res["metadata_analysis"]["is_suspicious"]:
-            composite_risk = max(composite_risk, 0.68)
+            composite_risk = max(composite_risk, 0.75)
 
-        # Collect candidate bounding boxes from Layer 2, Layer 3, and Layer 4
+        # Collect candidate bounding boxes from all layers
         candidate_boxes = []
         if l2_res.get("is_anomalous", False):
             for box in l2_res.get("detected_regions", []):
@@ -130,13 +151,26 @@ class VeriSlipForensicEngine:
         for box in l4_res.get("detected_regions", []):
             candidate_boxes.append(box)
 
+        if font_res.get("is_anomalous", False):
+            for box in font_res.get("detected_regions", []):
+                candidate_boxes.append(box)
+
         final_boxes = merge_bounding_boxes(candidate_boxes)
 
-        # If high-confidence tamper boxes are detected, reflect in composite risk
+        # Corroborated tamper box elevation:
+        # Avoid false positives from isolated phantom boxes by requiring multi-layer corroboration
         if final_boxes:
             top_box_conf = max(b.get("confidence", 0.5) for b in final_boxes)
-            if top_box_conf > 0.65:
+            has_corroborating_evidence = (
+                l2_res["anomaly_score"] > 0.15 or
+                l3_res["anomaly_score"] > 0.20 or
+                l4_res["anomaly_score"] > 0.65 or
+                l1_res["metadata_analysis"]["is_suspicious"]
+            )
+            if top_box_conf > 0.70 and has_corroborating_evidence:
                 composite_risk = max(composite_risk, 0.55 + 0.35 * top_box_conf)
+            elif top_box_conf > 0.85:
+                composite_risk = max(composite_risk, 0.60)
 
         # Calibrated risk percentage (0 to 100%)
         risk_percentage = round(min(100.0, max(0.0, composite_risk * 100.0)), 1)
@@ -167,6 +201,7 @@ class VeriSlipForensicEngine:
         all_findings.extend(l1_res.get("findings", []))
         all_findings.extend(l2_res.get("findings", []))
         all_findings.extend(l3_res.get("findings", []))
+        all_findings.extend(font_res.get("findings", []))
         all_findings.extend(l4_res.get("findings", []))
 
         return {

@@ -6,23 +6,23 @@
     "is_user_provided": true
   },
   "baselines": {
-    "mean_ela_variance": 1.665,
-    "mean_noise_variance": 55.709,
+    "mean_ela_variance": 2.235,
+    "mean_noise_variance": 74.267,
     "layer_means": {
       "layer1": 0.09,
-      "layer2": 0.073,
-      "layer3": 0.006,
-      "layer4": 0.066
+      "layer2": 0.044,
+      "layer3": 0.019,
+      "layer4": 0.107
     }
   },
   "tuned_weights": {
-    "w1_structural": 0.567,
-    "w2_classical": 0.04,
-    "w3_noise": 0.203,
-    "w4_ensemble": 0.19
+    "w1_structural": 0.363,
+    "w2_classical": 0.186,
+    "w3_noise": 0.208,
+    "w4_ensemble": 0.243
   },
   "thresholds": {
-    "authentic_max_risk": 24.1,
-    "suspicious_max_risk": 54.1
+    "authentic_max_risk": 28.2,
+    "suspicious_max_risk": 58.2
   }
 }

@@ -23,6 +23,7 @@ from core.forensics.layer1_structural import Layer1StructuralValidator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.ml.ensemble_model import Layer4DeepEnsemble
+from core.forensics.utils import normalize_dimensions
 
 
 CALIBRATION_DIR = "datasets/real_calibration"
@@ -142,7 +143,9 @@ def run_calibration():
     auth_l1_scores, auth_l2_scores, auth_l3_scores, auth_l4_scores = [], [], [], []
     auth_ela_vars, auth_noise_vars = [], []
 
-    for idx, img in enumerate(auth_samples, 1):
+    for idx, raw_img in enumerate(auth_samples, 1):
+        img = normalize_dimensions(raw_img, max_dim=1400).convert("RGB")
+        img.info = raw_img.info.copy() if hasattr(raw_img, "info") else {}
         r1 = l1.evaluate(img)
         r2 = l2.evaluate(img)
         r3 = l3.evaluate(img)
@@ -158,7 +161,9 @@ def run_calibration():
 
     print("\n[2/3] Benchmarking Spliced / Tampered Sensitivity...")
     tamp_l1_scores, tamp_l2_scores, tamp_l3_scores, tamp_l4_scores = [], [], [], []
-    for idx, img in enumerate(tamp_samples, 1):
+    for idx, raw_img in enumerate(tamp_samples, 1):
+        img = normalize_dimensions(raw_img, max_dim=1400).convert("RGB")
+        img.info = raw_img.info.copy() if hasattr(raw_img, "info") else {}
         r1 = l1.evaluate(img)
         r2 = l2.evaluate(img)
         r3 = l3.evaluate(img)
@@ -175,28 +180,36 @@ def run_calibration():
     mean_auth_l2 = float(np.mean(auth_l2_scores))
     mean_auth_l3 = float(np.mean(auth_l3_scores))
     mean_auth_l4 = float(np.mean(auth_l4_scores))
-    max_auth_composite = float(np.max(
-        0.15 * np.array(auth_l1_scores) +
-        0.35 * np.array(auth_l2_scores) +
-        0.25 * np.array(auth_l3_scores) +
-        0.25 * np.array(auth_l4_scores)
-    ))
-
     # Calculate optimal tuned weights based on signal-to-noise ratio
-    delta_l1 = max(0.01, float(np.mean(tamp_l1_scores) - mean_auth_l1))
-    delta_l2 = max(0.01, float(np.mean(tamp_l2_scores) - mean_auth_l2))
-    delta_l3 = max(0.01, float(np.mean(tamp_l3_scores) - mean_auth_l3))
-    delta_l4 = max(0.01, float(np.mean(tamp_l4_scores) - mean_auth_l4))
+    # with balanced Dirichlet prior smoothing to prevent single-layer overdominance (e.g. metadata)
+    delta_l1 = max(0.02, float(np.mean(tamp_l1_scores) - mean_auth_l1))
+    delta_l2 = max(0.02, float(np.mean(tamp_l2_scores) - mean_auth_l2))
+    delta_l3 = max(0.02, float(np.mean(tamp_l3_scores) - mean_auth_l3))
+    delta_l4 = max(0.02, float(np.mean(tamp_l4_scores) - mean_auth_l4))
 
-    total_delta = delta_l1 + delta_l2 + delta_l3 + delta_l4
-    tuned_w1 = round(delta_l1 / total_delta, 3)
-    tuned_w2 = round(delta_l2 / total_delta, 3)
-    tuned_w3 = round(delta_l3 / total_delta, 3)
+    prior_weights = np.array([0.20, 0.25, 0.25, 0.30])
+    raw_deltas = np.array([delta_l1, delta_l2, delta_l3, delta_l4])
+    raw_norm = raw_deltas / np.sum(raw_deltas)
+
+    # 40% empirical delta + 60% balanced multi-modal prior
+    balanced = 0.40 * raw_norm + 0.60 * prior_weights
+    balanced = balanced / np.sum(balanced)
+
+    tuned_w1 = round(float(balanced[0]), 3)
+    tuned_w2 = round(float(balanced[1]), 3)
+    tuned_w3 = round(float(balanced[2]), 3)
     tuned_w4 = round(1.0 - (tuned_w1 + tuned_w2 + tuned_w3), 3)
 
+    max_auth_composite = float(np.max(
+        tuned_w1 * np.array(auth_l1_scores) +
+        tuned_w2 * np.array(auth_l2_scores) +
+        tuned_w3 * np.array(auth_l3_scores) +
+        tuned_w4 * np.array(auth_l4_scores)
+    ))
+
     # Calibrate risk thresholds so genuine slips never trigger false alarms
-    # Add a 10% safety buffer over the maximum observed genuine composite score
-    calibrated_auth_ceiling = min(0.30, max(0.12, round(max_auth_composite + 0.08, 3)))
+    # Add a safety buffer over the maximum observed genuine composite score
+    calibrated_auth_ceiling = min(0.30, max(0.18, round(max_auth_composite + 0.06, 3)))
     calibrated_suspicious_ceiling = round(min(0.60, calibrated_auth_ceiling + 0.30), 3)
 
     calibration_profile = {

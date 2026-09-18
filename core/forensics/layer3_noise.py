@@ -74,6 +74,27 @@ class Layer3NoiseForensics:
                         "variance": round(float(var_map[gy, gx]), 2)
                     })
 
+        # Filter out 1D UI divider lines or hairline borders:
+        # A true tamper patch is a localized 2D cluster; a 1D row spanning >= 40% grid width with low variance is a UI divider rule
+        if outlier_blocks:
+            row_counts: Dict[int, int] = {}
+            col_counts: Dict[int, int] = {}
+            for o in outlier_blocks:
+                gy = o["box"][1] // bs
+                gx = o["box"][0] // bs
+                row_counts[gy] = row_counts.get(gy, 0) + 1
+                col_counts[gx] = col_counts.get(gx, 0) + 1
+
+            filtered_outliers = []
+            for o in outlier_blocks:
+                gy = o["box"][1] // bs
+                gx = o["box"][0] // bs
+                is_divider_row = row_counts.get(gy, 0) >= 6 and (row_counts[gy] / max(grid_w, 1)) >= 0.40 and o["variance"] < 10.0
+                is_divider_col = col_counts.get(gx, 0) >= 6 and (col_counts[gx] / max(grid_h, 1)) >= 0.40 and o["variance"] < 10.0
+                if not (is_divider_row or is_divider_col):
+                    filtered_outliers.append(o)
+            outlier_blocks = filtered_outliers
+
         return var_map, outlier_blocks
 
     def generate_noise_heatmap(self, residual: np.ndarray) -> np.ndarray:

@@ -12,6 +12,8 @@ datasets/real_calibration/authentic/*
 !datasets/real_calibration/authentic/.gitkeep
 datasets/real_calibration/tampered/*
 !datasets/real_calibration/tampered/.gitkeep
+datasets/real_calibration/forgeries_augmented/*
+!datasets/real_calibration/forgeries_augmented/.gitkeep
 datasets/real_calibration/README.md
 venv/
 .env

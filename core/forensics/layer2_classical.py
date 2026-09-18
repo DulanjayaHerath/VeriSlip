@@ -54,6 +54,101 @@ class Layer2ClassicalForensics:
 
         return visual_ela, diff_gray, ela_variance
 
+    def decompose_ela_channels(self, pil_image: Image.Image) -> Dict[str, Any]:
+        """
+        Decompose ELA difference into Luminance (Y) and Chrominance (Cb, Cr) channels.
+        In digital receipt tampering (splicing or text alterations), tampered characters typically
+        exhibit elevated high-frequency noise in the luminance channel (Y) while chrominance channels
+        remain subdued due to chroma subsampling (4:2:0 or 4:2:2 JPEG compression).
+        """
+        rgb_image = pil_image.convert("RGB")
+        buffer = io.BytesIO()
+        rgb_image.save(buffer, 'JPEG', quality=self.ela_quality)
+        buffer.seek(0)
+        resaved_img = Image.open(buffer)
+
+        diff = ImageChops.difference(rgb_image, resaved_img)
+        diff_arr = np.array(diff, dtype=np.uint8)
+
+        ycrcb = cv2.cvtColor(diff_arr, cv2.COLOR_RGB2YCrCb).astype(np.float32)
+        y_channel = ycrcb[:, :, 0]
+        cr_channel = ycrcb[:, :, 1]
+        cb_channel = ycrcb[:, :, 2]
+
+        luma_variance = float(np.var(y_channel))
+        cr_variance = float(np.var(cr_channel))
+        cb_variance = float(np.var(cb_channel))
+        chroma_variance = float((cr_variance + cb_variance) / 2.0)
+
+        luma_chroma_disparity = float(luma_variance / (chroma_variance + 1e-4))
+
+        return {
+            "luminance_variance": round(luma_variance, 4),
+            "chrominance_variance": round(chroma_variance, 4),
+            "cr_variance": round(cr_variance, 4),
+            "cb_variance": round(cb_variance, 4),
+            "luma_chroma_disparity": round(luma_chroma_disparity, 4),
+            "luminance_diff": y_channel,
+            "chrominance_diff": (cb_channel + cr_channel) / 2.0,
+        }
+
+    def detect_jpeg_grid_shift(self, gray: np.ndarray) -> Dict[str, Any]:
+        """
+        Detect double-JPEG compression grid misalignment and spatial shift (0 to 7 px).
+        When a tampered receipt snippet (e.g. amount or reference digits) is cropped and
+        pasted into another document, the original 8x8 block DCT boundary is shifted by
+        (shift_x, shift_y) != (0, 0), introducing dual periodic boundary traces.
+        """
+        h, w = gray.shape
+        if h < 64 or w < 64:
+            return {
+                "detected_shift": (0, 0),
+                "grid_periodicity_strength": 1.0,
+                "is_aligned": True,
+                "horizontal_grid_profile": [0.0] * 8,
+                "vertical_grid_profile": [0.0] * 8,
+                "notes": []
+            }
+
+        diff_h = np.abs(gray[:, 1:] - gray[:, :-1])
+        diff_v = np.abs(gray[1:, :] - gray[:-1, :])
+
+        h_scores = []
+        for shift_x in range(8):
+            cols = [c for c in range(diff_h.shape[1]) if (c + 1 - shift_x) % 8 == 0]
+            h_scores.append(float(np.mean(diff_h[:, cols])) if cols else 0.0)
+
+        v_scores = []
+        for shift_y in range(8):
+            rows = [r for r in range(diff_v.shape[0]) if (r + 1 - shift_y) % 8 == 0]
+            v_scores.append(float(np.mean(diff_v[rows, :])) if rows else 0.0)
+
+        best_shift_x = int(np.argmax(h_scores))
+        best_shift_y = int(np.argmax(v_scores))
+
+        mean_h = float(np.mean(h_scores)) + 1e-6
+        mean_v = float(np.mean(v_scores)) + 1e-6
+        peak_ratio_h = max(h_scores) / mean_h
+        peak_ratio_v = max(v_scores) / mean_v
+        grid_strength = max(peak_ratio_h, peak_ratio_v)
+
+        is_misaligned = (best_shift_x not in (0, 1) or best_shift_y not in (0, 1)) and grid_strength > 1.18
+
+        notes = []
+        if is_misaligned:
+            notes.append(
+                f"Non-aligned JPEG 8x8 block grid shift detected at offset ({best_shift_x}, {best_shift_y})."
+            )
+
+        return {
+            "detected_shift": (best_shift_x, best_shift_y),
+            "grid_periodicity_strength": round(float(grid_strength), 3),
+            "horizontal_grid_profile": [round(s, 3) for s in h_scores],
+            "vertical_grid_profile": [round(s, 3) for s in v_scores],
+            "is_aligned": not is_misaligned,
+            "notes": notes
+        }
+
     def generate_ela_heatmap(self, diff_gray: np.ndarray) -> np.ndarray:
         """
         Convert grayscale ELA difference to a normalized colored heatmap (BGR).
@@ -183,6 +278,14 @@ class Layer2ClassicalForensics:
         dct_res = self.analyze_dct_coefficients(cv2_img)
         boxes = self.detect_tamper_bounding_boxes(diff_gray)
 
+        # Decompose ELA differences into chromatic vs luminance channels
+        ela_channels = self.decompose_ela_channels(pil_image)
+
+        # Detect 8x8 block grid shift & misalignment
+        gray_img = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY).astype(np.float32)
+        grid_shift_res = self.detect_jpeg_grid_shift(gray_img)
+        dct_res["grid_alignment"] = grid_shift_res
+
         # Calculate composite score for Layer 2
         # Normal uncompressed/uniform mobile screenshots have modest ELA variance (~0.5 - 2.5)
         # Spliced/recompressed screenshots exhibit localized ELA variance spikes (> 5.0)
@@ -197,6 +300,7 @@ class Layer2ClassicalForensics:
         if layer2_score > 0.45:
             notes.append(f"Significant compression error level discrepancies detected ({len(boxes)} anomaly regions).")
         notes.extend(dct_res["notes"])
+        notes.extend(grid_shift_res["notes"])
 
         return {
             "layer_name": "Layer 2: Classical Image Forensics (ELA & DCT)",
@@ -205,6 +309,8 @@ class Layer2ClassicalForensics:
             "ela_variance": round(ela_var, 2),
             "detected_regions": boxes,
             "double_compression_analysis": dct_res,
+            "channel_decomposition": ela_channels,
+            "grid_alignment": grid_shift_res,
             "heatmap_base64": cv2_to_base64(heatmap),
             "diff_gray": diff_gray,
             "findings": notes

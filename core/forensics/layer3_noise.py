@@ -5,12 +5,28 @@ Layer 3 Forensics: Noise Residual and Spatial Inconsistency Analysis.
 - Discontinuity detection for spliced text / erased rectangles / clone-stamped patches
 """
 
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 from PIL import Image
 import cv2
 
 from core.forensics.utils import pil_to_cv2, cv2_to_base64
+
+SRM_KERNELS: Dict[str, np.ndarray] = {
+    "srm_1st_horizontal": np.array([[0, 0, 0], [-1, 1, 0], [0, 0, 0]], dtype=np.float32),
+    "srm_1st_vertical": np.array([[0, -1, 0], [0, 1, 0], [0, 0, 0]], dtype=np.float32),
+    "srm_2nd_horizontal": np.array([[0, 0, 0], [-1, 2, -1], [0, 0, 0]], dtype=np.float32),
+    "srm_2nd_vertical": np.array([[0, -1, 0], [0, 2, 0], [0, -1, 0]], dtype=np.float32),
+    "srm_edge_3x3": np.array([[-1, 2, -1], [2, -4, 2], [-1, 2, -1]], dtype=np.float32) / 4.0,
+    "srm_square_3x3": np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]], dtype=np.float32) / 8.0,
+    "srm_edge_5x5": np.array([
+        [-1,  2,  -2,  2, -1],
+        [ 2, -6,   8, -6,  2],
+        [-2,  8, -12,  8, -2],
+        [ 2, -6,   8, -6,  2],
+        [-1,  2,  -2,  2, -1]
+    ], dtype=np.float32) / 12.0,
+}
 
 class Layer3NoiseForensics:
     """Evaluates noise residual variance and spatial consistency across patches."""
@@ -18,6 +34,48 @@ class Layer3NoiseForensics:
     def __init__(self, block_size: int = 32, median_ksize: int = 3):
         self.block_size = block_size
         self.median_ksize = median_ksize
+
+    def extract_srm_residuals(
+        self,
+        gray: np.ndarray,
+        kernel_names: Optional[List[str]] = None
+    ) -> Dict[str, np.ndarray]:
+        """
+        Apply standard 3x3 and 5x5 Spatial Rich Models (SRM) high-pass filtering kernels
+        to extract subtle, directional noise residuals across the canvas.
+        """
+        selected = kernel_names or list(SRM_KERNELS.keys())
+        gray_f = gray.astype(np.float32)
+        residuals = {}
+        for name in selected:
+            if name in SRM_KERNELS:
+                kernel = SRM_KERNELS[name]
+                filtered = cv2.filter2D(gray_f, cv2.CV_32F, kernel)
+                residuals[name] = np.abs(filtered)
+        return residuals
+
+    def compute_srm_summary(self, gray: np.ndarray) -> Dict[str, Any]:
+        """
+        Compute summary statistics (variance, mean energy) across all SRM residual streams.
+        """
+        residuals = self.extract_srm_residuals(gray)
+        metrics = {}
+        variances = []
+        for name, res in residuals.items():
+            var = float(np.var(res))
+            mean = float(np.mean(res))
+            metrics[name] = {
+                "variance": round(var, 4),
+                "mean_energy": round(mean, 4),
+            }
+            variances.append(var)
+
+        avg_srm_var = float(np.mean(variances)) if variances else 0.0
+        return {
+            "srm_metrics": metrics,
+            "average_srm_variance": round(avg_srm_var, 4),
+            "kernels_evaluated": len(metrics)
+        }
 
     def extract_noise_residual(self, gray: np.ndarray) -> np.ndarray:
         """
@@ -132,6 +190,8 @@ class Layer3NoiseForensics:
         if score > 0.4:
             notes.append("High spatial noise inconsistency detected across text/background boundary.")
 
+        srm_summary = self.compute_srm_summary(gray)
+
         return {
             "layer_name": "Layer 3: Noise Residual & Spatial Consistency",
             "anomaly_score": score,
@@ -139,6 +199,7 @@ class Layer3NoiseForensics:
             "mean_noise_variance": round(mean_var, 3),
             "outlier_blocks": outliers[:8],
             "noise_heatmap_base64": cv2_to_base64(noise_heatmap),
+            "srm_analysis": srm_summary,
             "residual": residual,
             "findings": notes
         }

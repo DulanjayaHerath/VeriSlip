@@ -194,6 +194,15 @@ message-ID submissions are not charged. The local implementation stores only
 keyed fingerprints and is intended to be replaced by durable shared storage in
 multi-worker production deployments.
 
+For high-risk results only, callers that have already determined the normal
+WhatsApp reply could not be delivered may set `whatsapp_delivery_failed` to
+`true`. VeriSlip then attempts a short, receipt-free SMS fraud alert through a
+configured Dialog IdeaMart/Mobitel hSenid-compatible JSON gateway. Enable it
+with `VERISLIP_SMS_ENABLED=1` and configure the HTTPS gateway URL, application
+ID, password, sender ID, and timeouts shown in `.env.example`. Credentials must
+come from deployment secrets. Duplicate alerts with the same WhatsApp
+`message_id` are suppressed in the local process.
+
 ---
 
 ## 🗺️ Open-Source Roadmap & Backlog

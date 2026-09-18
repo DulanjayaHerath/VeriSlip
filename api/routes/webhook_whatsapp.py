@@ -28,6 +28,7 @@ from core.integrations.whatsapp_media import (
     WhatsAppMediaError,
     download_whatsapp_image,
 )
+from core.notifications.sms_fallback import sms_fallback_notifier
 from core.security.image_sanitizer import (
     ImageValidationError,
     MAX_IMAGE_UPLOAD_BYTES,
@@ -56,6 +57,10 @@ class WhatsAppMessagePayload(BaseModel):
         description="Stable WhatsApp message ID used for idempotency",
     )
     caption: Optional[str] = Field(None, description="Optional caption from buyer/seller")
+    whatsapp_delivery_failed: bool = Field(
+        False,
+        description="True only after the normal WhatsApp fraud alert could not be delivered",
+    )
 
 
 class WhatsAppResponsePayload(BaseModel):
@@ -70,6 +75,7 @@ class WhatsAppResponsePayload(BaseModel):
     merchant_tier: Optional[str] = None
     credits_remaining: Optional[int] = None
     credit_limit: Optional[int] = None
+    sms_fallback_status: Optional[str] = None
 
 
 @router.post("/whatsapp", response_model=WhatsAppResponsePayload)
@@ -225,6 +231,13 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
             f"{quota_reached_message(language, merchant_credit_service.policy.upgrade_url)}"
         )
 
+    sms_result = await sms_fallback_notifier.notify(
+        recipient=payload.from_phone,
+        verdict=verdict,
+        whatsapp_delivery_failed=payload.whatsapp_delivery_failed,
+        event_id=payload.message_id,
+    )
+
     return {
         "recipient": payload.from_phone,
         "reply_text": reply,
@@ -237,4 +250,5 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
         "merchant_tier": merchant_balance.tier,
         "credits_remaining": merchant_balance.remaining,
         "credit_limit": merchant_balance.limit,
+        "sms_fallback_status": sms_result.status.value,
     }

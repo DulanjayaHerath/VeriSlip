@@ -5,16 +5,33 @@ Receives bank slip image uploads, runs multi-layer forensic detection, and retur
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from typing import Optional, List
-from PIL import Image
-import io
-
 from core.forensics.unified_scorer import VeriSlipForensicEngine
 from core.forensics.ocr_extractor import ReceiptFieldExtractor
+from core.security.image_sanitizer import (
+    ImageValidationError,
+    MAX_IMAGE_UPLOAD_BYTES,
+    sanitize_image_bytes,
+)
 from api.schemas.detection import VerificationResponse, BatchVerificationResponse, BatchSlipItem, BatchVerificationSummary
 
 router = APIRouter(prefix="/api/v1", tags=["Verification"])
 engine = VeriSlipForensicEngine()
 field_extractor = ReceiptFieldExtractor()
+
+
+async def _read_bounded_upload(file: UploadFile) -> bytes:
+    """Read at most one byte beyond the public upload limit."""
+    contents = await file.read(MAX_IMAGE_UPLOAD_BYTES + 1)
+    if len(contents) > MAX_IMAGE_UPLOAD_BYTES:
+        raise ImageValidationError(
+            "Upload exceeds the permitted size.", status_code=413
+        )
+    return contents
+
+
+def _is_pdf(contents: bytes) -> bool:
+    """Identify PDFs by their file signature, never their name or MIME type."""
+    return contents.startswith(b"%PDF-")
 
 @router.post("/verify", response_model=VerificationResponse)
 async def verify_slip(
@@ -26,13 +43,9 @@ async def verify_slip(
     Run multi-layer forensic analysis on an uploaded payment slip image.
     Automatically detects bank layout and key fields if not provided.
     """
-    is_pdf = file.content_type == "application/pdf" or file.filename.lower().endswith(".pdf")
-    if not (file.content_type.startswith("image/") or is_pdf):
-        raise HTTPException(status_code=400, detail="Uploaded file must be a valid image (JPEG, PNG, WebP) or PDF slip.")
-
     try:
-        contents = await file.read()
-        if is_pdf:
+        contents = await _read_bounded_upload(file)
+        if _is_pdf(contents):
             import pypdfium2 as pdfium
             pdf = pdfium.PdfDocument(contents)
             page = pdf[0]
@@ -44,12 +57,13 @@ async def verify_slip(
             page.close()
             pdf.close()
         else:
-            raw_img = Image.open(io.BytesIO(contents))
-            info_dict = raw_img.info.copy() if hasattr(raw_img, "info") else {}
-            pil_img = raw_img.convert("RGB") if raw_img.mode != "RGB" else raw_img
-            pil_img.info = info_dict
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to decode document/image file: {str(e)}")
+            pil_img = sanitize_image_bytes(contents)
+    except ImageValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Uploaded document could not be decoded safely."
+        ) from None
 
     # Run field extraction & bank template detection
     extracted_meta = field_extractor.extract_fields(pil_img, bank_hint=bank_code)
@@ -64,8 +78,10 @@ async def verify_slip(
         )
         results["extracted_metadata"] = extracted_meta
         return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Forensic analysis failed: {str(e)}")
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Forensic analysis could not be completed."
+        ) from None
 
 @router.post("/batch-verify", response_model=BatchVerificationResponse)
 async def batch_verify_slips(
@@ -90,8 +106,8 @@ async def batch_verify_slips(
     for f in files:
         fname = f.filename or "unknown_slip.jpg"
         try:
-            contents = await f.read()
-            if fname.lower().endswith(".pdf"):
+            contents = await _read_bounded_upload(f)
+            if _is_pdf(contents):
                 import pypdfium2 as pdfium
                 pdf = pdfium.PdfDocument(contents)
                 page = pdf[0]
@@ -103,10 +119,7 @@ async def batch_verify_slips(
                 page.close()
                 pdf.close()
             else:
-                raw_img = Image.open(io.BytesIO(contents))
-                info_dict = raw_img.info.copy() if hasattr(raw_img, "info") else {}
-                pil_img = raw_img.convert("RGB") if raw_img.mode != "RGB" else raw_img
-                pil_img.info = info_dict
+                pil_img = sanitize_image_bytes(contents)
 
             # Field extraction
             extracted = field_extractor.extract_fields(pil_img)
@@ -145,7 +158,7 @@ async def batch_verify_slips(
                 top_finding=top_find,
                 extracted_metadata=extracted
             ))
-        except Exception as err:
+        except Exception:
             items.append(BatchSlipItem(
                 filename=fname,
                 verdict="ERROR",
@@ -153,7 +166,7 @@ async def batch_verify_slips(
                 tamper_risk_percentage=100.0,
                 detected_bank="UNKNOWN",
                 bank_name="Unknown Bank",
-                recommendation=f"Error parsing file: {str(err)}",
+                recommendation="File was rejected because it is invalid or unsafe.",
                 flagged_regions_count=0,
                 findings_count=1,
                 top_finding="Unreadable or corrupt image file"

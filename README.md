@@ -157,6 +157,26 @@ curl -X POST http://127.0.0.1:8000/api/v1/verify \
 }
 ```
 
+### Merchant verification history
+
+Successful `POST /api/v1/verify` requests and completed background verification
+jobs add a metadata-only record to the authenticated API key's merchant history.
+The web cockpit's **History** drawer supports reference search, inclusive UTC date
+filters, and paginated results. The endpoint can also be called directly:
+
+```bash
+curl "http://127.0.0.1:8000/api/v1/verifications/history?reference=ORDER-42&date_from=2026-09-01&date_to=2026-09-30&page=1&page_size=20" \
+  -H "X-API-Key: <merchant-api-key>"
+```
+
+History records contain only time, caller-supplied reference, verdict/risk, and
+bank label metadata. Uploaded images, forensic maps, account details, API keys,
+and raw OCR payloads are never retained in this store. The default in-process
+implementation is thread-safe, bounded by `VERISLIP_HISTORY_MAX_RECORDS`, and
+expires entries after `VERISLIP_HISTORY_RETENTION_DAYS`. Multi-worker production
+deployments should implement the provided storage boundary with a shared durable
+database while keeping the API-key fingerprint as the tenant key.
+
 ### 2. WhatsApp Webhook
 The webhook accepts either the existing `image_base64` field or a WhatsApp Cloud
 API `media_id`. Media-ID downloads require `VERISLIP_WHATSAPP_ACCESS_TOKEN`, are
@@ -244,6 +264,7 @@ Contributions from computer vision researchers, ML engineers, and software devel
 * **Request Tracing:** Every API response includes `X-Request-ID`. Callers may provide a safe `X-Request-ID` or `X-Correlation-ID`; otherwise VeriSlip generates a UUID. Request lifecycle logs are JSON records containing the correlation ID, route template, status, and duration—never request bodies, uploaded receipts, query strings, credentials, or authorization headers.
 * **API Access Control:** `/api/v1` endpoints require an `X-API-Key`. Configure only SHA-256 key fingerprints through `VERISLIP_API_KEY_HASHES`; raw production keys never belong in source or environment configuration. Free keys receive 10 requests/day and pro keys receive 100 requests/minute. Health, documentation, OpenAPI, static assets, and the web root remain public. `REDIS_URL` enables distributed counters; local development falls back to an in-memory store.
 * **Background Verification:** `POST /api/v1/verify/jobs` sanitizes an upload and returns `202` with a job ID; `GET /api/v1/verify/jobs/{job_id}` reports `pending`, `processing`, `completed`, or `failed`. Jobs are isolated by API-key fingerprint, inherit the submission correlation ID, and retain only sanitized pixels while running. The existing `POST /api/v1/verify` response remains synchronous-compatible but executes decoding and forensic inference on worker threads.
+* **Merchant History:** `GET /api/v1/verifications/history` returns only the authenticated merchant's bounded verification summary records. Receipt images and detailed forensic/OCR payloads are not persisted for history.
 * **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
 * Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 

@@ -106,6 +106,7 @@ class ForensicJobManager:
         owner_key_id: str,
         correlation_id: str,
         task: Callable[[], Dict[str, Any]],
+        on_complete: Optional[Callable[[Dict[str, Any]], None]] = None,
     ) -> JobSnapshot:
         """Register a pending job and schedule it without retaining upload bytes."""
         now = self._clock()
@@ -124,10 +125,15 @@ class ForensicJobManager:
             )
             self._records[job_id] = record
             snapshot = self._snapshot(record)
-        self._executor.submit(self._run, job_id, task)
+        self._executor.submit(self._run, job_id, task, on_complete)
         return snapshot
 
-    def _run(self, job_id: str, task: Callable[[], Dict[str, Any]]) -> None:
+    def _run(
+        self,
+        job_id: str,
+        task: Callable[[], Dict[str, Any]],
+        on_complete: Optional[Callable[[Dict[str, Any]], None]] = None,
+    ) -> None:
         with self._lock:
             record = self._records.get(job_id)
             if record is None:
@@ -151,6 +157,14 @@ class ForensicJobManager:
                 "forensic_job.failed", extra={"error_type": type(exc).__name__}
             )
         else:
+            if on_complete is not None:
+                try:
+                    on_complete(result)
+                except Exception as exc:
+                    logger.warning(
+                        "forensic_job.completion_hook_failed",
+                        extra={"error_type": type(exc).__name__},
+                    )
             with self._lock:
                 record = self._records.get(job_id)
                 if record is not None:

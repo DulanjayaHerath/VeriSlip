@@ -2,6 +2,7 @@
 Pydantic Schemas for VeriSlip API requests and responses.
 """
 
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -41,6 +42,22 @@ class ForensicJobStatusResponse(BaseModel):
     updated_at: float
     result: Optional[VerificationResponse] = None
     error: Optional[str] = None
+
+class VerificationHistoryItem(BaseModel):
+    verification_id: str
+    created_at: datetime
+    reference_no: Optional[str] = None
+    verdict: str
+    tamper_risk_percentage: float
+    bank_code: Optional[str] = None
+    bank_name: Optional[str] = None
+
+class VerificationHistoryResponse(BaseModel):
+    items: List[VerificationHistoryItem]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
 
 class BatchSlipItem(BaseModel):
     filename: str

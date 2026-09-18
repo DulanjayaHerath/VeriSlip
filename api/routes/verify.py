@@ -4,7 +4,8 @@ Receives bank slip image uploads, runs multi-layer forensic detection, and retur
 """
 
 from functools import partial
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Request
+from datetime import date
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Request
 from starlette.concurrency import run_in_threadpool
 from typing import Optional, List
 from core.forensics.unified_scorer import VeriSlipForensicEngine
@@ -15,6 +16,7 @@ from core.security.image_sanitizer import (
     sanitize_image_bytes,
 )
 from core.jobs.forensic_jobs import ForensicJobManager, JobQueueFullError
+from core.history.verification_history import InMemoryVerificationHistoryStore
 from core.observability.logging import get_correlation_id
 from api.schemas.detection import (
     VerificationResponse,
@@ -23,12 +25,14 @@ from api.schemas.detection import (
     BatchVerificationSummary,
     ForensicJobSubmissionResponse,
     ForensicJobStatusResponse,
+    VerificationHistoryResponse,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Verification"])
 engine = VeriSlipForensicEngine()
 field_extractor = ReceiptFieldExtractor()
 job_manager = ForensicJobManager()
+history_store = InMemoryVerificationHistoryStore()
 
 
 class ForensicAnalysisError(RuntimeError):
@@ -94,11 +98,25 @@ def _analyze_image(
     results["extracted_metadata"] = extracted_meta
     return results
 
+
+def _record_verification(owner_key_id: str, reference_no: Optional[str], result):
+    """Persist only merchant-facing summary metadata from a successful result."""
+    extracted = result.get("extracted_metadata") or {}
+    history_store.add(
+        owner_key_id,
+        reference_no=reference_no,
+        verdict=result.get("verdict", "UNKNOWN"),
+        tamper_risk_percentage=result.get("tamper_risk_percentage", 0.0),
+        bank_code=extracted.get("detected_bank_code"),
+        bank_name=extracted.get("bank_name"),
+    )
+
 @router.post("/verify", response_model=VerificationResponse)
 async def verify_slip(
+    request: Request,
     file: UploadFile = File(..., description="Payment slip or screenshot image file"),
     bank_code: Optional[str] = Form(None, description="Optional bank code: COMBANK, SAMPATH, BOC, HNB, SEYLAN, NTB_FRIMI, GENERIC_CEFTS"),
-    reference_no: Optional[str] = Form(None, description="Optional transaction reference number for syntax verification")
+    reference_no: Optional[str] = Form(None, max_length=128, description="Optional transaction reference number for syntax verification")
 ):
     """
     Run multi-layer forensic analysis on an uploaded payment slip image.
@@ -115,9 +133,13 @@ async def verify_slip(
         ) from None
 
     try:
-        return await run_in_threadpool(
+        result = await run_in_threadpool(
             _analyze_image, pil_img, bank_code, reference_no, True
         )
+        await run_in_threadpool(
+            _record_verification, request.state.api_key_id, reference_no, result
+        )
+        return result
     except ForensicAnalysisError:
         raise HTTPException(
             status_code=500, detail="Forensic analysis could not be completed."
@@ -131,7 +153,7 @@ async def submit_verification_job(
     request: Request,
     file: UploadFile = File(..., description="Payment slip or screenshot image file"),
     bank_code: Optional[str] = Form(None),
-    reference_no: Optional[str] = Form(None),
+    reference_no: Optional[str] = Form(None, max_length=128),
 ):
     """Sanitize an upload, then queue heavy OCR and forensic analysis."""
     try:
@@ -148,7 +170,12 @@ async def submit_verification_job(
     owner_key_id = request.state.api_key_id
     task = partial(_analyze_image, pil_img, bank_code, reference_no, True)
     try:
-        job = job_manager.submit(owner_key_id, correlation_id, task)
+        job = job_manager.submit(
+            owner_key_id,
+            correlation_id,
+            task,
+            on_complete=partial(_record_verification, owner_key_id, reference_no),
+        )
     except JobQueueFullError:
         raise HTTPException(
             status_code=503, detail="Forensic job capacity is temporarily unavailable."
@@ -168,6 +195,32 @@ async def get_verification_job(request: Request, job_id: str):
     if job is None:
         raise HTTPException(status_code=404, detail="Forensic job was not found.")
     return job
+
+
+@router.get(
+    "/verifications/history", response_model=VerificationHistoryResponse
+)
+async def get_verification_history(
+    request: Request,
+    reference: Optional[str] = Query(None, max_length=128),
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    """Search the authenticated merchant's metadata-only verification history."""
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(
+            status_code=400, detail="date_from must be on or before date_to."
+        )
+    return history_store.search(
+        request.state.api_key_id,
+        reference_query=reference,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        page_size=page_size,
+    )
 
 @router.post("/batch-verify", response_model=BatchVerificationResponse)
 async def batch_verify_slips(

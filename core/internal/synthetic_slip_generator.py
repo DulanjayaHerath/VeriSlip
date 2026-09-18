@@ -277,6 +277,7 @@ class SyntheticSlipGenerator:
         final_pil.save(buf, format="JPEG", quality=82, exif=exif)
         buf.seek(0)
         final_pil = Image.open(buf)
+        final_pil.load()
 
         tamper_metadata["ground_truth_boxes"] = flagged_boxes
         return final_pil, tamper_metadata

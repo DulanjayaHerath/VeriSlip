@@ -7,7 +7,7 @@ delivering instantaneous fraud risk verdicts and highlighted tamper warnings.
 import base64
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
@@ -16,6 +16,13 @@ from core.integrations.whatsapp_conversation import (
     ConversationState,
     QuotaSnapshot,
     conversation_store,
+    duplicate_verification_message,
+    quota_exhausted_message,
+    quota_reached_message,
+)
+from core.integrations.merchant_credits import (
+    ReservationStatus,
+    merchant_credit_service,
 )
 from core.integrations.whatsapp_media import (
     WhatsAppMediaError,
@@ -60,10 +67,13 @@ class WhatsAppResponsePayload(BaseModel):
     conversation_state: ConversationState = ConversationState.READY
     language: str = "en"
     duplicate: bool = False
+    merchant_tier: Optional[str] = None
+    credits_remaining: Optional[int] = None
+    credit_limit: Optional[int] = None
 
 
 @router.post("/whatsapp", response_model=WhatsAppResponsePayload)
-async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request):
+async def handle_whatsapp_slip(payload: WhatsAppMessagePayload):
     """
     Handle seller commands or securely verify one WhatsApp receipt image.
 
@@ -82,11 +92,12 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request
         )
 
     if payload.text is not None:
+        merchant_balance = merchant_credit_service.balance(payload.from_phone)
         quota = QuotaSnapshot(
-            tier=getattr(request.state, "api_tier", "unknown"),
-            limit=getattr(request.state, "rate_limit_limit", 0),
-            remaining=getattr(request.state, "rate_limit_remaining", 0),
-            reset_at=getattr(request.state, "rate_limit_reset", 0),
+            tier=merchant_balance.tier,
+            limit=merchant_balance.limit,
+            remaining=merchant_balance.remaining,
+            used=merchant_balance.used,
         )
         reply = conversation_store.process(
             payload.from_phone,
@@ -100,9 +111,40 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request
             "conversation_state": reply.state,
             "language": reply.language.value,
             "duplicate": reply.duplicate,
+            "merchant_tier": merchant_balance.tier,
+            "credits_remaining": merchant_balance.remaining,
+            "credit_limit": merchant_balance.limit,
         }
 
     language = conversation_store.seller_language(payload.from_phone)
+    reservation = merchant_credit_service.reserve(
+        payload.from_phone, payload.message_id
+    )
+    if reservation.status is ReservationStatus.DUPLICATE:
+        return {
+            "recipient": payload.from_phone,
+            "reply_text": duplicate_verification_message(language),
+            "conversation_state": ConversationState.READY,
+            "language": language.value,
+            "duplicate": True,
+            "merchant_tier": reservation.balance.tier,
+            "credits_remaining": reservation.balance.remaining,
+            "credit_limit": reservation.balance.limit,
+        }
+    if reservation.status is ReservationStatus.EXHAUSTED:
+        return {
+            "recipient": payload.from_phone,
+            "reply_text": quota_exhausted_message(
+                language, merchant_credit_service.policy.upgrade_url
+            ),
+            "conversation_state": ConversationState.READY,
+            "language": language.value,
+            "merchant_tier": reservation.balance.tier,
+            "credits_remaining": 0,
+            "credit_limit": reservation.balance.limit,
+        }
+    assert reservation.token is not None
+    credit_token: Optional[str] = reservation.token
 
     try:
         if payload.media_id:
@@ -118,18 +160,32 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request
                 raise ImageValidationError(
                     "Image upload exceeds the permitted size.", status_code=413
                 )
-            img_bytes = base64.b64decode(raw_b64, validate=True)
+            try:
+                img_bytes = base64.b64decode(raw_b64, validate=True)
+            except (ValueError, TypeError):
+                raise HTTPException(
+                    status_code=400, detail="Image payload is not valid base64."
+                ) from None
             pil_img = await run_in_threadpool(sanitize_image_bytes, img_bytes)
+        res = await run_in_threadpool(engine.analyze, pil_img)
+        merchant_balance = merchant_credit_service.complete(credit_token)
+        credit_token = None
     except WhatsAppMediaError as exc:
+        if credit_token is not None:
+            merchant_credit_service.release(credit_token)
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
     except ImageValidationError as exc:
+        if credit_token is not None:
+            merchant_credit_service.release(credit_token)
         raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
-    except (ValueError, TypeError):
-        raise HTTPException(
-            status_code=400, detail="Image payload is not valid base64."
-        ) from None
-
-    res = await run_in_threadpool(engine.analyze, pil_img)
+    except HTTPException:
+        if credit_token is not None:
+            merchant_credit_service.release(credit_token)
+        raise
+    except BaseException:
+        if credit_token is not None:
+            merchant_credit_service.release(credit_token)
+        raise
     verdict = res["verdict"]
     risk = res["tamper_risk_percentage"]
     flagged_count = len(res["flagged_regions"])
@@ -142,6 +198,7 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request
             f"📦 *Recommendation:* Safe to dispatch order.\n\n"
             f"_Powered by VeriSlip Forensic AI_"
         )
+
     elif verdict == "SUSPICIOUS":
         reply = (
             f"⚠️ *VeriSlip Fraud Check: CAUTION REQUIRED*\n\n"
@@ -162,6 +219,12 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request
             f"_Powered by VeriSlip Forensic AI_"
         )
 
+    if merchant_balance.remaining == 0:
+        reply = (
+            f"{reply}\n\n"
+            f"{quota_reached_message(language, merchant_credit_service.policy.upgrade_url)}"
+        )
+
     return {
         "recipient": payload.from_phone,
         "reply_text": reply,
@@ -171,4 +234,7 @@ async def handle_whatsapp_slip(payload: WhatsAppMessagePayload, request: Request
         "conversation_state": ConversationState.READY,
         "language": language.value,
         "duplicate": False,
+        "merchant_tier": merchant_balance.tier,
+        "credits_remaining": merchant_balance.remaining,
+        "credit_limit": merchant_balance.limit,
     }

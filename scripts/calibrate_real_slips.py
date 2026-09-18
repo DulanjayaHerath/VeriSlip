@@ -117,7 +117,7 @@ def run_calibration():
         print("3. Re-run: python3 scripts/calibrate_real_slips.py")
         print("\nNote: Creating a baseline profile using synthetic mobile variations for demonstration...")
         # Create a sample calibration profile
-        from core.ml.dataset_generator import SyntheticSlipGenerator
+        from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
         gen = SyntheticSlipGenerator()
         auth_pairs = [gen.generate_authentic_slip(b) for b in ["COMBANK", "BOC", "SAMPATH", "HNB", "SEYLAN"]]
         auth_samples = [p[0] for p in auth_pairs]

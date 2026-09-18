@@ -2,7 +2,24 @@
 Unit tests for Synthetic Slip & Tampering Engine.
 """
 
-from core.ml.dataset_generator import SyntheticSlipGenerator
+import pytest
+
+from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
+
+
+def test_generator_is_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("VERISLIP_ENABLE_SYNTHETIC_GENERATOR", raising=False)
+
+    with pytest.raises(RuntimeError, match="Synthetic slip generation is disabled"):
+        SyntheticSlipGenerator()
+
+
+@pytest.mark.parametrize("value", ["0", "true", "TRUE", "yes"])
+def test_generator_requires_explicit_enable_value(monkeypatch, value):
+    monkeypatch.setenv("VERISLIP_ENABLE_SYNTHETIC_GENERATOR", value)
+
+    with pytest.raises(RuntimeError, match="Synthetic slip generation is disabled"):
+        SyntheticSlipGenerator()
 
 def test_authentic_slip_generation():
     generator = SyntheticSlipGenerator(width=400, height=700)

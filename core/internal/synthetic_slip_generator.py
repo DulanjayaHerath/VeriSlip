@@ -1,7 +1,8 @@
-"""
-Synthetic Slip & Tampering Engine for VeriSlip.
-Generates realistic authentic bank transfer slips and paired doctored/tampered variants
-with ground-truth bounding boxes, labels, and forensic tampering traces.
+"""Internal-only synthetic slip and tampering engine.
+
+This module is intended exclusively for offline training, calibration, and tests. It
+must never be imported by an API route or other user-facing runtime. Construction is
+deny-by-default and requires ``VERISLIP_ENABLE_SYNTHETIC_GENERATOR=1``.
 """
 
 import os
@@ -34,9 +35,15 @@ def get_font(size: int = 18, bold: bool = False):
     return ImageFont.load_default()
 
 class SyntheticSlipGenerator:
-    """Generates synthetic authentic and doctored bank transfer slips."""
+    """Generate training-only synthetic slips when explicitly enabled."""
 
     def __init__(self, width: int = 420, height: int = 740):
+        if os.getenv("VERISLIP_ENABLE_SYNTHETIC_GENERATOR") != "1":
+            raise RuntimeError(
+                "Synthetic slip generation is disabled. Set "
+                "VERISLIP_ENABLE_SYNTHETIC_GENERATOR=1 only in an authorized "
+                "offline training or test environment."
+            )
         self.width = width
         self.height = height
 

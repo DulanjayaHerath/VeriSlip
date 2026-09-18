@@ -20,7 +20,7 @@ from tqdm import tqdm
 # Ensure core packages can be imported
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from core.ml.dataset_generator import SyntheticSlipGenerator
+from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
 from core.templates.bank_rules import BANK_TEMPLATES
 
 BANKS = ["COMBANK", "SAMPATH", "BOC", "HNB", "SEYLAN", "NTB_FRIMI", "GENERIC_CEFTS"]

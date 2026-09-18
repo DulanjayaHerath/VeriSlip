@@ -17,13 +17,11 @@ def test_health():
     assert data["status"] == "healthy"
     assert "COMBANK" in data["supported_banks"]
 
-def test_synthetic_sample_endpoint():
-    res = client.get("/api/v1/forensics/synthetic-sample?bank_code=COMBANK&tampered=false")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["bank_code"] == "COMBANK"
-    assert data["is_tampered"] is False
-    assert data["image_base64"].startswith("data:image/png;base64,")
+def test_synthetic_sample_is_not_exposed():
+    res = client.get("/api/v1/forensics/synthetic-sample")
+
+    assert res.status_code == 404
+    assert "/api/v1/forensics/synthetic-sample" not in app.openapi()["paths"]
 
 def test_verify_endpoint():
     # Generate dummy image

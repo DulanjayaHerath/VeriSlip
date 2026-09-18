@@ -10,7 +10,6 @@ from fastapi.responses import FileResponse
 
 from api.middleware.request_tracing import RequestTracingMiddleware
 from api.routes.verify import router as verify_router
-from api.routes.forensics import router as forensics_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
 from core.observability.logging import configure_json_logging
@@ -37,7 +36,6 @@ app.add_middleware(
 
 # Include API Routers
 app.include_router(verify_router)
-app.include_router(forensics_router)
 app.include_router(whatsapp_router)
 app.include_router(reports_router)
 

@@ -158,6 +158,11 @@ curl -X POST http://127.0.0.1:8000/api/v1/verify \
 ```
 
 ### 2. WhatsApp Webhook
+The webhook accepts either the existing `image_base64` field or a WhatsApp Cloud
+API `media_id`. Media-ID downloads require `VERISLIP_WHATSAPP_ACCESS_TOKEN`, are
+kept in memory, bounded to the normal upload limit, and are sanitized before
+forensic analysis.
+
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/webhook/whatsapp \
   -H "Content-Type: application/json" \
@@ -167,6 +172,10 @@ curl -X POST http://127.0.0.1:8000/api/v1/webhook/whatsapp \
     "caption": "Customer sent this slip for order #1082"
   }'
 ```
+
+For a WhatsApp-hosted attachment, replace `image_base64` with `"media_id":
+"<numeric_media_id>"`. Configure the access token through a deployment secret;
+never place it in source control or logs.
 
 ---
 

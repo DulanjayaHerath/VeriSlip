@@ -40,6 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnSampleAuth = document.getElementById("btn-sample-auth");
   const btnSampleTamperAmt = document.getElementById("btn-sample-tamper-amt");
   const btnSampleTamperRef = document.getElementById("btn-sample-tamper-ref");
+  const btnSampleTamperPeoples = document.getElementById("btn-sample-tamper-peoples");
+  const btnSampleTamperParadox = document.getElementById("btn-sample-tamper-paradox");
 
   const bankSelect = document.getElementById("bank-select");
   const refInput = document.getElementById("ref-input");
@@ -339,7 +341,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   btnSampleAuth.addEventListener("click", () => loadSampleSlip("/static/samples/combank_authentic.png", "COMBANK"));
   btnSampleTamperAmt.addEventListener("click", () => loadSampleSlip("/static/samples/combank_tampered_amount.png", "COMBANK"));
-  btnSampleTamperRef.addEventListener("click", () => loadSampleSlip("/static/samples/boc_tampered_ref.png", "BOC"));
+  if (btnSampleTamperRef) {
+    btnSampleTamperRef.addEventListener("click", () => loadSampleSlip("/static/samples/boc_tampered_ref.png", "BOC"));
+  }
+  if (btnSampleTamperPeoples) {
+    btnSampleTamperPeoples.addEventListener("click", () => loadSampleSlip("/static/samples/peoples_tampered_arithmetic.png", "PEOPLES"));
+  }
+  if (btnSampleTamperParadox) {
+    btnSampleTamperParadox.addEventListener("click", () => loadSampleSlip("/static/samples/sampath_tampered_paradox.png", "SAMPATH"));
+  }
 
   async function loadSampleSlip(sampleUrl, bankCode) {
     setLoading(true);

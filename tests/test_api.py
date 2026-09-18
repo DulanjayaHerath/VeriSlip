@@ -8,7 +8,7 @@ import io
 from PIL import Image
 import base64
 
-client = TestClient(app)
+client = TestClient(app, headers={"X-API-Key": "test-pro-key"})
 
 def test_health():
     res = client.get("/health")
@@ -262,5 +262,4 @@ def test_rate_limiter_middleware_headers():
     assert res.status_code == 200
     assert "X-RateLimit-Limit" in res.headers
     assert "X-RateLimit-Remaining" in res.headers
-
 

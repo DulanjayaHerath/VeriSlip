@@ -13,7 +13,7 @@ from api.main import app
 from core.observability.logging import JsonLogFormatter, get_correlation_id
 
 
-client = TestClient(app)
+client = TestClient(app, headers={"X-API-Key": "test-pro-key"})
 
 
 @pytest.fixture

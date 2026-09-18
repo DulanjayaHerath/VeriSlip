@@ -1,73 +1,262 @@
-"""
-VeriSlip Rate Limiting Middleware
-Protects forensic analysis endpoints from denial-of-service and brute-force scanning.
-Implements in-memory sliding window counter with client IP tracking.
-"""
+"""API-key authentication and per-key, multi-tier rate limiting."""
 
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+import logging
+import os
+import threading
 import time
-from collections import defaultdict
-from typing import Dict, List
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
-from starlette.responses import JSONResponse
+from dataclasses import dataclass
+from typing import Callable, Dict, Mapping, Optional, Protocol, Tuple
+
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from starlette.concurrency import run_in_threadpool
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
+API_KEY_HEADER = "X-API-Key"
+API_KEY_HASHES_ENV = "VERISLIP_API_KEY_HASHES"
+logger = logging.getLogger("verislip.auth")
+
+
+@dataclass(frozen=True)
+class RateLimitPolicy:
+    """A fixed-window request quota."""
+
+    limit: int
+    window_seconds: int
+    name: str
+
+
+TIER_POLICIES: Mapping[str, RateLimitPolicy] = {
+    "free": RateLimitPolicy(limit=10, window_seconds=86_400, name="free"),
+    "pro": RateLimitPolicy(limit=100, window_seconds=60, name="pro"),
+}
+
+
+@dataclass(frozen=True)
+class RateLimitResult:
+    """Result of atomically consuming one request from a quota."""
+
+    allowed: bool
+    limit: int
+    remaining: int
+    reset_at: int
+    retry_after: int
+
+
+class RateLimitStore(Protocol):
+    """Storage contract implemented by local and distributed counters."""
+
+    def consume(
+        self, key_id: str, policy: RateLimitPolicy, now: float
+    ) -> RateLimitResult: ...
+
+
+class InMemoryRateLimitStore:
+    """Thread-safe fixed-window counters for local development and tests."""
+
+    def __init__(self) -> None:
+        self._counts: Dict[Tuple[str, int, int], int] = {}
+        self._lock = threading.Lock()
+
+    def consume(
+        self, key_id: str, policy: RateLimitPolicy, now: float
+    ) -> RateLimitResult:
+        bucket = int(now // policy.window_seconds)
+        reset_at = (bucket + 1) * policy.window_seconds
+        counter_key = (key_id, policy.window_seconds, bucket)
+        with self._lock:
+            count = self._counts.get(counter_key, 0) + 1
+            self._counts[counter_key] = count
+            if len(self._counts) > 10_000:
+                self._counts = {
+                    key: value
+                    for key, value in self._counts.items()
+                    if (key[2] + 1) * key[1] > now
+                }
+        return RateLimitResult(
+            allowed=count <= policy.limit,
+            limit=policy.limit,
+            remaining=max(0, policy.limit - count),
+            reset_at=reset_at,
+            retry_after=max(1, reset_at - int(now)),
+        )
+
+
+class RedisRateLimitStore:
+    """Redis-backed atomic counters for multi-process production deployments."""
+
+    _CONSUME_SCRIPT = """
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+end
+local ttl = redis.call('TTL', KEYS[1])
+return {count, ttl}
+"""
+
+    def __init__(self, redis_url: str) -> None:
+        try:
+            import redis
+        except ImportError as exc:  # pragma: no cover - deployment dependency guard
+            raise RuntimeError("Redis rate limiting requires the redis package.") from exc
+        self._client = redis.Redis.from_url(
+            redis_url, decode_responses=True, socket_timeout=2
+        )
+
+    def consume(
+        self, key_id: str, policy: RateLimitPolicy, now: float
+    ) -> RateLimitResult:
+        bucket = int(now // policy.window_seconds)
+        reset_at = (bucket + 1) * policy.window_seconds
+        ttl = max(1, reset_at - int(now))
+        redis_key = f"verislip:rate:{policy.name}:{key_id}:{bucket}"
+        count, stored_ttl = self._client.eval(
+            self._CONSUME_SCRIPT, 1, redis_key, ttl
+        )
+        count = int(count)
+        return RateLimitResult(
+            allowed=count <= policy.limit,
+            limit=policy.limit,
+            remaining=max(0, policy.limit - count),
+            reset_at=reset_at,
+            retry_after=max(1, int(stored_ttl)),
+        )
+
+
+class ApiKeyRegistry:
+    """Authenticate raw keys against configured SHA-256 fingerprints."""
+
+    def __init__(self, tiers_by_hash: Mapping[str, str]) -> None:
+        normalized: Dict[str, str] = {}
+        for key_hash, tier in tiers_by_hash.items():
+            normalized_hash = str(key_hash).lower()
+            if len(normalized_hash) != 64 or any(
+                character not in "0123456789abcdef" for character in normalized_hash
+            ):
+                raise ValueError("API key configuration contains an invalid SHA-256 hash.")
+            if tier not in TIER_POLICIES:
+                raise ValueError("API key configuration contains an unsupported tier.")
+            normalized[normalized_hash] = tier
+        self._tiers_by_hash = normalized
+
+    @classmethod
+    def from_environment(cls) -> "ApiKeyRegistry":
+        """Load a JSON object of SHA-256 fingerprint to tier mappings."""
+        raw_config = os.getenv(API_KEY_HASHES_ENV, "{}")
+        try:
+            parsed = json.loads(raw_config)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("API key configuration is not valid JSON.") from exc
+        if not isinstance(parsed, dict):
+            raise RuntimeError("API key configuration must be a JSON object.")
+        try:
+            return cls(parsed)
+        except ValueError as exc:
+            raise RuntimeError(str(exc)) from exc
+
+    @property
+    def is_configured(self) -> bool:
+        return bool(self._tiers_by_hash)
+
+    def authenticate(self, raw_key: str) -> Optional[Tuple[str, str]]:
+        """Return the non-secret key fingerprint and tier for a valid key."""
+        candidate_hash = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+        for configured_hash, tier in self._tiers_by_hash.items():
+            if hmac.compare_digest(candidate_hash, configured_hash):
+                return configured_hash, tier
+        return None
+
+
+def build_rate_limit_store() -> RateLimitStore:
+    """Select Redis when configured, otherwise use the local process store."""
+    redis_url = os.getenv("REDIS_URL")
+    if redis_url:
+        return RedisRateLimitStore(redis_url)
+    return InMemoryRateLimitStore()
+
+
+def _rate_headers(result: RateLimitResult) -> Dict[str, str]:
+    return {
+        "X-RateLimit-Limit": str(result.limit),
+        "X-RateLimit-Remaining": str(result.remaining),
+        "X-RateLimit-Reset": str(result.reset_at),
+    }
+
+
+class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
+    """Authenticate and rate-limit protected API routes without exposing keys."""
+
     def __init__(
         self,
         app,
-        max_requests: int = 120,
-        window_seconds: int = 60,
-        exempt_paths: List[str] = None
-    ):
+        registry: Optional[ApiKeyRegistry] = None,
+        store: Optional[RateLimitStore] = None,
+        clock: Callable[[], float] = time.time,
+        protected_prefix: str = "/api/v1",
+    ) -> None:
         super().__init__(app)
-        self.max_requests = max_requests
-        self.window_seconds = window_seconds
-        self.exempt_paths = exempt_paths or [
-            "/health",
-            "/docs",
-            "/redoc",
-            "/openapi.json",
-            "/static",
-            "/favicon.ico"
-        ]
-        self.request_records: Dict[str, List[float]] = defaultdict(list)
+        self.registry = registry or ApiKeyRegistry.from_environment()
+        self.store = store or build_rate_limit_store()
+        self.clock = clock
+        self.protected_prefix = protected_prefix
 
-    async def dispatch(self, request: Request, call_next):
-        path = request.url.path
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        path_is_protected = request.url.path == self.protected_prefix or (
+            request.url.path.startswith(f"{self.protected_prefix}/")
+        )
+        if request.method == "OPTIONS" or not path_is_protected:
+            return await call_next(request)
 
-        # Check exemptions
-        for exempt in self.exempt_paths:
-            if path.startswith(exempt):
-                return await call_next(request)
-
-        # Get client IP
-        client_ip = request.client.host if request.client else "unknown"
-        now = time.time()
-        cutoff = now - self.window_seconds
-
-        # Clean old timestamps
-        history = [ts for ts in self.request_records[client_ip] if ts > cutoff]
-        self.request_records[client_ip] = history
-
-        # Check limit
-        if len(history) >= self.max_requests:
-            retry_after = int(self.window_seconds - (now - history[0])) if history else self.window_seconds
+        if not self.registry.is_configured:
+            logger.error("auth.not_configured")
             return JSONResponse(
-                status_code=429,
-                content={
-                    "detail": "Rate limit exceeded. Too many requests.",
-                    "max_requests": self.max_requests,
-                    "window_seconds": self.window_seconds,
-                    "retry_after": max(1, retry_after)
-                },
-                headers={"Retry-After": str(max(1, retry_after))}
+                status_code=503,
+                content={"detail": "API authentication is unavailable."},
             )
 
-        # Record this request
-        self.request_records[client_ip].append(now)
+        raw_key = request.headers.get(API_KEY_HEADER)
+        if not raw_key:
+            logger.warning("auth.missing")
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "API key is required."},
+                headers={"WWW-Authenticate": "ApiKey"},
+            )
 
+        identity = self.registry.authenticate(raw_key)
+        if identity is None:
+            logger.warning("auth.invalid")
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "API key is invalid."},
+            )
+
+        key_id, tier = identity
+        policy = TIER_POLICIES[tier]
+        result = await run_in_threadpool(
+            self.store.consume, key_id, policy, self.clock()
+        )
+        headers = _rate_headers(result)
+        if not result.allowed:
+            logger.warning("rate_limit.exceeded")
+            headers["Retry-After"] = str(result.retry_after)
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded."},
+                headers=headers,
+            )
+
+        request.state.api_key_id = key_id
+        request.state.api_tier = tier
         response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(self.max_requests)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, self.max_requests - len(self.request_records[client_ip])))
+        response.headers.update(headers)
         return response

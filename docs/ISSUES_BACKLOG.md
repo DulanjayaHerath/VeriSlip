@@ -1247,7 +1247,7 @@ Use FastAPI background tasks or Celery/RQ for processing high-resolution slips w
 - [ ] Submit PR referencing this issue.
 
 
-#### #59: [BACKEND-API] Add structured JSON logging with request tracing and correlation IDs
+#### #59: [COMPLETED] [BACKEND-API] Add structured JSON logging with request tracing and correlation IDs
 * **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Low`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:low, layer:backend-api, contributions-welcome`
 
@@ -1310,7 +1310,7 @@ Enable merchants to register webhook URLs to receive verification callbacks when
 - [ ] Submit PR referencing this issue.
 
 
-#### #62: [BACKEND-API] Add image sanitization and virus/bomb prevention middleware
+#### #62: [COMPLETED] [BACKEND-API] Add image sanitization and virus/bomb prevention middleware
 * **Domain:** `Backend & Full-Stack` | **Layer:** `Backend API` | **Milestone:** `Phase 2: Core Forensics` | **Priority:** `Medium`
 * **Labels:** `domain:backend-api, milestone:phase-2, priority:medium, layer:backend-api, contributions-welcome`
 
@@ -1882,7 +1882,7 @@ Monitor request latency, layer execution times, and memory utilization.
 - [ ] Submit PR referencing this issue.
 
 
-#### #89: [INFRA-RESEARCH] Implement dual-use containment: lock down synthetic tampering generator
+#### #89: [COMPLETED] [INFRA-RESEARCH] Implement dual-use containment: lock down synthetic tampering generator
 * **Domain:** `Cloud & Security` | **Layer:** `Security` | **Milestone:** `Phase 1: Foundations` | **Priority:** `High`
 * **Labels:** `domain:infra-research, milestone:phase-1, priority:high, layer:security, contributions-welcome`
 

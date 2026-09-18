@@ -191,35 +191,30 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================
   // 3. QUICK TEST SAMPLE GENERATORS
   // ==========================================
-  btnSampleAuth.addEventListener("click", () => loadSyntheticSample("COMBANK", false));
-  btnSampleTamperAmt.addEventListener("click", () => loadSyntheticSample("COMBANK", true, "ALTER_AMOUNT"));
-  btnSampleTamperRef.addEventListener("click", () => loadSyntheticSample("COMBANK", true, "SPLICE_REFERENCE"));
+  btnSampleAuth.addEventListener("click", () => loadSampleSlip("/static/samples/combank_authentic.png", "COMBANK"));
+  btnSampleTamperAmt.addEventListener("click", () => loadSampleSlip("/static/samples/combank_tampered_amount.png", "COMBANK"));
+  btnSampleTamperRef.addEventListener("click", () => loadSampleSlip("/static/samples/boc_tampered_ref.png", "BOC"));
 
-  async function loadSyntheticSample(bankCode, tampered, tamperType = null) {
+  async function loadSampleSlip(sampleUrl, bankCode) {
     setLoading(true);
     try {
-      let url = `/api/v1/forensics/synthetic-sample?bank_code=${bankCode}&tampered=${tampered}`;
-      if (tamperType) url += `&tamper_type=${tamperType}`;
+      const res = await fetch(sampleUrl);
+      if (!res.ok) throw new Error("Failed to load sample slip asset.");
+      const blob = await res.blob();
+      const fileName = sampleUrl.split("/").pop();
+      currentImageBlob = new File([blob], fileName, { type: "image/png" });
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to generate synthetic sample.");
-      const data = await res.json();
-
-      currentBase64 = data.image_base64;
-      currentImageBlob = base64ToBlob(currentBase64);
-      currentResults = null;
-      bankSelect.value = bankCode;
-
-      if (data.metadata && data.metadata.reference_no) {
-        refInput.value = data.metadata.reference_no;
-      }
-
-      resetZoom();
-      showImagePreview(currentBase64);
-      resetVerdictCard();
-
-      // Trigger automatic scan for smooth user experience
-      runScan();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentBase64 = e.target.result;
+        currentResults = null;
+        bankSelect.value = bankCode;
+        resetZoom();
+        showImagePreview(currentBase64);
+        resetVerdictCard();
+        runScan();
+      };
+      reader.readAsDataURL(blob);
     } catch (err) {
       alert(`Error loading sample: ${err.message}`);
     } finally {
@@ -604,30 +599,26 @@ document.addEventListener("DOMContentLoaded", () => {
     batchTableBody.innerHTML = `
       <tr>
         <td colspan="8" style="text-align: center; color: var(--accent-cyan); padding: 30px;">
-          ⚡ Generating and auditing 5 realistic banking screenshots across Sri Lankan banks...
+          ⚡ Loading and auditing 5 realistic banking screenshots across Sri Lankan banks...
         </td>
       </tr>
     `;
 
     try {
-      const demoConfigs = [
-        { bank: "COMBANK", tampered: false },
-        { bank: "SAMPATH", tampered: false },
-        { bank: "COMBANK", tampered: true, type: "ALTER_AMOUNT" },
-        { bank: "BOC", tampered: true, type: "SPLICE_REFERENCE" },
-        { bank: "SEYLAN", tampered: true, type: "ALTER_AMOUNT" }
+      const demoPaths = [
+        "/static/samples/combank_authentic.png",
+        "/static/samples/sampath_authentic.png",
+        "/static/samples/combank_tampered_amount.png",
+        "/static/samples/boc_tampered_ref.png",
+        "/static/samples/seylan_tampered_amount.png"
       ];
 
       const filesToAudit = [];
-      for (let i = 0; i < demoConfigs.length; i++) {
-        const c = demoConfigs[i];
-        let u = `/api/v1/forensics/synthetic-sample?bank_code=${c.bank}&tampered=${c.tampered}`;
-        if (c.type) u += `&tamper_type=${c.type}`;
-        const res = await fetch(u);
-        const data = await res.json();
-        const blob = base64ToBlob(data.image_base64);
-        const filename = `${c.bank}_${c.tampered ? 'TAMPERED' : 'AUTHENTIC'}_${i+1}.png`;
-        filesToAudit.push(new File([blob], filename, { type: "image/png" }));
+      for (const p of demoPaths) {
+        const res = await fetch(p);
+        if (!res.ok) throw new Error(`Failed to load ${p}`);
+        const blob = await res.blob();
+        filesToAudit.push(new File([blob], p.split("/").pop(), { type: "image/png" }));
       }
 
       await handleBatchFiles(filesToAudit);
@@ -855,16 +846,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function simulateWhatsAppCheck(isTampered) {
-    const slipLabel = isTampered ? "Doctored_Slip_LKR125000.jpg" : "Authentic_ComBank_Slip.jpg";
+    const slipLabel = isTampered ? "Doctored_Slip_LKR32000.png" : "Authentic_ComBank_Slip.png";
     appendWaMessage("sent", `📷 Forwarded image: [${slipLabel}]`);
 
-    // Fetch synthetic sample first
     try {
-      const sampleRes = await fetch(`/api/v1/forensics/synthetic-sample?bank_code=COMBANK&tampered=${isTampered}&tamper_type=ALTER_AMOUNT`);
-      const sampleData = await sampleRes.json();
-      await executeWhatsAppWebhook(sampleData.image_base64, slipLabel);
+      const sampleUrl = isTampered ? "/static/samples/combank_tampered_amount.png" : "/static/samples/combank_authentic.png";
+      const sampleRes = await fetch(sampleUrl);
+      const blob = await sampleRes.blob();
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        await executeWhatsAppWebhook(e.target.result, slipLabel);
+      };
+      reader.readAsDataURL(blob);
     } catch (err) {
-      appendWaMessage("received", `Error generating test slip: ${err.message}`);
+      appendWaMessage("received", `Error loading test slip: ${err.message}`);
     }
   }
 

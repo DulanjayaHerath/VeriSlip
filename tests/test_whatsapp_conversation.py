@@ -65,11 +65,10 @@ def test_balance_uses_current_authenticated_quota(client):
     response = _message(client, phone, "balance")
 
     assert response.status_code == 200
-    remaining = response.headers["X-RateLimit-Remaining"]
     assert response.json()["reply_text"] == (
-        "Plan: pro. Requests remaining in the current window: "
-        f"{remaining}/100."
+        "Plan: free. Verification credits remaining: 5/5."
     )
+    assert response.json()["credits_remaining"] == 5
 
 
 def test_first_message_balance_includes_onboarding_and_current_quota(client):
@@ -77,9 +76,7 @@ def test_first_message_balance_includes_onboarding_and_current_quota(client):
 
     assert response.status_code == 200
     assert "Welcome to VeriSlip" in response.json()["reply_text"]
-    assert f"{response.headers['X-RateLimit-Remaining']}/100" in response.json()[
-        "reply_text"
-    ]
+    assert "5/5" in response.json()["reply_text"]
 
 
 def test_unknown_command_is_handled_gracefully(client):

@@ -185,6 +185,15 @@ state is bounded and expiring and stores only hashed seller/message identifiers.
 Deployments with multiple API workers should replace the process-local store
 with shared storage.
 
+WhatsApp receipt verification also has a merchant business-credit quota,
+separate from API-key request rate limiting. Configure the default free credits
+with `VERISLIP_WHATSAPP_FREE_VERIFICATIONS` and a public HTTPS checkout page
+with `VERISLIP_WHATSAPP_UPGRADE_URL`. Credits are reserved atomically and are
+only finalized after successful forensic analysis; failed and duplicate
+message-ID submissions are not charged. The local implementation stores only
+keyed fingerprints and is intended to be replaced by durable shared storage in
+multi-worker production deployments.
+
 ---
 
 ## 🗺️ Open-Source Roadmap & Backlog

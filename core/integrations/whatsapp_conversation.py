@@ -29,12 +29,12 @@ class Language(str, Enum):
 
 @dataclass(frozen=True)
 class QuotaSnapshot:
-    """Non-secret quota information supplied by API authentication middleware."""
+    """Non-secret merchant verification-credit information."""
 
     tier: str
     limit: int
     remaining: int
-    reset_at: int
+    used: int = 0
 
 
 @dataclass(frozen=True)
@@ -72,17 +72,17 @@ _ONBOARDING = {
 _HELP = {
     Language.ENGLISH: (
         "VeriSlip help:\n• Send a JPEG/PNG slip to verify it\n"
-        "• balance — show your current API quota\n"
+        "• balance — show your verification credits\n"
         "• English / සිංහල / தமிழ் — change language"
     ),
     Language.SINHALA: (
         "VeriSlip උදව්:\n• පරීක්ෂා කිරීමට JPEG/PNG පතක් එවන්න\n"
-        "• ශේෂය — වත්මන් API භාවිත සීමාව බලන්න\n"
+        "• ශේෂය — ඉතිරි පරීක්ෂණ ණය බලන්න\n"
         "• English / සිංහල / தமிழ் — භාෂාව වෙනස් කරන්න"
     ),
     Language.TAMIL: (
         "VeriSlip உதவி:\n• சரிபார்க்க JPEG/PNG பணச்சீட்டை அனுப்பவும்\n"
-        "• மீதம் — தற்போதைய API பயன்பாட்டு அளவைப் பார்க்கவும்\n"
+        "• மீதம் — மீதமுள்ள சரிபார்ப்பு வரவுகளைப் பார்க்கவும்\n"
         "• English / සිංහල / தமிழ் — மொழியை மாற்றவும்"
     ),
 }
@@ -142,9 +142,35 @@ def _balance_message(language: Language, quota: QuotaSnapshot) -> str:
             f"{quota.remaining}/{quota.limit}."
         )
     return (
-        f"Plan: {quota.tier}. Requests remaining in the current window: "
+        f"Plan: {quota.tier}. Verification credits remaining: "
         f"{quota.remaining}/{quota.limit}."
     )
+
+
+def duplicate_verification_message(language: Language) -> str:
+    """Return a localized reply for an idempotently ignored media message."""
+    if language is Language.SINHALA:
+        return "මෙම ගෙවීම් පත දැනටමත් සකසා ඇත. නැවත ණයක් අය නොකෙරේ."
+    if language is Language.TAMIL:
+        return "இந்த பணச்சீட்டு ஏற்கனவே செயலாக்கப்பட்டது. மீண்டும் வரவு கழிக்கப்படாது."
+    return "This payment slip message was already processed. No additional credit was charged."
+
+
+def quota_exhausted_message(
+    language: Language, upgrade_url: Optional[str]
+) -> str:
+    """Return a localized exhausted-quota response with the configured link."""
+    link = upgrade_url or "Contact VeriSlip support to upgrade."
+    if language is Language.SINHALA:
+        return f"ඔබගේ නොමිලේ පරීක්ෂණ ණය අවසන්. උත්ශ්‍රේණි කිරීමට: {link}"
+    if language is Language.TAMIL:
+        return f"உங்கள் இலவச சரிபார்ப்பு வரவுகள் முடிந்துவிட்டன. மேம்படுத்த: {link}"
+    return f"Your free verification credits are exhausted. Upgrade here: {link}"
+
+
+def quota_reached_message(language: Language, upgrade_url: Optional[str]) -> str:
+    """Notify a merchant immediately after their final free verification."""
+    return quota_exhausted_message(language, upgrade_url)
 
 
 class InMemoryConversationStore:

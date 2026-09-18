@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeView = "original";
   let currentZoom = 1.0;
   let batchDataCache = [];
+  let triageLoading = false;
   let historyPage = 1;
   let historyHasMore = false;
   let sessionApiKey = "";
@@ -1114,17 +1115,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  document.addEventListener("keydown", (e) => {
-    const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : "";
-    if (tag === "input" || tag === "textarea" || tag === "select") return;
-
-    if (e.code === "Space") {
-      e.preventDefault();
-      if (btnTriageApprove) btnTriageApprove.click();
-    } else if (e.key === "x" || e.key === "X") {
-      e.preventDefault();
-      if (btnTriageFlag) btnTriageFlag.click();
-    } else if (e.key === "1") {
+  function handleAuxiliaryShortcut(e) {
+    if (e.key === "1") {
       setView("original");
       showToast("info", "Switched to: Original Slip");
     } else if (e.key === "2") {
@@ -1150,9 +1142,27 @@ document.addEventListener("DOMContentLoaded", () => {
         btnRunScan.click();
       }
     }
+  }
+
+  function updateTriageAvailability() {
+    const unavailable = triageLoading || !currentResults;
+    if (btnTriageApprove) btnTriageApprove.disabled = unavailable;
+    if (btnTriageFlag) btnTriageFlag.disabled = unavailable;
+  }
+
+  const cleanupTriageShortcuts = window.VeriSlipTriageShortcuts.install({
+    document,
+    acceptButton: btnTriageApprove,
+    flagButton: btnTriageFlag,
+    isActionAvailable: () => !triageLoading && Boolean(currentResults),
+    onUnhandledKeydown: handleAuxiliaryShortcut
   });
+  window.addEventListener("pagehide", cleanupTriageShortcuts, { once: true });
+  updateTriageAvailability();
 
   function setLoading(isLoading) {
+    triageLoading = isLoading;
+    updateTriageAvailability();
     if (isLoading) {
       loadingSpinner.classList.remove("hidden");
     } else {

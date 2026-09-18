@@ -12,7 +12,7 @@ from api.routes import courier
 
 
 client = TestClient(app)
-HEADERS = {"X-API-Key": "test-pro-key"}
+HEADERS = {"X-API-Key": "test-courier-pro-key"}
 
 
 def _image_bytes(image_format="JPEG"):

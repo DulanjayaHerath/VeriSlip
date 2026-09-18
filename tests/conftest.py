@@ -9,6 +9,7 @@ import pytest
 TEST_API_KEYS = {
     hashlib.sha256(b"test-free-key").hexdigest(): "free",
     hashlib.sha256(b"test-pro-key").hexdigest(): "pro",
+    hashlib.sha256(b"test-courier-pro-key").hexdigest(): "pro",
 }
 os.environ["VERISLIP_API_KEY_HASHES"] = json.dumps(TEST_API_KEYS)
 os.environ.pop("REDIS_URL", None)

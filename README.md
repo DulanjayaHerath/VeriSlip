@@ -177,7 +177,28 @@ expires entries after `VERISLIP_HISTORY_RETENTION_DAYS`. Multi-worker production
 deployments should implement the provided storage boundary with a shared durable
 database while keeping the API-key fingerprint as the tenant key.
 
-### 2. WhatsApp Webhook
+### 2. Courier Rider API
+
+`POST /api/v1/courier/verify` accepts an authenticated JSON request containing
+`waybill_id`, `expected_cod_amount`, base64 JPEG/PNG `slip_base64`, and an
+optional `target_bank`. It returns a compact `can_handover_package` boolean,
+`rider_action`, safe cashier alert, risk classification, and best-effort COD
+amount comparison. The endpoint uses the shared sanitized verification pipeline;
+uploaded bytes are not persisted and detailed forensic maps are omitted.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/courier/verify \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <courier-api-key>" \
+  -d '{
+    "waybill_id": "WB-882910",
+    "expected_cod_amount": 12500,
+    "slip_base64": "<base64-jpeg-or-png>",
+    "target_bank": "COMBANK"
+  }'
+```
+
+### 3. WhatsApp Webhook
 The webhook accepts either the existing `image_base64` field or a WhatsApp Cloud
 API `media_id`. Media-ID downloads require `VERISLIP_WHATSAPP_ACCESS_TOKEN`, are
 kept in memory, bounded to the normal upload limit, and are sanitized before

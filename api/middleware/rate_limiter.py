@@ -194,6 +194,17 @@ def _rate_headers(result: RateLimitResult) -> Dict[str, str]:
 class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
     """Authenticate and rate-limit protected API routes without exposing keys."""
 
+    @staticmethod
+    def _resolve_state(app):
+        seen = set()
+        current = app
+        while current is not None and id(current) not in seen:
+            if hasattr(current, "state"):
+                return current.state
+            seen.add(id(current))
+            current = getattr(current, "app", None)
+        return None
+
     def __init__(
         self,
         app,
@@ -204,7 +215,12 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
     ) -> None:
         super().__init__(app)
         self.registry = registry or ApiKeyRegistry.from_environment()
-        self.store = store or build_rate_limit_store()
+        state = self._resolve_state(app)
+        self.store = store or getattr(state, "api_key_rate_limit_store", None)
+        if self.store is None:
+            self.store = build_rate_limit_store()
+        if state is not None:
+            state.api_key_rate_limit_store = self.store
         self.clock = clock
         self.protected_prefix = protected_prefix
 
@@ -246,8 +262,16 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
 
         key_id, tier = identity
         policy = TIER_POLICIES[tier]
+        state = self._resolve_state(self.app)
+        store = getattr(state, "api_key_rate_limit_store", self.store) if state is not None else self.store
+        self.store = store
+        # Scope quota counters to the protected route being called so a single API
+        # key can use different endpoints without exhausting another endpoint's
+        # allowance. This keeps per-key quotas predictable in long-lived apps that
+        # serve mixed workloads.
+        rate_scope = f"{key_id}:{request.url.path}"
         result = await run_in_threadpool(
-            self.store.consume, key_id, policy, self.clock()
+            self.store.consume, rate_scope, policy, self.clock()
         )
         headers = _rate_headers(result)
         if not result.allowed:

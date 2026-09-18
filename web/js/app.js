@@ -11,6 +11,20 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeView = "original";
   let currentZoom = 1.0;
   let batchDataCache = [];
+  let historyPage = 1;
+  let historyHasMore = false;
+  let sessionApiKey = "";
+
+  function getSessionApiKey() {
+    return sessionApiKey;
+  }
+
+  function protectedFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    const apiKey = getSessionApiKey();
+    if (apiKey) headers.set("X-API-Key", apiKey);
+    return fetch(url, { ...options, headers });
+  }
 
   // Tab Elements
   const tabs = document.querySelectorAll(".nav-tab");
@@ -89,6 +103,135 @@ document.addEventListener("DOMContentLoaded", () => {
   const waFileInput = document.getElementById("wa-file-input");
   const waChatText = document.getElementById("wa-chat-text");
   const waSendBtn = document.getElementById("wa-send-btn");
+
+  // Merchant history drawer
+  const historyDrawer = document.getElementById("history-drawer");
+  const historyOverlay = document.getElementById("history-overlay");
+  const btnOpenHistory = document.getElementById("btn-open-history");
+  const btnCloseHistory = document.getElementById("btn-close-history");
+  const historyApiKey = document.getElementById("history-api-key");
+  const btnSaveHistoryKey = document.getElementById("btn-save-history-key");
+  const historyFilters = document.getElementById("history-filters");
+  const historyReference = document.getElementById("history-reference");
+  const historyDateFrom = document.getElementById("history-date-from");
+  const historyDateTo = document.getElementById("history-date-to");
+  const btnClearHistoryFilters = document.getElementById("btn-clear-history-filters");
+  const historyStatus = document.getElementById("history-status");
+  const historyList = document.getElementById("history-list");
+  const historyPagination = document.getElementById("history-pagination");
+  const historyPrev = document.getElementById("history-prev");
+  const historyNext = document.getElementById("history-next");
+  const historyPageLabel = document.getElementById("history-page-label");
+
+  function setHistoryOpen(open) {
+    historyDrawer.classList.toggle("open", open);
+    historyDrawer.setAttribute("aria-hidden", String(!open));
+    historyOverlay.hidden = !open;
+    document.body.classList.toggle("drawer-open", open);
+    if (open) {
+      historyApiKey.value = getSessionApiKey();
+      if (getSessionApiKey()) loadHistory();
+      else {
+        historyList.replaceChildren();
+        historyPagination.hidden = true;
+        historyStatus.textContent = "Enter your API access key to load this merchant's history.";
+      }
+    }
+  }
+
+  function historyFiltersActive() {
+    return Boolean(historyReference.value.trim() || historyDateFrom.value || historyDateTo.value);
+  }
+
+  function renderHistory(items) {
+    historyList.replaceChildren();
+    items.forEach(item => {
+      const card = document.createElement("article");
+      card.className = "history-item";
+      const top = document.createElement("div");
+      top.className = "history-item-top";
+      const ref = document.createElement("strong");
+      ref.textContent = item.reference_no || "No reference supplied";
+      const verdict = document.createElement("span");
+      verdict.className = `history-verdict history-verdict-${item.verdict.toLowerCase().replace(/[^a-z_]/g, "")}`;
+      verdict.textContent = item.verdict.replaceAll("_", " ");
+      top.append(ref, verdict);
+      const meta = document.createElement("p");
+      const timestamp = new Date(item.created_at).toLocaleString();
+      meta.textContent = `${timestamp} · ${item.bank_name || item.bank_code || "Bank not identified"}`;
+      const risk = document.createElement("p");
+      risk.className = "history-risk";
+      risk.textContent = `Tamper risk: ${Number(item.tamper_risk_percentage).toFixed(1)}%`;
+      card.append(top, meta, risk);
+      historyList.append(card);
+    });
+  }
+
+  async function loadHistory() {
+    if (!getSessionApiKey()) {
+      historyStatus.textContent = "Enter your API access key to load history.";
+      return;
+    }
+    historyStatus.textContent = "Loading verification history…";
+    historyList.replaceChildren();
+    historyPagination.hidden = true;
+    const params = new URLSearchParams({ page: String(historyPage), page_size: "20" });
+    if (historyReference.value.trim()) params.set("reference", historyReference.value.trim());
+    if (historyDateFrom.value) params.set("date_from", historyDateFrom.value);
+    if (historyDateTo.value) params.set("date_to", historyDateTo.value);
+    try {
+      const response = await protectedFetch(`/api/v1/verifications/history?${params}`);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(response.status === 401 ? "The API access key is missing or invalid." : (payload.detail || "History could not be loaded."));
+      }
+      const data = await response.json();
+      historyHasMore = data.has_more;
+      if (!data.items.length) {
+        historyStatus.textContent = historyFiltersActive()
+          ? "No verification records match these filters."
+          : "No verification history yet.";
+        return;
+      }
+      historyStatus.textContent = `${data.total} verification record${data.total === 1 ? "" : "s"}`;
+      renderHistory(data.items);
+      historyPagination.hidden = data.total <= data.page_size;
+      historyPrev.disabled = historyPage <= 1;
+      historyNext.disabled = !historyHasMore;
+      historyPageLabel.textContent = `Page ${historyPage}`;
+    } catch (error) {
+      historyStatus.textContent = error.message || "History could not be loaded. Try again.";
+    }
+  }
+
+  btnOpenHistory.addEventListener("click", () => setHistoryOpen(true));
+  btnCloseHistory.addEventListener("click", () => setHistoryOpen(false));
+  historyOverlay.addEventListener("click", () => setHistoryOpen(false));
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && historyDrawer.classList.contains("open")) setHistoryOpen(false);
+  });
+  btnSaveHistoryKey.addEventListener("click", () => {
+    const key = historyApiKey.value.trim();
+    sessionApiKey = key;
+    historyPage = 1;
+    loadHistory();
+  });
+  historyFilters.addEventListener("submit", event => {
+    event.preventDefault();
+    historyPage = 1;
+    loadHistory();
+  });
+  btnClearHistoryFilters.addEventListener("click", () => {
+    historyFilters.reset();
+    historyPage = 1;
+    loadHistory();
+  });
+  historyPrev.addEventListener("click", () => {
+    if (historyPage > 1) { historyPage -= 1; loadHistory(); }
+  });
+  historyNext.addEventListener("click", () => {
+    if (historyHasMore) { historyPage += 1; loadHistory(); }
+  });
   // ==========================================
   // 1. TAB NAVIGATION
   // ==========================================
@@ -258,7 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (refVal) formData.append("reference_no", refVal);
 
     try {
-      const res = await fetch("/api/v1/verify", {
+      const res = await protectedFetch("/api/v1/verify", {
         method: "POST",
         body: formData
       });
@@ -280,6 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       btnDownloadReport.disabled = false;
+      if (historyDrawer.classList.contains("open")) loadHistory();
     } catch (err) {
       alert(`Analysis error: ${err.message}`);
     } finally {

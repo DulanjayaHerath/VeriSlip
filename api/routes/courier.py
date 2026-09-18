@@ -1,31 +1,51 @@
-"""
-Courier Rider Fast-Triage Endpoint (VeriSlip Layer 5 Integration)
-Optimized for mobile courier delivery apps (PromptX, Koombiyo, Domex, PickMe Flash)
-Provides instant binary decision: can_handover_package (True/False)
-"""
+"""Secure, mobile-oriented courier rider verification endpoint."""
+
+from __future__ import annotations
+
+import base64
+import binascii
+from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import Optional
-import io
-import base64
-import time
-from PIL import Image
+from starlette.concurrency import run_in_threadpool
 
-from core.forensics.unified_scorer import VeriSlipForensicEngine
+from api.routes.verify import ForensicAnalysisError, _analyze_image
+from core.security.image_sanitizer import (
+    ImageValidationError,
+    MAX_IMAGE_UPLOAD_BYTES,
+    sanitize_image_bytes,
+)
+
 
 router = APIRouter(prefix="/courier", tags=["Courier Rider Mobile API"])
-engine = VeriSlipForensicEngine()
+MAX_ENCODED_IMAGE_CHARS = ((MAX_IMAGE_UPLOAD_BYTES + 2) // 3) * 4
 
 
 class CourierVerifyRequest(BaseModel):
-    waybill_id: str = Field(..., description="Courier delivery tracking / waybill number (e.g. WB-894102)")
-    expected_cod_amount: float = Field(..., description="Expected Cash-On-Delivery total in LKR")
-    slip_base64: str = Field(..., description="Base64 encoded photo taken by delivery rider")
-    target_bank: Optional[str] = Field("COMBANK", description="Bank code")
+    """Existing JSON contract used by mobile courier applications."""
+
+    waybill_id: str = Field(
+        ..., min_length=1, max_length=128,
+        description="Courier delivery tracking / waybill number.",
+    )
+    expected_cod_amount: float = Field(
+        ..., gt=0, le=1_000_000_000,
+        description="Expected cash-on-delivery total in LKR.",
+    )
+    slip_base64: str = Field(
+        ..., min_length=1,
+        description="Base64-encoded JPEG or PNG captured by the rider.",
+    )
+    target_bank: Optional[str] = Field(
+        "COMBANK", max_length=40, description="Optional supported bank code."
+    )
 
 
 class CourierVerifyResponse(BaseModel):
+    """Compact response optimized for an immediate rider handover decision."""
+
     waybill_id: str
     can_handover_package: bool
     rider_action: str
@@ -38,54 +58,95 @@ class CourierVerifyResponse(BaseModel):
     timestamp: str
 
 
+def _decode_base64_image(encoded: str):
+    """Decode and sanitize an untrusted in-memory rider upload."""
+    raw = encoded.strip()
+    if raw.startswith("data:"):
+        prefix, separator, raw = raw.partition(",")
+        if (
+            not separator
+            or not prefix.lower().startswith("data:image/")
+            or not prefix.lower().endswith(";base64")
+        ):
+            raise ImageValidationError("Image payload is not valid base64.")
+    if len(raw) > MAX_ENCODED_IMAGE_CHARS:
+        raise ImageValidationError(
+            "Image upload exceeds the permitted size.", status_code=413
+        )
+    try:
+        image_bytes = base64.b64decode(raw, validate=True)
+    except (binascii.Error, ValueError):
+        raise ImageValidationError("Image payload is not valid base64.") from None
+    return sanitize_image_bytes(image_bytes)
+
+
+def _detected_amount(result) -> Optional[float]:
+    """Return a numeric OCR amount only when the shared extractor supplies one."""
+    value = (result.get("extracted_metadata") or {}).get("amount")
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @router.post("/verify", response_model=CourierVerifyResponse)
 async def verify_courier_delivery(payload: CourierVerifyRequest):
-    """
-    Ultra-fast mobile triage endpoint for courier delivery agents.
-    Evaluates slip authenticity and ensures transferred amount matches expected COD value.
+    """Return a fast binary package-handover decision for a sanitized slip.
+
+    Authentication, tiered rate limiting, request correlation, and structured
+    lifecycle logging are applied by the existing ``/api/v1`` middleware.
     """
     try:
-        # Decode image
-        raw_b64 = payload.slip_base64
-        if "," in raw_b64:
-            raw_b64 = raw_b64.split(",", 1)[1]
-        img_bytes = base64.b64decode(raw_b64)
-        image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image format: {str(e)}")
+        image = await run_in_threadpool(_decode_base64_image, payload.slip_base64)
+    except ImageValidationError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail) from None
 
-    # Run forensic pipeline
-    result = engine.analyze(pil_image=image, bank_code=payload.target_bank, include_heatmaps=False)
-    risk_pct = result["tamper_risk_percentage"]
-    verdict = result["verdict"]
+    try:
+        result = await run_in_threadpool(
+            _analyze_image, image, payload.target_bank, None, False
+        )
+    except ForensicAnalysisError:
+        raise HTTPException(
+            status_code=500, detail="Forensic analysis could not be completed."
+        ) from None
+    except Exception:
+        raise HTTPException(
+            status_code=500, detail="Forensic analysis could not be completed."
+        ) from None
 
-    # Check extracted financial amount
-    detected_amt = None
-    amount_mismatch = False
-    metadata = result.get("extracted_metadata") or {}
-    if metadata.get("amount") is not None:
-        try:
-            detected_amt = float(metadata["amount"])
-            if abs(detected_amt - payload.expected_cod_amount) > 1.0:
-                amount_mismatch = True
-        except (ValueError, TypeError):
-            pass
+    risk_pct = float(result["tamper_risk_percentage"])
+    verdict = str(result["verdict"])
+    detected_amount = _detected_amount(result)
+    amount_mismatch = bool(
+        detected_amount is not None
+        and abs(detected_amount - payload.expected_cod_amount) > 1.0
+    )
+    unsafe_verdict = verdict in {"SUSPICIOUS", "HIGH_RISK_TAMPERED"}
 
-    # Rider decision logic
-    if risk_pct > 45.0 or amount_mismatch:
+    if amount_mismatch:
         can_handover = False
-        if amount_mismatch:
-            action = "DO_NOT_HANDOVER_AMOUNT_MISMATCH"
-            alert = f"Slip shows LKR {detected_amt:,.2f} but package COD is LKR {payload.expected_cod_amount:,.2f}."
-        else:
-            action = "DO_NOT_HANDOVER_SUSPECTED_FORGERY"
-            alert = f"High forgery risk ({risk_pct:.1f}%). Tampered slip detected."
+        action = "DO_NOT_HANDOVER_AMOUNT_MISMATCH"
+        alert = (
+            f"Slip shows LKR {detected_amount:,.2f} but package COD is "
+            f"LKR {payload.expected_cod_amount:,.2f}."
+        )
+    elif unsafe_verdict or risk_pct > 45.0:
+        can_handover = False
+        action = "DO_NOT_HANDOVER_SUSPECTED_FORGERY"
+        alert = f"High forgery risk ({risk_pct:.1f}%). Verify with the cashier."
     else:
         can_handover = True
         action = "HANDOVER_PACKAGE_CONFIRMED"
         alert = None
 
-    risk_level = "SAFE" if risk_pct < 25.0 else "SUSPICIOUS" if risk_pct <= 45.0 else "FRAUDULENT"
+    if verdict == "HIGH_RISK_TAMPERED" or risk_pct > 45.0:
+        risk_level = "FRAUDULENT"
+    elif verdict == "SUSPICIOUS" or risk_pct >= 25.0:
+        risk_level = "SUSPICIOUS"
+    else:
+        risk_level = "SAFE"
 
     return CourierVerifyResponse(
         waybill_id=payload.waybill_id,
@@ -95,7 +156,7 @@ async def verify_courier_delivery(payload: CourierVerifyRequest):
         risk_level=risk_level,
         risk_percentage=risk_pct,
         expected_amount=payload.expected_cod_amount,
-        detected_amount=detected_amt,
+        detected_amount=detected_amount,
         amount_mismatch=amount_mismatch,
-        timestamp=result.get("timestamp", str(time.time()))
+        timestamp=datetime.now(timezone.utc).isoformat(),
     )

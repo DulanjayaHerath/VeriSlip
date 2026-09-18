@@ -30,3 +30,8 @@ def reset_rate_limit_store():
 def enable_internal_synthetic_generator(monkeypatch):
     """Enable internal synthetic data only for the lifetime of each test."""
     monkeypatch.setenv("VERISLIP_ENABLE_SYNTHETIC_GENERATOR", "1")
+
+
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"

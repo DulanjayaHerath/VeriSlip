@@ -24,7 +24,7 @@ def _create_synthetic_test_slip(with_copy_move: bool = False) -> np.ndarray:
     
     # Draw some structured background and text with natural line spacing
     cv2.putText(img, "COMMERCIAL BANK", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (20, 20, 100), 2)
-    cv2.putText(img, "Txn ID: CB-7821903", (30, 95), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 40, 40), 1)
+    cv2.putText(img, "Date: 2026-03-15", (30, 95), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 40, 40), 1)
     cv2.putText(img, "Paid: LKR 45,000.00", (30, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (10, 10, 10), 2)
     
     # Add a patterned logo box

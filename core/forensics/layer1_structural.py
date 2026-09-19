@@ -300,10 +300,11 @@ class Layer1StructuralValidator:
         Run full Layer 1 validation and compute structural anomaly score (0.0 = clean, 1.0 = highly anomalous).
         """
         perspective_res = self.rectify_perspective(pil_image)
-        working_image = perspective_res["warped_image"] if not perspective_res.get("used_fallback") else pil_image
-
-        metadata_res = self.analyze_metadata(working_image)
-        layout_res = self.analyze_layout_and_color(working_image, bank_code)
+        # Keep structural scoring on the source image. Rectification is exposed in
+        # the result for consumers that need a normalized document, but warping
+        # before scoring can erase metadata and alter branding/color evidence.
+        metadata_res = self.analyze_metadata(pil_image)
+        layout_res = self.analyze_layout_and_color(pil_image, bank_code)
         
         ref_res = None
         if reference_no:

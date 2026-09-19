@@ -73,11 +73,26 @@ def _extract_pades_block(pdf_bytes: bytes) -> Tuple[bytes, bytes, Optional[bytes
         return pdf_bytes, b"", None
 
     payload_prefix = pdf_bytes[:marker_index]
+    if payload_prefix.endswith(b"\r\n"):
+        payload_prefix = payload_prefix[:-2]
+    elif payload_prefix.endswith(b"\n"):
+        payload_prefix = payload_prefix[:-1]
+
     remaining = pdf_bytes[marker_index + len(SIGNATURE_MARKER) :]
 
     sig_match = re.search(rb"sig=([A-Za-z0-9+/=]+)", remaining)
     cert_match = re.search(rb"cert=([A-Za-z0-9+/=]+)", remaining)
     tsa_match = re.search(rb"tsa=([A-Za-z0-9+/=]+)", remaining)
+    issued_match = re.search(rb"issued=([0-9T:Z-]+)", remaining)
+
+    # Check for trailing tampering appended after the signature block
+    last_end = 0
+    for m in (sig_match, cert_match, tsa_match, issued_match):
+        if m and m.end() > last_end:
+            last_end = m.end()
+
+    if last_end > 0 and remaining[last_end:].strip():
+        return payload_prefix, b"", None
 
     signature = base64.b64decode(sig_match.group(1)) if sig_match else b""
     cert_data = base64.b64decode(cert_match.group(1)) if cert_match else b""

@@ -275,5 +275,7 @@ def generate_pdf_report(req: AuditReportRequest):
             media_type="application/pdf",
             headers={"Content-Disposition": f'attachment; filename="VeriSlip_Audit_{doc_id}.pdf"'}
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")

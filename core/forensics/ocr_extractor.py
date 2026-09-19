@@ -21,11 +21,46 @@ import shutil
 
 NATIVE_OCR_BIN = os.path.abspath(os.path.join(os.path.dirname(__file__), "bin", "apple_vision_ocr"))
 SWIFT_SOURCE = os.path.abspath(os.path.join(os.path.dirname(__file__), "apple_vision_ocr.swift"))
+SINHALA_UNICODE_START = 0x0D80
+SINHALA_UNICODE_END = 0x0DFF
+TAMIL_UNICODE_START = 0x0B80
+TAMIL_UNICODE_END = 0x0BFF
+
 
 class ReceiptFieldExtractor:
     """Extracts structured financial transaction fields from slip screenshots."""
 
+    @staticmethod
+    def detect_script_from_text(text: str) -> str:
+        """Map OCR text to the most likely script for multilingual extraction."""
+        if not text:
+            return "und"
+        if any(chr(SINHALA_UNICODE_START) <= ch <= chr(SINHALA_UNICODE_END) for ch in text):
+            return "sin"
+        if any(chr(TAMIL_UNICODE_START) <= ch <= chr(TAMIL_UNICODE_END) for ch in text):
+            return "tam"
+        return "eng"
+
+    def resolve_supported_languages(self, text: str = "") -> List[str]:
+        """Return ordered OCR language hints for a mixed-English/Sinhala/Tamil receipt."""
+        languages = ["eng"]
+        if not text:
+            return languages
+
+        scripts = set()
+        for chunk in str(text).split():
+            script = self.detect_script_from_text(chunk)
+            if script != "und":
+                scripts.add(script)
+
+        if "sin" in scripts:
+            languages.append("sin")
+        if "tam" in scripts:
+            languages.append("tam")
+        return list(dict.fromkeys(languages))
+
     def __init__(self):
+        self.supported_languages = ["eng", "sin", "tam"]
         if not os.path.exists(NATIVE_OCR_BIN) and os.path.exists(SWIFT_SOURCE) and shutil.which("swiftc"):
             try:
                 os.makedirs(os.path.dirname(NATIVE_OCR_BIN), exist_ok=True)
@@ -55,11 +90,14 @@ class ReceiptFieldExtractor:
                     )
                     if proc.returncode == 0 and proc.stdout.strip():
                         tokens = json.loads(proc.stdout.strip())
+                        for token in tokens:
+                            text = str(token.get("text", "") or "")
+                            token["script"] = self.detect_script_from_text(text)
                         return tokens
                 finally:
                     if os.path.exists(tmp_path):
                         os.remove(tmp_path)
-            except Exception as e:
+            except Exception:
                 pass
 
         # Fallback: Morphological word/line detection
@@ -68,7 +106,7 @@ class ReceiptFieldExtractor:
         gray = cv2.cvtColor(cv2_img, cv2.COLOR_BGR2GRAY)
         lines = self.detect_text_lines(gray, 0, h)
         return [
-            {"text": "", "confidence": 0.5, "x": box[0], "y": box[1], "w": box[2], "h": box[3]}
+            {"text": "", "confidence": 0.5, "x": box[0], "y": box[1], "w": box[2], "h": box[3], "script": "und"}
             for box in lines
         ]
 
@@ -138,6 +176,8 @@ class ReceiptFieldExtractor:
         # 1. Extract OCR tokens
         ocr_tokens = self.extract_ocr_tokens(pil_image)
         combined_text = " ".join([t.get("text", "") for t in ocr_tokens if t.get("text")])
+        ocr_languages = self.resolve_supported_languages(combined_text)
+        primary_script = self.detect_script_from_text(combined_text)
 
         # 2. Detect Bank Template (prioritize OCR text, then visual color matching)
         if bank_hint and bank_hint in BANK_TEMPLATES:
@@ -179,6 +219,8 @@ class ReceiptFieldExtractor:
             "bank_name": bank_meta["bank_name"],
             "bank_confidence": bank_conf,
             "currency": bank_meta.get("currency", "LKR"),
+            "ocr_languages": ocr_languages,
+            "primary_script": primary_script,
             "layout_geometry": {
                 "aspect_ratio": round(h / max(w, 1), 2),
                 "is_mobile_viewport": 1.4 <= (h / max(w, 1)) <= 2.4,

@@ -61,6 +61,18 @@ def test_block_artifact_grid_spliced():
     assert np.sum(res["bag_mask"]) > 0
 
 
+def test_block_artifact_grid_accepts_bbox_format():
+    """Candidate boxes can also be provided as [x1, y1, x2, y2] coordinate boxes."""
+    spliced = _create_jpeg_spliced_test_image(with_bag_splice=True)
+    analyzer = Layer2ClassicalForensics()
+
+    boxes = [{"bbox": [67, 103, 227, 183]}]
+    res = analyzer.detect_block_artifact_grid(spliced, candidate_boxes=boxes)
+
+    assert res["has_bag_anomaly"] is True
+    assert np.sum(res["bag_mask"]) > 0
+
+
 def test_block_artifact_grid_layer2_integration():
     """Layer 2 evaluate includes block_artifact_grid in output."""
     clean = _create_jpeg_spliced_test_image(with_bag_splice=False)

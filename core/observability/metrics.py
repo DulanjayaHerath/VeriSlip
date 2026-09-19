@@ -33,6 +33,7 @@ except ImportError:
 
         def register(self, metric):
             self._metrics.append(metric)
+            return metric
 
         def collect(self):
             return list(self._metrics)
@@ -141,7 +142,7 @@ except ImportError:
                 total_sum = sum(sample.observed_values)
                 for bucket in ordered_buckets:
                     bucket_labels = dict(label_values)
-                    bucket_labels["le"] = str(bucket)
+                    bucket_labels["le"] = "+Inf" if bucket == float("inf") else str(bucket)
                     count = sum(1 for value in sample.observed_values if value <= bucket)
                     lines.append(f"{self.name}_bucket{self._format_labels(bucket_labels)} {count}")
                 lines.append(f"{self.name}_sum{self._format_labels(label_values)} {total_sum}")
@@ -161,22 +162,28 @@ except ImportError:
     REGISTRY = _FallbackRegistry()
 
     class Counter(_FallbackCounter):
-        def __init__(self, name: str, documentation: str, labelnames=()):
-            super().__init__(name, documentation, labelnames)
+        def __init__(self, name: str, documentation: str, labelnames=(), **kwargs):
+            labels = labelnames or kwargs.get("label_names", ())
+            super().__init__(name, documentation, labels)
 
     class Histogram(_FallbackHistogram):
-        def __init__(self, name: str, documentation: str, labelnames=(), buckets=None):
-            super().__init__(name, documentation, labelnames, buckets)
+        def __init__(self, name: str, documentation: str, labelnames=(), buckets=None, **kwargs):
+            labels = labelnames or kwargs.get("label_names", ())
+            b = buckets if buckets is not None else kwargs.get("buckets")
+            super().__init__(name, documentation, labels, b)
 
     class Gauge(_FallbackGauge):
-        def __init__(self, name: str, documentation: str, labelnames=()):
-            super().__init__(name, documentation, labelnames)
+        def __init__(self, name: str, documentation: str, labelnames=(), **kwargs):
+            labels = labelnames or kwargs.get("label_names", ())
+            super().__init__(name, documentation, labels)
 
     def generate_latest(registry=None) -> bytes:
         metrics = registry.collect() if registry is not None else REGISTRY.collect()
         lines = []
         for metric in metrics:
-            lines.append(metric.render())
+            rendered = metric.render()
+            if rendered:
+                lines.append(rendered)
         payload = "\n".join(lines)
         if payload:
             payload += "\n"

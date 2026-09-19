@@ -2,9 +2,37 @@
 Unit tests for Layer 1: Structural & Bank Template Validation.
 """
 
+import cv2
+import numpy as np
 from PIL import Image
 from core.templates.bank_rules import validate_reference_number, identify_bank_from_text
 from core.forensics.layer1_structural import Layer1StructuralValidator
+
+
+def _make_skewed_receipt(angle_deg: int) -> Image.Image:
+    base = np.full((800, 1200, 3), 255, dtype=np.uint8)
+    cv2.rectangle(base, (120, 100), (1080, 700), (245, 245, 245), -1)
+    cv2.rectangle(base, (180, 150), (1020, 650), (235, 235, 235), -1)
+    cv2.rectangle(base, (220, 200), (980, 600), (255, 255, 255), -1)
+
+    src = np.float32([
+        [180, 150],
+        [1020, 150],
+        [1020, 650],
+        [180, 650],
+    ])
+
+    angle = np.deg2rad(angle_deg)
+    cx, cy = 600, 400
+    dst = np.float32([
+        [180 + 80 * np.sin(angle), 160],
+        [1020 + 70 * np.sin(angle), 220],
+        [980 - 80 * np.sin(angle), 660],
+        [240 - 60 * np.sin(angle), 690],
+    ])
+
+    warped = cv2.warpPerspective(base, cv2.getPerspectiveTransform(src, dst), (1200, 800))
+    return Image.fromarray(warped)
 
 def test_bank_identification():
     assert identify_bank_from_text("Commercial Bank of Ceylon Transfer") == "COMBANK"
@@ -47,3 +75,19 @@ def test_layer1_evaluator():
     assert "anomaly_score" in res
     assert "layer_name" in res
     assert res["anomaly_score"] >= 0.0
+
+
+def test_receipt_perspective_rectification_for_skewed_slips():
+    validator = Layer1StructuralValidator()
+
+    for angle in [15, 25, 35, 45]:
+        skewed = _make_skewed_receipt(angle)
+        rectified = validator.rectify_perspective(skewed)
+
+        assert rectified["used_fallback"] is False, f"Expected successful quad detection at {angle}°"
+        assert rectified["confidence"] >= 0.6, f"Expected higher confidence at {angle}°"
+        assert rectified["warped_image"].size == (827, 1169), f"Unexpected target size at {angle}°"
+
+        eval_res = validator.evaluate(skewed, bank_code="GENERIC_CEFTS")
+        assert "perspective_analysis" in eval_res
+        assert eval_res["perspective_analysis"]["confidence"] >= 0.6

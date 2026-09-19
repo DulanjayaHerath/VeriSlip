@@ -24,100 +24,8 @@ except ImportError:
     PROMETHEUS_AVAILABLE = False
     CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
 
-    def _format_labels(labels):
-        if not labels:
-            return ""
-        return "{" + ",".join(f'{key}="{value}"' for key, value in labels.items()) + "}"
-
-    class _BoundMetric:
-        def __init__(self, metric, labels):
-            self.metric = metric
-            self.labels_map = labels or {}
-
-        def inc(self, amount: float = 1.0, **kwargs):
-            self.metric._inc(self.labels_map, amount)
-
-        def observe(self, amount: float, **kwargs):
-            self.metric._observe(self.labels_map, amount)
-
-        def set(self, value: float, **kwargs):
-            self.metric._set(self.labels_map, value)
-
-    class _FallbackMetric:
-        def __init__(self, name, documentation, label_names=(), metric_type="counter", buckets=None):
-            self.name = name
-            self.documentation = documentation
-            self.label_names = list(label_names)
-            self.metric_type = metric_type
-            self.buckets = list(buckets or [])
-            self._values = {}
-            self._histograms = {}
-            self._registered = False
-
-        def inc(self, amount: float = 1.0, **kwargs):
-            self._inc({}, amount)
-
-        def observe(self, amount: float, **kwargs):
-            self._observe({}, amount)
-
-        def set(self, value: float, **kwargs):
-            self._set({}, value)
-
-        def labels(self, *args, **kwargs):
-            if args:
-                raise TypeError("Positional labels are not supported in fallback metrics.")
-            ordered = {key: kwargs.get(key, "") for key in self.label_names}
-            return _BoundMetric(self, ordered)
-
-        def _label_key(self, labels):
-            ordered = tuple(str(labels.get(key, "")) for key in self.label_names)
-            return ordered
-
-        def _set(self, labels, value):
-            self._values[self._label_key(labels)] = float(value)
-
-        def _inc(self, labels, value):
-            key = self._label_key(labels)
-            self._values[key] = float(self._values.get(key, 0.0)) + float(value)
-
-        def _observe(self, labels, value):
-            value = float(value)
-            key = self._label_key(labels)
-            metric = self._histograms.setdefault(key, {"count": 0.0, "sum": 0.0, "buckets": {}})
-            metric["count"] += 1.0
-            metric["sum"] += value
-            for upper_bound in self.buckets:
-                if value <= upper_bound:
-                    metric["buckets"][upper_bound] = metric["buckets"].get(upper_bound, 0.0) + 1.0
-            metric["buckets"][float("inf")] = metric["buckets"].get(float("inf"), 0.0) + 1.0
-
-        def collect(self):
-            return self
-
-        def render(self):
-            lines = [
-                f"# HELP {self.name} {self.documentation}",
-                f"# TYPE {self.name} {self.metric_type}",
-            ]
-            if self.metric_type == "histogram":
-                for labels, metric in sorted(self._histograms.items()):
-                    label_str = _format_labels(dict(zip(self.label_names, labels)))
-                    cumulative = 0.0
-                    for upper_bound in self.buckets:
-                        cumulative += metric["buckets"].get(upper_bound, 0.0)
-                        bucket_labels = dict(zip(self.label_names, labels))
-                        bucket_labels["le"] = str(upper_bound)
-                        lines.append(f"{self.name}_bucket{_format_labels(bucket_labels)} {cumulative}")
-                    bucket_labels = dict(zip(self.label_names, labels))
-                    bucket_labels["le"] = "+Inf"
-                    lines.append(f"{self.name}_bucket{_format_labels(bucket_labels)} {metric['count']}")
-                    lines.append(f"{self.name}_sum{label_str} {metric['sum']}")
-                    lines.append(f"{self.name}_count{label_str} {metric['count']}")
-            else:
-                for labels, value in sorted(self._values.items()):
-                    label_str = _format_labels(dict(zip(self.label_names, labels)))
-                    lines.append(f"{self.name}{label_str} {value}")
-            return lines
+    def _escape_label_value(value: str) -> str:
+        return str(value).replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
 
     class _FallbackRegistry:
         def __init__(self):
@@ -130,29 +38,156 @@ except ImportError:
         def collect(self):
             return list(self._metrics)
 
-    class Counter(_FallbackMetric):
-        def __init__(self, name, documentation, label_names=None, **kwargs):
-            super().__init__(name, documentation, label_names or (), "counter")
+    class _FallbackSample:
+        def __init__(self, metric, labels):
+            self.metric = metric
+            self.labels = labels
+            self.value = 0.0
+            self.observed_values = []
+
+        def inc(self, amount: float = 1.0):
+            self.value += float(amount)
+
+        def observe(self, amount: float):
+            self.observed_values.append(float(amount))
+
+        def set(self, value: float):
+            self.value = float(value)
+
+    class _BaseFallbackMetric:
+        def __init__(self, name: str, documentation: str, labelnames=(), buckets=None):
+            self.name = name
+            self.documentation = documentation
+            self.labelnames = list(labelnames)
+            self.buckets = tuple(float(bucket) for bucket in (buckets or ()))
+            self._samples = {}
             REGISTRY.register(self)
 
-    class Gauge(_FallbackMetric):
-        def __init__(self, name, documentation, label_names=None, **kwargs):
-            super().__init__(name, documentation, label_names or (), "gauge")
-            REGISTRY.register(self)
+        def _resolve_labels(self, args, kwargs):
+            if not self.labelnames:
+                if args or kwargs:
+                    raise ValueError(f"{self.name} does not expect label values")
+                return {}
 
-    class Histogram(_FallbackMetric):
-        def __init__(self, name, documentation, label_names=None, buckets=None, **kwargs):
-            super().__init__(name, documentation, label_names or (), "histogram", buckets or [])
-            REGISTRY.register(self)
+            if args and kwargs:
+                raise ValueError(f"{self.name} cannot accept positional and keyword labels together")
+
+            if args:
+                if len(args) != len(self.labelnames):
+                    raise ValueError(f"{self.name} expects {len(self.labelnames)} label values")
+                label_values = dict(zip(self.labelnames, args))
+            else:
+                label_values = dict(kwargs)
+                missing = [name for name in self.labelnames if name not in label_values]
+                extra = [name for name in label_values if name not in self.labelnames]
+                if missing or extra:
+                    raise ValueError(f"{self.name} labels mismatch: missing={missing}, extra={extra}")
+
+            return label_values
+
+        def _default_sample(self):
+            if () not in self._samples:
+                self._samples[()] = _FallbackSample(self, {})
+            return self._samples[()]
+
+        def labels(self, *args, **kwargs):
+            label_values = self._resolve_labels(args, kwargs)
+            key = tuple(label_values.get(name) for name in self.labelnames)
+            if key not in self._samples:
+                self._samples[key] = _FallbackSample(self, label_values)
+            return self._samples[key]
+
+        def inc(self, amount: float = 1.0, *args, **kwargs):
+            sample = self.labels(*args, **kwargs) if self.labelnames else self._default_sample()
+            sample.inc(amount)
+
+        def observe(self, amount: float, *args, **kwargs):
+            sample = self.labels(*args, **kwargs) if self.labelnames else self._default_sample()
+            sample.observe(amount)
+
+        def set(self, value: float, *args, **kwargs):
+            sample = self.labels(*args, **kwargs) if self.labelnames else self._default_sample()
+            sample.set(value)
+
+        def _format_labels(self, label_values):
+            if not label_values:
+                return ""
+            return "{" + ",".join(
+                f'{name}="{_escape_label_value(str(value))}"' for name, value in label_values.items()
+            ) + "}"
+
+        def render(self):
+            raise NotImplementedError
+
+    class _FallbackCounter(_BaseFallbackMetric):
+        def render(self):
+            lines = [
+                f"# HELP {self.name} {self.documentation}",
+                f"# TYPE {self.name} counter",
+            ]
+            for sample in self._samples.values():
+                lines.append(f"{self.name}{self._format_labels(sample.labels)} {sample.value}")
+            return "\n".join(lines)
+
+    class _FallbackHistogram(_BaseFallbackMetric):
+        def render(self):
+            lines = [
+                f"# HELP {self.name} {self.documentation}",
+                f"# TYPE {self.name} histogram",
+            ]
+            ordered_buckets = list(self.buckets) + [float("inf")]
+            for sample in self._samples.values():
+                label_values = dict(sample.labels)
+                total_count = len(sample.observed_values)
+                total_sum = sum(sample.observed_values)
+                for bucket in ordered_buckets:
+                    bucket_labels = dict(label_values)
+                    bucket_labels["le"] = "+Inf" if bucket == float("inf") else str(bucket)
+                    count = sum(1 for value in sample.observed_values if value <= bucket)
+                    lines.append(f"{self.name}_bucket{self._format_labels(bucket_labels)} {count}")
+                lines.append(f"{self.name}_sum{self._format_labels(label_values)} {total_sum}")
+                lines.append(f"{self.name}_count{self._format_labels(label_values)} {total_count}")
+            return "\n".join(lines)
+
+    class _FallbackGauge(_BaseFallbackMetric):
+        def render(self):
+            lines = [
+                f"# HELP {self.name} {self.documentation}",
+                f"# TYPE {self.name} gauge",
+            ]
+            for sample in self._samples.values():
+                lines.append(f"{self.name}{self._format_labels(sample.labels)} {sample.value}")
+            return "\n".join(lines)
 
     REGISTRY = _FallbackRegistry()
 
+    class Counter(_FallbackCounter):
+        def __init__(self, name: str, documentation: str, labelnames=(), **kwargs):
+            labels = labelnames or kwargs.get("label_names", ())
+            super().__init__(name, documentation, labels)
+
+    class Histogram(_FallbackHistogram):
+        def __init__(self, name: str, documentation: str, labelnames=(), buckets=None, **kwargs):
+            labels = labelnames or kwargs.get("label_names", ())
+            b = buckets if buckets is not None else kwargs.get("buckets")
+            super().__init__(name, documentation, labels, b)
+
+    class Gauge(_FallbackGauge):
+        def __init__(self, name: str, documentation: str, labelnames=(), **kwargs):
+            labels = labelnames or kwargs.get("label_names", ())
+            super().__init__(name, documentation, labels)
+
     def generate_latest(registry=None) -> bytes:
         metrics = registry.collect() if registry is not None else REGISTRY.collect()
-        output = []
+        lines = []
         for metric in metrics:
-            output.extend(metric.render())
-        return ("\n".join(output) + "\n").encode("utf-8")
+            rendered = metric.render()
+            if rendered:
+                lines.append(rendered)
+        payload = "\n".join(lines)
+        if payload:
+            payload += "\n"
+        return payload.encode("utf-8")
 
 # HTTP Request Metrics
 HTTP_REQUESTS_TOTAL = Counter(

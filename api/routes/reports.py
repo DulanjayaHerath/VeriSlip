@@ -5,10 +5,13 @@ Produces official, cryptographically signed examination sheets using ReportLab.
 
 import io
 import hashlib
+import os
 from datetime import datetime
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
+
+from core.security.pdf_signer import sign_pdf_document
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -27,6 +30,12 @@ class AuditReportRequest(BaseModel):
     flagged_regions: list = []
     bank_name: Optional[str] = "Sri Lankan Commercial Bank"
     reference_no: Optional[str] = "N/A"
+    sign_pdf: bool = False
+    include_pades_signature: Optional[bool] = None
+    signature_reason: Optional[str] = "VeriSlip Forensic Authority"
+    tsa_url: Optional[str] = None
+    signing_certificate_pem: Optional[str] = None
+    signing_private_key_pem: Optional[str] = None
 
 @router.post("/audit-pdf")
 def generate_pdf_report(req: AuditReportRequest):
@@ -34,6 +43,10 @@ def generate_pdf_report(req: AuditReportRequest):
     Generate official, downloadable PDF Forensic Audit Certificate.
     """
     try:
+        sign_requested = req.sign_pdf or bool(req.include_pades_signature)
+        if req.include_pades_signature is False:
+            sign_requested = False
+
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer,
@@ -240,6 +253,22 @@ def generate_pdf_report(req: AuditReportRequest):
         doc.build(story)
         pdf_bytes = buffer.getvalue()
         buffer.close()
+
+        if sign_requested:
+            cert_pem = req.signing_certificate_pem or os.getenv("VERISLIP_SIGNING_CERT_PEM")
+            key_pem = req.signing_private_key_pem or os.getenv("VERISLIP_SIGNING_KEY_PEM")
+            if not cert_pem or not key_pem:
+                raise HTTPException(
+                    status_code=400,
+                    detail="PDF signing cannot be enabled without a valid certificate and private key."
+                )
+            pdf_bytes = sign_pdf_document(
+                pdf_bytes,
+                cert_pem=cert_pem,
+                private_key_pem=key_pem,
+                reason=req.signature_reason or "VeriSlip Forensic Authority",
+                tsa_url=req.tsa_url or os.getenv("VERISLIP_TSA_URL"),
+            )
 
         return Response(
             content=pdf_bytes,

@@ -26,6 +26,7 @@ class VerificationResponse(BaseModel):
     findings_summary: List[str]
     layer_breakdowns: Dict[str, Any]
     forensic_maps: Optional[Dict[str, Optional[str]]] = None
+    xai_gradcam: Optional[Dict[str, Any]] = None
     extracted_metadata: Optional[Dict[str, Any]] = None
     lankaqr_validation: Optional[Dict[str, Any]] = None
 

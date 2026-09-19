@@ -27,6 +27,7 @@ class VerificationResponse(BaseModel):
     layer_breakdowns: Dict[str, Any]
     forensic_maps: Optional[Dict[str, Optional[str]]] = None
     extracted_metadata: Optional[Dict[str, Any]] = None
+    lankaqr_validation: Optional[Dict[str, Any]] = None
 
 class ForensicJobSubmissionResponse(BaseModel):
     job_id: str

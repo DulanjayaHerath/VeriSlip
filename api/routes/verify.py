@@ -10,6 +10,12 @@ from starlette.concurrency import run_in_threadpool
 from typing import Optional, List
 from core.forensics.unified_scorer import VeriSlipForensicEngine
 from core.forensics.ocr_extractor import ReceiptFieldExtractor
+from core.forensics.utils import pil_to_cv2
+from core.templates.lankaqr_parser import (
+    detect_and_decode_qr_from_image,
+    parse_lankaqr,
+    cross_verify_lankaqr_with_receipt,
+)
 from core.security.image_sanitizer import (
     ImageValidationError,
     MAX_IMAGE_UPLOAD_BYTES,
@@ -96,6 +102,25 @@ def _analyze_image(
     except Exception:
         raise ForensicAnalysisError from None
     results["extracted_metadata"] = extracted_meta
+
+    # Cross-verify LankaQR payload if QR code is present on the slip (#122)
+    cv2_img = pil_to_cv2(pil_img)
+    qr_text = detect_and_decode_qr_from_image(cv2_img)
+    lankaqr_res = None
+    if qr_text:
+        parsed_qr = parse_lankaqr(qr_text)
+        lankaqr_res = cross_verify_lankaqr_with_receipt(
+            qr_data=parsed_qr,
+            receipt_amount=extracted_meta.get("amount"),
+            receipt_reference=reference_no or extracted_meta.get("reference_no")
+        )
+        if lankaqr_res.get("is_tampered", False):
+            results["findings_summary"].extend(lankaqr_res.get("discrepancies", []))
+            results["tamper_risk_percentage"] = max(results.get("tamper_risk_percentage", 0.0), 85.0)
+            results["verdict"] = "HIGH_RISK_TAMPERED"
+            results["verdict_color"] = "#ef4444"
+
+    results["lankaqr_validation"] = lankaqr_res
     return results
 
 

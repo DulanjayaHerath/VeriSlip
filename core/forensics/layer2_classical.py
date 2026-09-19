@@ -7,7 +7,7 @@ Layer 2 Forensics: Classical Image Forensics.
 """
 
 import io
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 import numpy as np
 from PIL import Image, ImageChops, ImageEnhance
 import cv2
@@ -162,6 +162,93 @@ class Layer2ClassicalForensics:
             "notes": notes
         }
 
+    def detect_block_artifact_grid(
+        self,
+        gray: np.ndarray,
+        candidate_boxes: Optional[List[Dict[str, Any]]] = None
+    ) -> Dict[str, Any]:
+        """
+        Block Artifact Grid (BAG) Analysis (#115).
+        Extracts 8x8 block boundary discontinuity signal across luminance channels,
+        detects grid phase displacement between text regions and background canvas,
+        and outputs a binary grid-discrepancy mask.
+        """
+        h, w = gray.shape
+        bag_mask = np.zeros((h, w), dtype=np.uint8)
+        if h < 64 or w < 64:
+            return {
+                "has_bag_anomaly": False,
+                "discrepant_regions": [],
+                "bag_mask": bag_mask,
+                "notes": []
+            }
+
+        # Step 1: Compute global background grid phase
+        global_grid = self.detect_jpeg_grid_shift(gray)
+        gx, gy = global_grid["detected_shift"]
+
+        # Step 2: Compute 8x8 block boundary discontinuity signals
+        diff_h = np.abs(gray[:, 1:] - gray[:, :-1])
+        diff_v = np.abs(gray[1:, :] - gray[:-1, :])
+
+        # Step 3: Analyze candidate boxes (or split image into regional tiles if none provided)
+        regions_to_test = []
+        if candidate_boxes:
+            for b in candidate_boxes:
+                coords = b.get("box", [0, 0, 0, 0])
+                regions_to_test.append((coords[0], coords[1], coords[2], coords[3]))
+        else:
+            # Regional 64x64 tiles
+            for ty in range(0, h - 64, 48):
+                for tx in range(0, w - 64, 48):
+                    regions_to_test.append((tx, ty, 64, 64))
+
+        discrepant_regions = []
+        for (rx, ry, rw, rh) in regions_to_test:
+            if rw < 32 or rh < 32 or ry + rh > h or rx + rw > w:
+                continue
+
+            roi_gray = gray[ry:ry+rh, rx:rx+rw]
+            local_grid = self.detect_jpeg_grid_shift(roi_gray)
+            lx, ly = local_grid["detected_shift"]
+            l_strength = local_grid["grid_periodicity_strength"]
+
+            # Convert local ROI grid phase to absolute image coordinate space
+            abs_lx = (lx + rx) % 8
+            abs_ly = (ly + ry) % 8
+
+            # Circular distance modulo 8 between local grid and global background grid
+            dx = min(abs(abs_lx - gx) % 8, 8 - (abs(abs_lx - gx) % 8))
+            dy = min(abs(abs_ly - gy) % 8, 8 - (abs(abs_ly - gy) % 8))
+
+            # True phase displacement (>= 2 pixels offset from global grid)
+            if (dx >= 2 or dy >= 2) and l_strength > 1.25:
+                discrepant_regions.append({
+                    "box": [int(rx), int(ry), int(rw), int(rh)],
+                    "local_shift": (int(abs_lx), int(abs_ly)),
+                    "global_shift": (int(gx), int(gy)),
+                    "phase_disparity": (int(dx), int(dy)),
+                    "strength": round(float(l_strength), 3),
+                    "label": "Block Artifact Grid (BAG) Phase Shift"
+                })
+                # Highlight in binary discrepancy mask
+                bag_mask[ry:ry+rh, rx:rx+rw] = 255
+
+        has_bag_anomaly = len(discrepant_regions) > 0
+        notes = []
+        if has_bag_anomaly:
+            notes.append(
+                f"Block Artifact Grid (BAG) phase shift detected across {len(discrepant_regions)} regional blocks."
+            )
+
+        return {
+            "has_bag_anomaly": has_bag_anomaly,
+            "discrepant_regions": discrepant_regions[:10],
+            "global_grid_phase": (gx, gy),
+            "bag_mask": bag_mask,
+            "notes": notes
+        }
+
     def generate_ela_heatmap(self, diff_gray: np.ndarray) -> np.ndarray:
         """
         Convert grayscale ELA difference to a normalized colored heatmap (BGR).
@@ -299,6 +386,9 @@ class Layer2ClassicalForensics:
         grid_shift_res = self.detect_jpeg_grid_shift(gray_img)
         dct_res["grid_alignment"] = grid_shift_res
 
+        # Detect Block Artifact Grid (BAG) localized phase shifts
+        bag_res = self.detect_block_artifact_grid(gray_img, boxes)
+
         # Detect copy-move forgery (ORB keypoints & block DCT)
         copymove_res = analyze_copymove_forensics(cv2_img)
 
@@ -317,6 +407,7 @@ class Layer2ClassicalForensics:
             notes.append(f"Significant compression error level discrepancies detected ({len(boxes)} anomaly regions).")
         notes.extend(dct_res["notes"])
         notes.extend(grid_shift_res["notes"])
+        notes.extend(bag_res["notes"])
         notes.extend(copymove_res.get("findings", []))
 
         return {
@@ -328,6 +419,7 @@ class Layer2ClassicalForensics:
             "double_compression_analysis": dct_res,
             "channel_decomposition": ela_channels,
             "grid_alignment": grid_shift_res,
+            "block_artifact_grid": bag_res,
             "copy_move_analysis": copymove_res,
             "heatmap_base64": cv2_to_base64(heatmap),
             "diff_gray": diff_gray,

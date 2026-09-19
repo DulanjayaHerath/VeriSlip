@@ -13,6 +13,7 @@ from PIL import Image, ImageChops, ImageEnhance
 import cv2
 from scipy.fftpack import dct
 
+from core.forensics.anti_spoof import analyze_screen_recapture
 from core.forensics.utils import pil_to_cv2, cv2_to_base64, cv2_to_pil
 from core.forensics.layer2_copymove import (
     detect_copymove_orb,
@@ -444,6 +445,7 @@ class Layer2ClassicalForensics:
 
         # Detect copy-move forgery (ORB keypoints & block DCT)
         copymove_res = analyze_copymove_forensics(cv2_img)
+        screen_spoof_res = analyze_screen_recapture(pil_image)
 
         # Calculate composite score for Layer 2
         # Normal uncompressed/uniform mobile screenshots have modest ELA variance (~0.5 - 2.5)
@@ -453,11 +455,17 @@ class Layer2ClassicalForensics:
         if boxes:
             box_risk = min(1.0, len(boxes) * 0.25 + max(b["confidence"] for b in boxes) * 0.5)
 
-        layer2_score = round(0.45 * ela_risk + 0.35 * box_risk + 0.20 * dct_res["double_compression_risk"], 3)
+        screen_spoof_risk = 0.0 if not screen_spoof_res["is_screen_recapture"] else min(1.0, screen_spoof_res["screen_spoof_confidence"])
+        layer2_score = round(
+            0.40 * ela_risk + 0.30 * box_risk + 0.15 * dct_res["double_compression_risk"] + 0.15 * screen_spoof_risk,
+            3,
+        )
 
         notes = []
         if layer2_score > 0.45:
             notes.append(f"Significant compression error level discrepancies detected ({len(boxes)} anomaly regions).")
+        if screen_spoof_res["is_screen_recapture"]:
+            notes.append("Strong display recapture / screen-Moiré signature detected in the FFT spectrum.")
         notes.extend(dct_res["notes"])
         notes.extend(grid_shift_res["notes"])
         notes.extend(bag_res["notes"])
@@ -467,6 +475,8 @@ class Layer2ClassicalForensics:
             "layer_name": "Layer 2: Classical Image Forensics (ELA & DCT)",
             "anomaly_score": layer2_score,
             "is_anomalous": layer2_score >= 0.40,
+            "is_screen_recapture": screen_spoof_res["is_screen_recapture"],
+            "screen_spoof_confidence": screen_spoof_res["screen_spoof_confidence"],
             "ela_variance": round(ela_var, 2),
             "detected_regions": boxes,
             "double_compression_analysis": dct_res,
@@ -474,6 +484,7 @@ class Layer2ClassicalForensics:
             "grid_alignment": grid_shift_res,
             "block_artifact_grid": bag_res,
             "copy_move_analysis": copymove_res,
+            "screen_spoof_analysis": screen_spoof_res,
             "heatmap_base64": cv2_to_base64(heatmap),
             "diff_gray": diff_gray,
             "findings": notes

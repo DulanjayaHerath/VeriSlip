@@ -163,6 +163,34 @@ class Layer2ClassicalForensics:
             "notes": notes
         }
 
+    @staticmethod
+    def _normalize_candidate_box(candidate: Any) -> Optional[Tuple[int, int, int, int]]:
+        """Normalize candidate ROI boxes across common project formats."""
+        if candidate is None:
+            return None
+
+        if isinstance(candidate, dict):
+            if all(k in candidate for k in ("x", "y", "w", "h")):
+                return (int(candidate["x"]), int(candidate["y"]), int(candidate["w"]), int(candidate["h"]))
+            if all(k in candidate for k in ("x1", "y1", "x2", "y2")):
+                x1, y1, x2, y2 = (int(candidate[k]) for k in ("x1", "y1", "x2", "y2"))
+                return (x1, y1, max(0, x2 - x1), max(0, y2 - y1))
+            for key in ("bbox", "box"):
+                if key in candidate:
+                    box = candidate[key]
+                    if isinstance(box, (list, tuple, np.ndarray)) and len(box) == 4:
+                        if key == "bbox":
+                            x1, y1, x2, y2 = (int(v) for v in box)
+                            return (x1, y1, max(0, x2 - x1), max(0, y2 - y1))
+                        return (int(box[0]), int(box[1]), int(box[2]), int(box[3]))
+            return None
+
+        if isinstance(candidate, (list, tuple, np.ndarray)) and len(candidate) == 4:
+            coords = [int(v) for v in candidate]
+            return (coords[0], coords[1], coords[2], coords[3])
+
+        return None
+
     def detect_block_artifact_grid(
         self,
         gray: np.ndarray,
@@ -174,6 +202,10 @@ class Layer2ClassicalForensics:
         detects grid phase displacement between text regions and background canvas,
         and outputs a binary grid-discrepancy mask.
         """
+        gray = np.asarray(gray)
+        if gray.ndim == 3:
+            if gray.shape[-1] in (1, 3, 4):
+                gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY) if gray.shape[-1] == 3 else gray[:, :, 0]
         h, w = gray.shape
         bag_mask = np.zeros((h, w), dtype=np.uint8)
         if h < 64 or w < 64:
@@ -190,9 +222,11 @@ class Layer2ClassicalForensics:
         bg_gray = gray.copy()
         if candidate_boxes:
             bg_median = int(np.median(gray))
-            for b in candidate_boxes:
-                coords = b.get("box", [0, 0, 0, 0])
-                bx, by, bw, bh = coords[0], coords[1], coords[2], coords[3]
+            for candidate in candidate_boxes:
+                box = self._normalize_candidate_box(candidate)
+                if box is None:
+                    continue
+                bx, by, bw, bh = box
                 if bw > 0 and bh > 0 and by + bh <= h and bx + bw <= w:
                     bg_gray[by:by+bh, bx:bx+bw] = bg_median
 
@@ -206,9 +240,11 @@ class Layer2ClassicalForensics:
         # Step 3: Analyze candidate boxes (or split image into regional tiles if none provided)
         regions_to_test = []
         if candidate_boxes:
-            for b in candidate_boxes:
-                coords = b.get("box", [0, 0, 0, 0])
-                regions_to_test.append((coords[0], coords[1], coords[2], coords[3]))
+            for candidate in candidate_boxes:
+                box = self._normalize_candidate_box(candidate)
+                if box is None:
+                    continue
+                regions_to_test.append(box)
         else:
             # Regional 64x64 tiles
             for ty in range(0, h - 64, 48):

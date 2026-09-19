@@ -121,7 +121,7 @@ def detect_copymove_orb(
         med_dy = float(np.median([p["dy"] for p in clustered_pairs]))
         clustered_pairs = [
             p for p in clustered_pairs
-            if abs(p["dx"] - med_dx) <= 6.0 and abs(p["dy"] - med_dy) <= 6.0
+            if abs(p["dx"] - med_dx) <= 2.5 and abs(p["dy"] - med_dy) <= 2.5
         ]
 
     detected = len(clustered_pairs) >= min_cluster_matches

@@ -18,6 +18,7 @@ from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.forensics.font_kerning import CharacterAlignmentValidator
 from core.forensics.xai_gradcam import Layer4GradCAM
 from core.ml.ensemble_model import Layer4DeepEnsemble
+from core.ml.vlm_semantic_reasoner import LightweightVisionLanguageReasoner
 from core.forensics.ocr_extractor import ReceiptFieldExtractor
 from core.forensics.utils import normalize_dimensions, pil_to_base64
 
@@ -60,6 +61,7 @@ class VeriSlipForensicEngine:
         self.layer2_occlusion = Layer2OcclusionDetector()
         self.layer3 = Layer3NoiseForensics()
         self.layer4 = Layer4DeepEnsemble()
+        self.vlm_reasoner = LightweightVisionLanguageReasoner()
         self.xai_gradcam = Layer4GradCAM(self.layer4.model)
         self.font_validator = CharacterAlignmentValidator()
         self.field_extractor = ReceiptFieldExtractor()
@@ -103,10 +105,23 @@ class VeriSlipForensicEngine:
         l1_sem_res = self.layer1_semantic.evaluate(ocr_tokens, bank_code=bank_code)
         l2_occ_res = self.layer2_occlusion.evaluate(normalized_img)
 
-        # Run Layer 4 Deep Learning Ensemble
+        # Run Layer 4 Deep Learning Ensemble and lightweight VLM semantic reasoning
         diff_gray = l2_res.get("diff_gray", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
         residual = l3_res.get("residual", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
         l4_res = self.layer4.evaluate(normalized_img, diff_gray, residual)
+        vlm_context = {
+            "bank_code": bank_code,
+            "reference_no": reference_no,
+            "branch_code": "",
+            "account_prefix": "",
+        }
+        vlm_res = self.vlm_reasoner.evaluate(
+            normalized_img,
+            ocr_tokens,
+            bank_code=bank_code,
+            reference_no=reference_no,
+            slip_context=vlm_context,
+        )
 
         xai_payload = {}
         if include_heatmaps:
@@ -120,14 +135,16 @@ class VeriSlipForensicEngine:
             w2 = tw.get("w2_classical", 0.25)
             w3 = tw.get("w3_noise", 0.25)
             w4 = tw.get("w4_ensemble", 0.30)
+            w5 = tw.get("w5_vlm", 0.10)
         else:
-            w1, w2, w3, w4 = 0.20, 0.25, 0.25, 0.30
+            w1, w2, w3, w4, w5 = 0.18, 0.225, 0.225, 0.27, 0.10
 
         weighted_risk = (
             w1 * l1_res["anomaly_score"] +
             w2 * l2_res["anomaly_score"] +
             w3 * l3_res["anomaly_score"] +
-            w4 * l4_res["anomaly_score"]
+            w4 * l4_res["anomaly_score"] +
+            w5 * vlm_res["anomaly_score"]
         )
 
         # Non-Diluting Max-Pooled Fusion:
@@ -138,7 +155,8 @@ class VeriSlipForensicEngine:
             l2_res["anomaly_score"] > 0.15 or
             l3_res["anomaly_score"] > 0.20 or
             font_res["anomaly_score"] > 0.40 or
-            l1_sem_res["anomaly_score"] > 0.40
+            l1_sem_res["anomaly_score"] > 0.40 or
+            vlm_res["is_anomalous"]
         )
         l2_occ_corroborated = (
             l1_sem_res["is_anomalous"] or
@@ -146,7 +164,8 @@ class VeriSlipForensicEngine:
             l2_res["anomaly_score"] > 0.20 or
             l3_res["anomaly_score"] > 0.25 or
             l4_res["anomaly_score"] > 0.65 or
-            font_res["anomaly_score"] > 0.40
+            font_res["anomaly_score"] > 0.40 or
+            vlm_res["is_anomalous"]
         )
         peak_signals = [
             weighted_risk,
@@ -155,7 +174,8 @@ class VeriSlipForensicEngine:
             l2_res["anomaly_score"] * 0.90 if l2_res["anomaly_score"] > 0.30 else 0.0,
             l3_res["anomaly_score"] * 0.90 if l3_res["anomaly_score"] > 0.35 else 0.0,
             l4_res["anomaly_score"] * 0.92 if (l4_res["anomaly_score"] > 0.70 and l4_corroborated) else 0.0,
-            font_res["anomaly_score"] * 0.85 if font_res["anomaly_score"] > 0.65 else 0.0
+            font_res["anomaly_score"] * 0.85 if font_res["anomaly_score"] > 0.65 else 0.0,
+            vlm_res["anomaly_score"] * 0.95 if vlm_res["is_anomalous"] else 0.0,
         ]
         composite_risk = max(peak_signals)
 
@@ -170,6 +190,9 @@ class VeriSlipForensicEngine:
         # Corroborated Occlusion override
         if l2_occ_res["is_anomalous"] and l2_occ_corroborated:
             composite_risk = max(composite_risk, l2_occ_res["anomaly_score"])
+
+        if vlm_res["is_anomalous"]:
+            composite_risk = max(composite_risk, vlm_res["anomaly_score"])
 
         # Collect candidate bounding boxes from all layers
         candidate_boxes = []
@@ -197,6 +220,9 @@ class VeriSlipForensicEngine:
         for box in l4_res.get("detected_regions", []):
             candidate_boxes.append(box)
 
+        for box in vlm_res.get("detected_regions", []):
+            candidate_boxes.append(box)
+
         if font_res.get("is_anomalous", False):
             for box in font_res.get("detected_regions", []):
                 candidate_boxes.append(box)
@@ -212,7 +238,8 @@ class VeriSlipForensicEngine:
                 l3_res["anomaly_score"] > 0.20 or
                 l4_res["anomaly_score"] > 0.65 or
                 l1_sem_res["is_anomalous"] or
-                l1_res["metadata_analysis"]["is_suspicious"]
+                l1_res["metadata_analysis"]["is_suspicious"] or
+                vlm_res["is_anomalous"]
             )
             if top_box_conf > 0.70 and has_corroborating_evidence:
                 composite_risk = max(composite_risk, 0.55 + 0.35 * top_box_conf)
@@ -252,6 +279,7 @@ class VeriSlipForensicEngine:
         all_findings.extend(l3_res.get("findings", []))
         all_findings.extend(font_res.get("findings", []))
         all_findings.extend(l4_res.get("findings", []))
+        all_findings.extend(vlm_res.get("findings", []))
 
         return {
             "verdict": verdict,
@@ -298,6 +326,13 @@ class VeriSlipForensicEngine:
                     "tamper_probability": l4_res.get("tamper_probability", 0.0),
                     "engine": l4_res.get("engine", "Deep Learning"),
                     "findings": l4_res.get("findings", [])
+                },
+                "layer4_vlm_reasoning": {
+                    "score": vlm_res["anomaly_score"],
+                    "is_anomalous": vlm_res["is_anomalous"],
+                    "confidence": vlm_res.get("confidence", 0.0),
+                    "findings": vlm_res.get("findings", []),
+                    "structured_output": vlm_res.get("structured_output", {})
                 }
             },
             "forensic_maps": {

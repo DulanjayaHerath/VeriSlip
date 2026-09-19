@@ -49,7 +49,7 @@ def test_copymove_orb_clean():
     res = detect_copymove_orb(clean_img, min_matches=6)
     assert isinstance(res, dict)
     assert "detected" in res
-    assert res["detected"] is False
+    assert not res["detected"], f"Clean slip triggered copy-move: count={res.get('match_count')}, shift={res.get('dominant_shift')}, pairs={res.get('clone_pairs')}"
     assert res["match_count"] < 6
 
 

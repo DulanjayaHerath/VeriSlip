@@ -184,7 +184,18 @@ class Layer2ClassicalForensics:
             }
 
         # Step 1: Compute global background grid phase
-        global_grid = self.detect_jpeg_grid_shift(gray)
+        # If candidate boxes are given, mask them with background median so high-contrast
+        # spliced patches cannot bias the background grid phase detection.
+        bg_gray = gray.copy()
+        if candidate_boxes:
+            bg_median = int(np.median(gray))
+            for b in candidate_boxes:
+                coords = b.get("box", [0, 0, 0, 0])
+                bx, by, bw, bh = coords[0], coords[1], coords[2], coords[3]
+                if bw > 0 and bh > 0 and by + bh <= h and bx + bw <= w:
+                    bg_gray[by:by+bh, bx:bx+bw] = bg_median
+
+        global_grid = self.detect_jpeg_grid_shift(bg_gray)
         gx, gy = global_grid["detected_shift"]
 
         # Step 2: Compute 8x8 block boundary discontinuity signals

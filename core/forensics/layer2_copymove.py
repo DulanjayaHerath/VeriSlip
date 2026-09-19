@@ -115,12 +115,13 @@ def detect_copymove_orb(
            abs(int(round(p["dy"] / shift_bin_size)) - by) <= 1
     ]
 
-    # Filter out 1D collinear same-baseline typographic repetition (repeated 0s or letters on same line)
+    # Filter out 1D collinear typographic repetition (repeated letters on same line or between 1D text lines)
     if clustered_pairs:
         src_ys = [p["src_pt"][1] for p in clustered_pairs]
-        y_span = max(src_ys) - min(src_ys)
-        avg_dy = abs(sum(p["dy"] for p in clustered_pairs) / len(clustered_pairs))
-        if avg_dy < 8.0 and y_span < 15.0:
+        dst_ys = [p["dst_pt"][1] for p in clustered_pairs]
+        src_y_span = max(src_ys) - min(src_ys)
+        dst_y_span = max(dst_ys) - min(dst_ys)
+        if src_y_span < 12.0 and dst_y_span < 12.0:
             clustered_pairs = []
 
     detected = len(clustered_pairs) >= min_cluster_matches

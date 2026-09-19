@@ -22,10 +22,10 @@ def _create_synthetic_test_slip(with_copy_move: bool = False) -> np.ndarray:
     """Create a synthetic high-contrast test image with patterned text / symbols."""
     img = np.full((300, 400, 3), 245, dtype=np.uint8)
     
-    # Draw some structured background and text
+    # Draw some structured background and text with natural line spacing
     cv2.putText(img, "COMMERCIAL BANK", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (20, 20, 100), 2)
-    cv2.putText(img, "Ref: 9847120394", (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 40, 40), 1)
-    cv2.putText(img, "Amount: LKR 45,000.00", (30, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (10, 10, 10), 2)
+    cv2.putText(img, "Ref: 9847120394", (30, 95), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (40, 40, 40), 1)
+    cv2.putText(img, "Amount: LKR 45,000.00", (30, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (10, 10, 10), 2)
     
     # Add a patterned logo box
     cv2.rectangle(img, (320, 20), (370, 70), (0, 120, 0), -1)
@@ -33,8 +33,8 @@ def _create_synthetic_test_slip(with_copy_move: bool = False) -> np.ndarray:
 
     if with_copy_move:
         # Clone a complex patch (e.g. amount text + logo) to another region
-        patch = img[100:140, 30:200].copy()
-        img[200:240, 150:320] = patch
+        patch = img[140:180, 30:200].copy()
+        img[220:260, 150:320] = patch
 
         # Also duplicate the logo
         logo_patch = img[20:70, 320:370].copy()

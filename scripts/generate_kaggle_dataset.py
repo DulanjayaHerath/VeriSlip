@@ -8,18 +8,24 @@ Outputs a clean zip archive ready to upload to Kaggle Datasets.
 
 import os
 import sys
+import csv
 import argparse
 import random
 import zipfile
 from datetime import datetime
-import pandas as pd
 import numpy as np
 from PIL import Image, ImageDraw
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+except ImportError:  # pragma: no cover - optional runtime dependency in slim installs
+    def tqdm(iterable, **kwargs):
+        return iterable
 
 # Ensure core packages can be imported
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from core.internal.print_scan_simulator import PrintScanSimulator
 from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
 from core.templates.bank_rules import BANK_TEMPLATES
 
@@ -46,7 +52,17 @@ def main():
     parser.add_argument("--samples", type=int, default=1000, help="Total number of image pairs to generate")
     parser.add_argument("--output-dir", type=str, default="verislip_dataset", help="Output directory")
     parser.add_argument("--train-ratio", type=float, default=0.8, help="Ratio for train split (remainder is validation)")
-    parser.add_argument("--zip", action="store_true", default=True, help="Create a verislip_dataset.zip archive")
+    parser.add_argument(
+        "--simulate-print-scan",
+        action="store_true",
+        help="Apply physics-based print-and-scan degradation to each generated synthetic slip.",
+    )
+    parser.add_argument(
+        "--zip",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Create a verislip_dataset.zip archive.",
+    )
     args = parser.parse_args()
 
     total_samples = args.samples
@@ -59,14 +75,16 @@ def main():
         os.makedirs(os.path.join(split_dir, "masks"), exist_ok=True)
 
     print(f"==================================================")
-    print(f"🚀 VeriSlip Synthetic Dataset Generator")
+    print("VeriSlip Synthetic Dataset Generator")
     print(f"   Target Samples : {total_samples}")
     print(f"   Train / Val    : {int(args.train_ratio * 100)}% / {int((1 - args.train_ratio) * 100)}%")
     print(f"   Output Folder  : {output_dir}")
     print(f"   Supported Banks: {', '.join(BANKS)}")
+    print(f"   Print/Scan     : {'Enabled' if args.simulate_print_scan else 'Disabled'}")
     print(f"==================================================")
 
     generator = SyntheticSlipGenerator(width=420, height=740)
+    simulator = PrintScanSimulator(seed=42) if args.simulate_print_scan else None
     records = []
 
     # Generate 50% authentic, 50% tampered
@@ -96,6 +114,8 @@ def main():
         auth_img_path = os.path.join(output_dir, split, "images", auth_fname)
         auth_mask_path = os.path.join(output_dir, split, "masks", auth_mask_fname)
 
+        if simulator is not None:
+            auth_img = simulator.simulate(auth_img)
         auth_img.save(auth_img_path, format="PNG")
         # Empty mask for authentic slip
         auth_mask = create_binary_mask(420, 740, [])
@@ -133,8 +153,10 @@ def main():
         tamp_img_path = os.path.join(output_dir, split, "images", tamp_fname)
         tamp_mask_path = os.path.join(output_dir, split, "masks", tamp_mask_fname)
 
+        if simulator is not None:
+            tampered_img = simulator.simulate(tampered_img)
         tampered_img.save(tamp_img_path, format="PNG")
-        
+
         boxes = tampered_meta.get("ground_truth_boxes", [])
         tamp_mask = create_binary_mask(420, 740, boxes)
         tamp_mask.save(tamp_mask_path, format="PNG")
@@ -159,18 +181,28 @@ def main():
 
     # Save CSV metadata
     print("\n[2/3] Exporting structured metadata CSV & dataset documentation...")
-    df = pd.DataFrame(records)
     csv_path = os.path.join(output_dir, "dataset_metadata.csv")
-    df.to_csv(csv_path, index=False)
-    print(f"  ✓ Saved metadata ledger: {csv_path} ({len(df)} total annotated items)")
+    if records:
+        fieldnames = list(records[0].keys())
+        with open(csv_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(records)
+    print(f"  Saved metadata ledger: {csv_path} ({len(records)} total annotated items)")
 
     # Write Dataset Card
+    authentic_total = sum(1 for r in records if r["is_tampered"] == 0)
+    tampered_total = sum(1 for r in records if r["is_tampered"] == 1)
+    bank_counts = {}
+    for record in records:
+        key = (record["bank_code"], record["is_tampered"])
+        bank_counts[key] = bank_counts.get(key, 0) + 1
     card_path = os.path.join(output_dir, "DATASET_CARD.md")
     with open(card_path, "w") as f:
         f.write(f"""# VeriSlip South Asian Bank Transfer Forgery Benchmark Dataset
 
 - **Generated On:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-- **Total Samples:** {len(df)} images ({len(df[df['is_tampered']==0])} Authentic, {len(df[df['is_tampered']==1])} Tampered)
+- **Total Samples:** {len(records)} images ({authentic_total} Authentic, {tampered_total} Tampered)
 - **Image Resolution:** 420 x 740 (Standard Mobile Viewport)
 - **Supported Banks:** {', '.join(BANKS)}
 - **Ground Truth Format:**
@@ -179,9 +211,9 @@ def main():
   - `dataset_metadata.csv`: Full tabular bounding box and class labels
 
 ### Class & Bank Distribution:
-{df.groupby(['bank_code', 'is_tampered']).size().to_string()}
+{chr(10).join(f'{bank_code} / tampered={int(is_tampered)} : {count}' for (bank_code, is_tampered), count in sorted(bank_counts.items()))}
 """)
-    print(f"  ✓ Created DATASET_CARD.md")
+    print(f"  Created DATASET_CARD.md")
 
     # Zip packaging
     if args.zip:
@@ -194,9 +226,9 @@ def main():
                     arcname = os.path.relpath(file_path, os.path.dirname(output_dir))
                     zipf.write(file_path, arcname)
         zip_size_mb = os.path.getsize(zip_filename) / (1024 * 1024)
-        print(f"  ✓ Compression Complete! Archive: {os.path.abspath(zip_filename)} ({zip_size_mb:.1f} MB)")
+        print(f"  Compression Complete! Archive: {os.path.abspath(zip_filename)} ({zip_size_mb:.1f} MB)")
 
-    print(f"\n✅ All Done! Ready to upload to Kaggle Datasets.")
+    print(f"\nAll Done! Ready to upload to Kaggle Datasets.")
 
 if __name__ == "__main__":
     main()

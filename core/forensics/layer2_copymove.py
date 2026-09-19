@@ -124,6 +124,18 @@ def detect_copymove_orb(
             if abs(p["dx"] - med_dx) <= 2.5 and abs(p["dy"] - med_dy) <= 2.5
         ]
 
+    # Cloned patches (amount, seal, signature, date) have 2D spatial extent;
+    # coincidental repetitions of a single font glyph (e.g. digit '0' across lines) span < 20px
+    if clustered_pairs:
+        src_xs = [p["src_pt"][0] for p in clustered_pairs]
+        src_ys = [p["src_pt"][1] for p in clustered_pairs]
+        dst_xs = [p["dst_pt"][0] for p in clustered_pairs]
+        dst_ys = [p["dst_pt"][1] for p in clustered_pairs]
+        src_span = float(np.hypot(max(src_xs) - min(src_xs), max(src_ys) - min(src_ys)))
+        dst_span = float(np.hypot(max(dst_xs) - min(dst_xs), max(dst_ys) - min(dst_ys)))
+        if src_span < 20.0 or dst_span < 20.0:
+            clustered_pairs = []
+
     detected = len(clustered_pairs) >= min_cluster_matches
     confidence = min(0.98, max(0.0, (len(clustered_pairs) - min_cluster_matches + 1) / (min_cluster_matches * 2.5))) if detected else 0.0
 

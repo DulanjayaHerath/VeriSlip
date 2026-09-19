@@ -113,7 +113,7 @@ class Layer2ClassicalForensics:
         (shift_x, shift_y) != (0, 0), introducing dual periodic boundary traces.
         """
         h, w = gray.shape
-        if h < 64 or w < 64:
+        if h < 64 or w < 64 or float(np.std(gray)) < 5.0:
             return {
                 "detected_shift": (0, 0),
                 "grid_periodicity_strength": 1.0,
@@ -204,6 +204,12 @@ class Layer2ClassicalForensics:
                     regions_to_test.append((tx, ty, 64, 64))
 
         discrepant_regions = []
+        is_targeted = bool(candidate_boxes)
+        # Targeted candidate boxes use a sensitive threshold (1.12),
+        # while blind background tile scans require higher strength (1.35)
+        # to avoid false positives from isolated text strokes.
+        required_strength = 1.12 if is_targeted else 1.35
+
         for (rx, ry, rw, rh) in regions_to_test:
             if rw < 32 or rh < 32 or ry + rh > h or rx + rw > w:
                 continue
@@ -222,7 +228,7 @@ class Layer2ClassicalForensics:
             dy = min(abs(abs_ly - gy) % 8, 8 - (abs(abs_ly - gy) % 8))
 
             # True phase displacement (>= 2 pixels offset from global grid)
-            if (dx >= 2 or dy >= 2) and l_strength > 1.25:
+            if (dx >= 2 or dy >= 2) and l_strength >= required_strength:
                 discrepant_regions.append({
                     "box": [int(rx), int(ry), int(rw), int(rh)],
                     "local_shift": (int(abs_lx), int(abs_ly)),

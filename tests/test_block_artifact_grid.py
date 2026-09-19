@@ -21,10 +21,10 @@ def _create_jpeg_spliced_test_image(with_bag_splice: bool = False) -> np.ndarray
     canvas_jpeg = cv2.imdecode(enc, cv2.IMREAD_GRAYSCALE)
 
     if with_bag_splice:
-        # Create a separate patch compressed independently at Quality 85
+        # Create a separate patch compressed independently at Quality 75
         patch = np.full((80, 160), 240, dtype=np.uint8)
         cv2.putText(patch, "FORGED 950,000", (10, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.6, 10, 2)
-        _, enc_p = cv2.imencode('.jpg', patch, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        _, enc_p = cv2.imencode('.jpg', patch, [int(cv2.IMWRITE_JPEG_QUALITY), 75])
         patch_jpeg = cv2.imdecode(enc_p, cv2.IMREAD_GRAYSCALE)
 
         # Paste at non-multiple of 8 (e.g. x=67, y=103 -> offsets (3, 7))

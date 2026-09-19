@@ -10,6 +10,7 @@ from typing import Dict, Any, List, Optional
 from PIL import Image
 import numpy as np
 
+from core.forensics.anti_spoof import analyze_screen_recapture
 from core.forensics.layer1_structural import Layer1StructuralValidator
 from core.forensics.layer1_semantic import Layer1SemanticValidator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
@@ -97,6 +98,7 @@ class VeriSlipForensicEngine:
         # Run layers 1, 2, and 3 + Font Alignment Validator
         l1_res = self.layer1.evaluate(normalized_img, bank_code=bank_code, reference_no=reference_no)
         l2_res = self.layer2.evaluate(normalized_img)
+        screen_spoof_res = analyze_screen_recapture(normalized_img)
         l3_res = self.layer3.evaluate(normalized_img)
         font_res = self.font_validator.evaluate(normalized_img)
 
@@ -139,12 +141,14 @@ class VeriSlipForensicEngine:
         else:
             w1, w2, w3, w4, w5 = 0.18, 0.225, 0.225, 0.27, 0.10
 
+        screen_spoof_weight = 0.15 if screen_spoof_res["is_screen_recapture"] else 0.0
         weighted_risk = (
             w1 * l1_res["anomaly_score"] +
             w2 * l2_res["anomaly_score"] +
             w3 * l3_res["anomaly_score"] +
             w4 * l4_res["anomaly_score"] +
-            w5 * vlm_res["anomaly_score"]
+            w5 * vlm_res["anomaly_score"] +
+            screen_spoof_weight * screen_spoof_res["screen_spoof_confidence"]
         )
 
         # Non-Diluting Max-Pooled Fusion:
@@ -307,7 +311,8 @@ class VeriSlipForensicEngine:
                     "is_anomalous": l2_res["is_anomalous"],
                     "ela_variance": l2_res["ela_variance"],
                     "findings": l2_res["findings"],
-                    "double_compression": l2_res["double_compression_analysis"]
+                    "double_compression": l2_res["double_compression_analysis"],
+                    "screen_spoof": l2_res.get("screen_spoof_analysis", screen_spoof_res)
                 },
                 "layer2_occlusion": {
                     "score": l2_occ_res["anomaly_score"],

@@ -9,14 +9,43 @@ Monitors:
 
 import time
 from typing import Dict, Any, Optional
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-    REGISTRY
-)
+try:
+    from prometheus_client import (
+        Counter,
+        Histogram,
+        Gauge,
+        generate_latest,
+        CONTENT_TYPE_LATEST,
+        REGISTRY
+    )
+    PROMETHEUS_AVAILABLE = True
+except ImportError:
+    PROMETHEUS_AVAILABLE = False
+    CONTENT_TYPE_LATEST = "text/plain; version=0.0.4; charset=utf-8"
+    REGISTRY = None
+
+    class _MockMetric:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def labels(self, *args, **kwargs):
+            return self
+
+        def inc(self, *args, **kwargs):
+            pass
+
+        def observe(self, *args, **kwargs):
+            pass
+
+        def set(self, *args, **kwargs):
+            pass
+
+    Counter = _MockMetric
+    Histogram = _MockMetric
+    Gauge = _MockMetric
+
+    def generate_latest(registry=None) -> bytes:
+        return b"# VeriSlip fallback metrics (prometheus_client not installed)\n"
 
 # HTTP Request Metrics
 HTTP_REQUESTS_TOTAL = Counter(

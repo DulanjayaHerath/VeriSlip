@@ -16,6 +16,32 @@ from core.observability.logging import JsonLogFormatter, get_correlation_id
 client = TestClient(app, headers={"X-API-Key": "test-pro-key"})
 
 
+def test_rate_limited_response_has_request_id(request_log_stream):
+    for _ in range(11):
+        response = client.get(
+            "/api/v1/analytics/overview",
+            headers={"X-Request-ID": "limited-request", "X-API-Key": "test-free-key"},
+        )
+    assert response.status_code == 429
+    assert response.headers["X-Request-ID"] == "limited-request"
+    record = _json_records(request_log_stream)[-1]
+    assert record["status_code"] == 429
+    assert record["correlation_id"] == "limited-request"
+
+
+def test_cors_preflight_has_request_id():
+    response = client.options(
+        "/api/v1/verify",
+        headers={
+            "Origin": "https://example.com",
+            "Access-Control-Request-Method": "POST",
+            "X-Request-ID": "preflight-request",
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "preflight-request"
+
+
 @pytest.fixture
 def request_log_stream():
     stream = io.StringIO()

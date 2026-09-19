@@ -121,7 +121,7 @@ def detect_copymove_orb(
         dst_ys = [p["dst_pt"][1] for p in clustered_pairs]
         src_y_span = max(src_ys) - min(src_ys)
         dst_y_span = max(dst_ys) - min(dst_ys)
-        if src_y_span < 24.0 and dst_y_span < 24.0 and len(clustered_pairs) < 12:
+        if src_y_span < 24.0 and dst_y_span < 24.0:
             clustered_pairs = []
 
     detected = len(clustered_pairs) >= min_cluster_matches

@@ -7,6 +7,7 @@ from api.main import app
 import io
 from PIL import Image
 import base64
+import pytest
 
 client = TestClient(app, headers={"X-API-Key": "test-pro-key"})
 
@@ -218,6 +219,59 @@ def test_batch_verify_rejects_invalid_item_without_leaking_details():
     item = res.json()["items"][0]
     assert item["verdict"] == "ERROR"
     assert item["recommendation"] == "File was rejected because it is invalid or unsafe."
+    assert res.json()["summary"]["avg_risk_percentage"] == 100.0
+
+
+def test_batch_average_includes_rejected_items():
+    buf = io.BytesIO()
+    Image.new("RGB", (120, 180), "white").save(buf, format="PNG")
+    res = client.post(
+        "/api/v1/batch-verify",
+        files=[
+            ("files", ("valid.png", buf.getvalue(), "image/png")),
+            ("files", ("bad.jpg", b"invalid", "image/jpeg")),
+        ],
+    )
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["items"][0]["verdict"] != "ERROR"
+    expected = round(sum(item["tamper_risk_percentage"] for item in payload["items"]) / 2, 1)
+    assert payload["summary"]["avg_risk_percentage"] == expected
+
+
+@pytest.mark.parametrize("page_size", [(4000, 100), (100, 4000), (2500, 2500)])
+def test_oversized_pdf_is_rejected_before_rendering(monkeypatch, page_size):
+    from reportlab.pdfgen import canvas
+    import pypdfium2 as pdfium
+
+    buf = io.BytesIO()
+    pdf = canvas.Canvas(buf, pagesize=page_size)
+    pdf.drawString(100, 100, "Oversized receipt")
+    pdf.save()
+    render_calls = []
+
+    def unexpected_render(*args, **kwargs):
+        render_calls.append(True)
+        raise AssertionError("Oversized PDF must not be rendered")
+
+    monkeypatch.setattr(pdfium.PdfPage, "render", unexpected_render)
+    response = client.post(
+        "/api/v1/verify",
+        files={"file": ("large.pdf", buf.getvalue(), "application/pdf")},
+    )
+    assert response.status_code == 413
+    job_response = client.post(
+        "/api/v1/verify/jobs",
+        files={"file": ("large.pdf", buf.getvalue(), "application/pdf")},
+    )
+    assert job_response.status_code == 413
+    batch_response = client.post(
+        "/api/v1/batch-verify",
+        files=[("files", ("large.pdf", buf.getvalue(), "application/pdf"))],
+    )
+    assert batch_response.status_code == 200
+    assert batch_response.json()["items"][0]["verdict"] == "ERROR"
+    assert render_calls == []
 
 def test_verify_pdf_slip_endpoint():
     from reportlab.pdfgen import canvas

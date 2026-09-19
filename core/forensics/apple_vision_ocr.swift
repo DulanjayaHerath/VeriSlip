@@ -21,6 +21,7 @@ guard let image = NSImage(contentsOf: url),
 let request = VNRecognizeTextRequest()
 request.recognitionLevel = .accurate
 request.usesLanguageCorrection = false
+request.recognitionLanguages = ["en-US", "si", "ta"]
 
 let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
 try? handler.perform([request])

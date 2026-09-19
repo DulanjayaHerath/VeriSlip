@@ -16,6 +16,7 @@ from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer2_occlusion import Layer2OcclusionDetector
 from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.forensics.font_kerning import CharacterAlignmentValidator
+from core.forensics.xai_gradcam import Layer4GradCAM
 from core.ml.ensemble_model import Layer4DeepEnsemble
 from core.forensics.ocr_extractor import ReceiptFieldExtractor
 from core.forensics.utils import normalize_dimensions, pil_to_base64
@@ -59,6 +60,7 @@ class VeriSlipForensicEngine:
         self.layer2_occlusion = Layer2OcclusionDetector()
         self.layer3 = Layer3NoiseForensics()
         self.layer4 = Layer4DeepEnsemble()
+        self.xai_gradcam = Layer4GradCAM(self.layer4.model)
         self.font_validator = CharacterAlignmentValidator()
         self.field_extractor = ReceiptFieldExtractor()
         self.calibration_path = os.environ.get("VERISLIP_CALIBRATION_PATH", "weights/calibration_profile.json")
@@ -105,6 +107,11 @@ class VeriSlipForensicEngine:
         diff_gray = l2_res.get("diff_gray", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
         residual = l3_res.get("residual", np.zeros((normalized_img.height, normalized_img.width), dtype=np.float32))
         l4_res = self.layer4.evaluate(normalized_img, diff_gray, residual)
+
+        xai_payload = {}
+        if include_heatmaps:
+            forensic_tensor = self.layer4.prepare_forensic_tensor(diff_gray, residual, (normalized_img.height, normalized_img.width), pil_image=normalized_img)
+            xai_payload = self.xai_gradcam.generate(normalized_img, forensic_input=forensic_tensor)
 
         # Multi-modal fusion weights (dynamically tuned if calibration profile is active)
         if self.calibration and "tuned_weights" in self.calibration:
@@ -296,7 +303,16 @@ class VeriSlipForensicEngine:
             "forensic_maps": {
                 "original_b64": pil_to_base64(normalized_img, format="JPEG"),
                 "ela_heatmap_base64": l2_res.get("heatmap_base64"),
-                "noise_heatmap_base64": l3_res.get("noise_heatmap_base64")
+                "noise_heatmap_base64": l3_res.get("noise_heatmap_base64"),
+                "gradcam_heatmap_base64": xai_payload.get("heatmap_base64"),
+                "gradcam_overlay_base64": xai_payload.get("overlay_base64"),
+                "counterfactual_base64": xai_payload.get("counterfactual_base64"),
             } if include_heatmaps else {},
-            "findings_summary": all_findings
+            "findings_summary": all_findings,
+            "xai_gradcam": {
+                "bbox": xai_payload.get("bbox"),
+                "iou": xai_payload.get("iou"),
+                "heatmap_base64": xai_payload.get("heatmap_base64"),
+                "counterfactual_base64": xai_payload.get("counterfactual_base64"),
+            } if include_heatmaps else {},
         }

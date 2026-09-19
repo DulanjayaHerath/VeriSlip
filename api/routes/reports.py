@@ -5,13 +5,15 @@ Produces official, cryptographically signed examination sheets using ReportLab.
 
 import io
 import hashlib
+import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from core.security.pdf_signer import sign_pdf_document
+from core.security.merkle_audit import MerkleAuditLedger
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -20,6 +22,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
 router = APIRouter(prefix="/api/v1/report", tags=["Audit Reports"])
+audit_ledger = MerkleAuditLedger()
 
 class AuditReportRequest(BaseModel):
     verdict: str
@@ -36,6 +39,9 @@ class AuditReportRequest(BaseModel):
     tsa_url: Optional[str] = None
     signing_certificate_pem: Optional[str] = None
     signing_private_key_pem: Optional[str] = None
+    slip_sha256: Optional[str] = None
+    audit_timestamp: Optional[str] = None
+    merchant_signature: Optional[str] = None
 
 @router.post("/audit-pdf")
 def generate_pdf_report(req: AuditReportRequest):
@@ -108,10 +114,19 @@ def generate_pdf_report(req: AuditReportRequest):
         story = []
 
         # Generate Document Fingerprint
-        timestamp_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+        timestamp_str = req.audit_timestamp or datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         raw_hash_data = f"{req.verdict}_{req.tamper_risk_percentage}_{timestamp_str}"
         cert_hash = hashlib.sha256(raw_hash_data.encode()).hexdigest().upper()
         doc_id = f"VS-{cert_hash[:10]}"
+        slip_sha256 = req.slip_sha256 or cert_hash.lower()
+        audit_receipt = audit_ledger.append(
+            slip_sha256=slip_sha256,
+            timestamp=timestamp_str,
+            layer_scores=req.layer_breakdowns,
+            verdict=req.verdict,
+            bounding_boxes=req.flagged_regions,
+            merchant_signature=req.merchant_signature,
+        )
 
         # Header Block
         header_data = [
@@ -248,6 +263,16 @@ def generate_pdf_report(req: AuditReportRequest):
             ('LINEABOVE', (0, 0), (-1, -1), 1, colors.HexColor('#CBD5E1')),
         ]))
         story.append(t_seal)
+        story.append(Spacer(1, 8))
+        proof_path = json.dumps(list(audit_receipt.siblings), separators=(",", ":"))
+        story.append(Paragraph(
+            "<b>MERKLE AUDIT RECEIPT</b><br/>"
+            f"Root: <font face='Courier'>{audit_receipt.root}</font><br/>"
+            f"Leaf: <font face='Courier'>{audit_receipt.leaf_hash}</font><br/>"
+            f"Entry index: {audit_receipt.index} | Proof nodes: {len(audit_receipt.siblings)}<br/>"
+            f"Proof path: <font face='Courier'>{proof_path}</font>",
+            ParagraphStyle('MerkleReceipt', parent=body_style, fontSize=7, leading=9),
+        ))
 
         # Build PDF
         doc.build(story)
@@ -277,5 +302,7 @@ def generate_pdf_report(req: AuditReportRequest):
         )
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")

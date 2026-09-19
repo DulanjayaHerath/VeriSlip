@@ -1105,23 +1105,50 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 2800);
   }
 
+  async function submitTriageFeedback(action) {
+    if (!currentBase64 || !currentResults) {
+      showToast("info", "Please load or scan a payment slip first.");
+      return;
+    }
+    const isApprove = action === "APPROVE";
+    const actionLabel = isApprove ? "Order Approved" : "Fraud Flagged";
+    const toastType = isApprove ? "success" : "danger";
+
+    try {
+      const payload = {
+        verification_id: currentResults.verification_id || null,
+        model_score: currentResults.tamper_risk_percentage || 0,
+        model_verdict: currentResults.verdict || "UNKNOWN",
+        human_action: action,
+        amount: currentResults.field_predictions?.amount || null,
+      };
+      const resp = await fetch("/api/v1/triage/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const rewardSign = data.reward >= 0 ? `+${data.reward}` : `${data.reward}`;
+        const overrideText = data.human_override ? " (Model Overridden)" : "";
+        showToast(toastType, `${actionLabel}: Human feedback recorded [Reward: ${rewardSign}]${overrideText}`);
+      } else {
+        showToast(toastType, `${actionLabel}: Local decision recorded.`);
+      }
+    } catch (err) {
+      showToast(toastType, `${actionLabel}: Local decision recorded.`);
+    }
+  }
+
   if (btnTriageApprove) {
     btnTriageApprove.addEventListener("click", () => {
-      if (!currentBase64) {
-        showToast("info", "Please load or scan a payment slip first.");
-        return;
-      }
-      showToast("success", "Order Approved: Payment slip marked verified authentic.");
+      submitTriageFeedback("APPROVE");
     });
   }
 
   if (btnTriageFlag) {
     btnTriageFlag.addEventListener("click", () => {
-      if (!currentBase64) {
-        showToast("info", "Please load or scan a payment slip first.");
-        return;
-      }
-      showToast("danger", "Fraud Flagged: Payment slip placed on fraud hold.");
+      submitTriageFeedback("FLAG_FRAUD");
     });
   }
 

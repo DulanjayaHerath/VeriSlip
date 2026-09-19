@@ -17,6 +17,7 @@ from api.routes.integrations import router as integrations_router
 from api.routes.analytics import router as analytics_router
 from api.routes.courier import router as courier_router
 from api.routes.shopify import router as shopify_router
+from api.routes.triage_feedback import router as triage_router
 from core.observability.logging import configure_json_logging
 
 configure_json_logging()
@@ -54,6 +55,7 @@ app.include_router(integrations_router)
 app.include_router(analytics_router)
 app.include_router(courier_router, prefix="/api/v1")
 app.include_router(shopify_router)
+app.include_router(triage_router)
 
 @app.get("/health")
 def health_check():

@@ -1,5 +1,12 @@
 """Forensic analysis modules for VeriSlip."""
 
+from core.forensics.anti_spoof import (
+    ScreenMoireDetector,
+    analyze_moire_pattern,
+    analyze_screen_recapture,
+    detect_screen_recapture,
+    detect_screen_spoofing,
+)
 from core.forensics.steganography import (
     BankWatermarkProfiler,
     SteganographyForensics,
@@ -12,6 +19,11 @@ from core.forensics.steganography import (
 from core.forensics.xai_gradcam import GradCAMForensics, GradCAMVisualizer, Layer4GradCAM, compute_iou
 
 __all__ = [
+    "ScreenMoireDetector",
+    "analyze_screen_recapture",
+    "detect_screen_recapture",
+    "detect_screen_spoofing",
+    "analyze_moire_pattern",
     "BankWatermarkProfiler",
     "SteganographyForensics",
     "detect_watermark_disruption",

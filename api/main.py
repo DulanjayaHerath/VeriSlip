@@ -35,7 +35,6 @@ app = FastAPI(
 )
 
 app.add_middleware(ApiKeyRateLimitMiddleware)
-app.add_middleware(RequestTracingMiddleware)
 app.add_middleware(PrometheusMetricsMiddleware)
 
 # Enable CORS for cross-origin web apps
@@ -53,6 +52,9 @@ app.add_middleware(
         "Retry-After",
     ],
 )
+
+# Added last so tracing also wraps rate-limit and CORS short-circuit responses.
+app.add_middleware(RequestTracingMiddleware)
 
 # Include API Routers
 app.include_router(verify_router)

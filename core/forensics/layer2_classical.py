@@ -14,6 +14,7 @@ import cv2
 from scipy.fftpack import dct
 
 from core.forensics.anti_spoof import analyze_screen_recapture
+from core.forensics.thermal_fade import ThermalFadeDiscriminator
 from core.forensics.utils import pil_to_cv2, cv2_to_base64, cv2_to_pil
 from core.forensics.layer2_copymove import (
     detect_copymove_orb,
@@ -27,6 +28,7 @@ class Layer2ClassicalForensics:
     def __init__(self, ela_quality: int = 90, ela_scale: float = 18.0):
         self.ela_quality = ela_quality
         self.ela_scale = ela_scale
+        self.thermal_fade = ThermalFadeDiscriminator()
 
     def detect_copymove_keypoints(self, cv2_bgr: np.ndarray, **kwargs) -> Dict[str, Any]:
         """Detect copy-move forgery using ORB/SIFT keypoints."""
@@ -446,6 +448,7 @@ class Layer2ClassicalForensics:
         # Detect copy-move forgery (ORB keypoints & block DCT)
         copymove_res = analyze_copymove_forensics(cv2_img)
         screen_spoof_res = analyze_screen_recapture(pil_image)
+        thermal_fade_res = self.thermal_fade.analyze(pil_image)
 
         # Calculate composite score for Layer 2
         # Normal uncompressed/uniform mobile screenshots have modest ELA variance (~0.5 - 2.5)
@@ -470,6 +473,7 @@ class Layer2ClassicalForensics:
         notes.extend(grid_shift_res["notes"])
         notes.extend(bag_res["notes"])
         notes.extend(copymove_res.get("findings", []))
+        notes.extend(thermal_fade_res["notes"])
 
         return {
             "layer_name": "Layer 2: Classical Image Forensics (ELA & DCT)",
@@ -485,6 +489,7 @@ class Layer2ClassicalForensics:
             "block_artifact_grid": bag_res,
             "copy_move_analysis": copymove_res,
             "screen_spoof_analysis": screen_spoof_res,
+            "thermal_fade_analysis": thermal_fade_res,
             "heatmap_base64": cv2_to_base64(heatmap),
             "diff_gray": diff_gray,
             "findings": notes

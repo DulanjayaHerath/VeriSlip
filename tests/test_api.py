@@ -144,6 +144,48 @@ def test_pdf_report_generation():
     assert res.headers["content-type"] == "application/pdf"
     assert len(res.content) > 1000
 
+
+def test_pdf_report_with_pades_signature_and_tamper_detection():
+    from core.security.pdf_signer import generate_self_signed_certificate, sign_pdf_document, verify_pdf_document
+
+    cert_pem, key_pem = generate_self_signed_certificate("VeriSlip Test Authority")
+    payload = b"%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF"
+    signed = sign_pdf_document(payload, cert_pem=cert_pem, private_key_pem=key_pem)
+
+    assert b"VERISLIP-PADES-SIGNATURE" in signed
+    assert verify_pdf_document(signed, cert_pem)
+    assert not verify_pdf_document(signed + b"\nmodified", cert_pem)
+
+    res = client.post(
+        "/api/v1/report/audit-pdf",
+        json={
+            "verdict": "AUTHENTIC",
+            "tamper_risk_percentage": 4.2,
+            "recommendation": "Proceed with merchant verification.",
+            "findings_summary": ["No significant anomaly detected"],
+            "layer_breakdowns": {"layer1_structural": {"score": 0.06, "findings": ["Normal"]}},
+            "sign_pdf": True,
+            "signature_reason": "Test legal certificate",
+            "signing_certificate_pem": cert_pem,
+            "signing_private_key_pem": key_pem,
+        },
+    )
+    assert res.status_code == 200
+    assert b"VERISLIP-PADES-SIGNATURE" in res.content
+
+
+def test_pdf_report_requires_signing_keys_when_signing_is_requested():
+    req_data = {
+        "verdict": "AUTHENTIC",
+        "tamper_risk_percentage": 0.5,
+        "recommendation": "Proceed.",
+        "sign_pdf": True,
+    }
+    res = client.post("/api/v1/report/audit-pdf", json=req_data)
+    assert res.status_code == 400
+    assert "certificate and private key" in res.json()["detail"]
+
+
 def test_batch_verify_endpoint():
     img1 = Image.new("RGB", (200, 350), color=(255, 255, 255))
     buf1 = io.BytesIO()

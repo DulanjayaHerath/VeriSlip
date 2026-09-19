@@ -3,13 +3,15 @@ Merchant Telemetry & Fraud Analytics Aggregation Endpoints for VeriSlip.
 Aggregates fraud rates, revenue protected, bank forgery distribution, and layer diagnostics.
 """
 
-from fastapi import APIRouter
-from typing import Dict, Any, List
+from fastapi import APIRouter, Query
+from typing import Dict, Any, List, Optional
 import time
 
+from core.analytics.syndicate_graph import SyndicateGraphBuilder, simulate_syndicate_ring
 from core.forensics.unified_scorer import VeriSlipForensicEngine
 
 router = APIRouter(prefix="/api/v1/analytics", tags=["Merchant Telemetry & Analytics"])
+
 
 @router.get("/overview")
 def get_analytics_overview() -> Dict[str, Any]:
@@ -52,3 +54,36 @@ def get_analytics_overview() -> Dict[str, Any]:
             "suspicious_ceiling_threshold": 54.1
         }
     }
+
+
+@router.get("/syndicate-risk")
+def get_syndicate_risk(
+    merchant_count: int = Query(default=5, ge=2, le=20, description="Synthetic ring size to evaluate."),
+    min_cluster_size: int = Query(default=2, ge=2, le=10, description="Minimum connected component size to consider a cluster."),
+) -> Dict[str, Any]:
+    """Return a graph-derived syndicate risk score and ring clusters."""
+    graph = SyndicateGraphBuilder().build_synthetic_ring(merchant_count=merchant_count)
+    clusters = graph.find_clusters(min_cluster_size=min_cluster_size)
+    risk_index = graph.compute_syndicate_risk(min_cluster_size=min_cluster_size)
+    return {
+        "status": "operational",
+        "timestamp": int(time.time()),
+        "syndicate_risk_index": round(risk_index, 4),
+        "risk_level": SyndicateGraphBuilder._risk_level(risk_index),
+        "graph_summary": {
+            "node_count": len(graph.nodes),
+            "edge_count": len(graph.edges),
+            "merchant_count": sum(1 for node in graph.nodes if node.node_type == "merchant"),
+            "account_count": sum(1 for node in graph.nodes if node.node_type == "account"),
+            "hash_count": sum(1 for node in graph.nodes if node.node_type == "hash"),
+            "transaction_count": sum(1 for node in graph.nodes if node.node_type == "transaction"),
+        },
+        "cluster_count": len(clusters),
+        "clusters": [cluster.to_dict() for cluster in clusters],
+    }
+
+
+@router.get("/syndicate-risk/simulated")
+def get_simulated_syndicate_risk() -> Dict[str, Any]:
+    """Compatibility endpoint that returns a five-merchant simulated ring payload."""
+    return simulate_syndicate_ring(merchant_count=5)

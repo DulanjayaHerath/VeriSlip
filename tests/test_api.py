@@ -264,6 +264,30 @@ def test_analytics_overview():
     assert "top_tampering_techniques" in data
 
 
+def test_syndicate_risk_endpoint_detects_ring():
+    res = client.get("/api/v1/analytics/syndicate-risk")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "operational"
+    assert data["risk_level"] in {"HIGH", "CRITICAL"}
+    assert data["cluster_count"] >= 1
+    assert data["syndicate_risk_index"] > 0.5
+    assert data["graph_summary"]["merchant_count"] >= 5
+
+
+def test_syndicate_graph_builder_detects_shared_fraud_ring():
+    from core.analytics.syndicate_graph import SyndicateGraphBuilder
+
+    graph = SyndicateGraphBuilder().build_synthetic_ring(merchant_count=5)
+    clusters = graph.find_clusters(min_cluster_size=2)
+
+    assert len(clusters) >= 1
+    assert clusters[0].shared_account_count >= 1
+    assert clusters[0].shared_hash_count >= 1
+    assert clusters[0].cluster_score > 0.5
+    assert graph.compute_syndicate_risk(min_cluster_size=2) > 0.5
+
+
 def test_courier_verify_endpoint():
     img = Image.new("RGB", (300, 600), color=(255, 255, 255))
     buf = io.BytesIO()

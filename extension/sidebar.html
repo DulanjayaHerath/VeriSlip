@@ -1,0 +1,40 @@
+<aside id="verislip-extension-panel" class="verislip-extension-panel" aria-live="polite">
+  <div class="verislip-extension-header">
+    <div>
+      <p class="verislip-extension-kicker">VeriSlip</p>
+      <h3>Quick Audit</h3>
+    </div>
+    <button type="button" class="verislip-extension-close" aria-label="Close audit panel">×</button>
+  </div>
+
+  <div class="verislip-extension-loading">
+    <span class="verislip-extension-spinner"></span>
+    <p>Running forensic checks…</p>
+  </div>
+
+  <div class="verislip-extension-body hidden">
+    <div class="verislip-extension-score-row">
+      <span class="verislip-extension-score-label">Risk score</span>
+      <strong class="verislip-extension-score" id="verislip-risk-score">0%</strong>
+    </div>
+
+    <div class="verislip-extension-meta">
+      <div>
+        <span class="verislip-extension-meta-label">Bank</span>
+        <strong class="verislip-extension-bank" id="verislip-bank-name">Unknown</strong>
+      </div>
+      <div>
+        <span class="verislip-extension-meta-label">Verdict</span>
+        <strong class="verislip-extension-verdict" id="verislip-verdict">Pending</strong>
+      </div>
+    </div>
+
+    <ul class="verislip-extension-tags" id="verislip-tamper-tags"></ul>
+
+    <button type="button" class="verislip-extension-open-cockpit" id="verislip-open-cockpit">
+      Open full Forensic Cockpit
+    </button>
+  </div>
+
+  <div class="verislip-extension-error hidden" id="verislip-extension-error"></div>
+</aside>

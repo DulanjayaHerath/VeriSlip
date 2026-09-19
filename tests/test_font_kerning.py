@@ -4,6 +4,16 @@ import cv2
 from PIL import Image
 
 from core.forensics.font_kerning import CharacterAlignmentValidator
+from core.forensics.ocr_extractor import ReceiptFieldExtractor
+
+
+def test_receipt_field_extractor_detects_multilingual_scripts():
+    """Verify Sinhala and Tamil script hints are detected for multilingual OCR runs."""
+    extractor = ReceiptFieldExtractor()
+
+    assert extractor.detect_script_from_text("සිංහල") == "sin"
+    assert extractor.detect_script_from_text("தமிழ்") == "tam"
+    assert extractor.resolve_supported_languages("සිංහල + தமிழ்") == ["eng", "sin", "tam"]
 
 
 def test_character_alignment_validator_clean_image():

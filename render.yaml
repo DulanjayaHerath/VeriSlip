@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: verislip-staging
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    region: singapore
+    branch: main
+    autoDeploy: false
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: VERISLIP_ENV
+        value: staging
+      - key: VERISLIP_API_KEY_HASHES
+        sync: false
+      - key: VERISLIP_SYNTHETIC_GENERATOR_ENABLED
+        value: "0"
+      - key: VERISLIP_JOB_WORKERS
+        value: "2"
+      - key: VERISLIP_JOB_MAX_RECORDS
+        value: "1000"
+      - key: VERISLIP_HISTORY_MAX_RECORDS
+        value: "5000"
+      - key: VERISLIP_HISTORY_RETENTION_DAYS
+        value: "90"
+      - key: VERISLIP_WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: VERISLIP_SHOPIFY_WEBHOOK_SECRET
+        sync: false
+      - key: VERISLIP_SMS_ENABLED
+        value: "0"

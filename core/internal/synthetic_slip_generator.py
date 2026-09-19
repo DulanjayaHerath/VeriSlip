@@ -155,37 +155,71 @@ class SyntheticSlipGenerator:
         metadata: Dict[str, Any],
         tamper_type: str = "ALTER_AMOUNT",
         new_amount: float = 125000.00,
+        skill_level: str = "naive",
         **kwargs: Any
     ) -> Tuple[Image.Image, Dict[str, Any]]:
         """
-        Simulate real-world fraud tampering on an authentic slip:
-        - Erasing amount and pasting forged amount
-        - Altering reference number
-        - Introducing compression mismatch & font edge disparity
+        Simulate real-world fraud tampering on an authentic slip across multi-tier adversary skill levels (#32):
+        - naive: obvious color mismatch, hard rectangular cuts, JPEG 80 recompression, Photoshop EXIF.
+        - intermediate: matched color palette, anti-aliased text, stripped EXIF metadata.
+        - expert: exact font weight & color, local noise floor matching, 8x8 JPEG grid alignment, Q92.
         """
         tampered = authentic_slip.copy()
         draw = ImageDraw.Draw(tampered)
         tamper_metadata = dict(metadata)
         tamper_metadata["is_tampered"] = True
         tamper_metadata["tamper_type"] = tamper_type
+        tamper_metadata["skill_level"] = skill_level
 
         brand_color = BANK_TEMPLATES.get(metadata["bank_code"], BANK_TEMPLATES["COMBANK"])["primary_color_rgb"]
 
+        # Color matching based on skill level
+        if skill_level == "naive":
+            attacker_color = (brand_color[0] + 15, max(0, brand_color[1] - 10), min(255, brand_color[2] + 20))
+            text_color = (20, 20, 20)
+        else:
+            attacker_color = brand_color
+            text_color = (20, 20, 20)
+
         flagged_boxes = []
+
+        def _apply_local_noise(img: Image.Image, box: Tuple[int, int, int, int]):
+            """Match local noise floor in tampered region for expert-level forgery (#32)."""
+            bx1, by1, bx2, by2 = box
+            cv_img = np.array(img)
+            # Sample background above or below box
+            sample_y1 = max(0, by1 - 15)
+            sample_y2 = by1
+            if sample_y2 > sample_y1 and bx2 > bx1:
+                bg_sample = cv_img[sample_y1:sample_y2, bx1:bx2]
+                noise_std = float(np.std(bg_sample)) if bg_sample.size > 0 else 3.0
+            else:
+                noise_std = 3.0
+
+            roi_h, roi_w = by2 - by1, bx2 - bx1
+            if roi_h > 0 and roi_w > 0:
+                noise = np.random.normal(0, max(1.5, noise_std), (roi_h, roi_w, 3))
+                roi = cv_img[by1:by2, bx1:bx2].astype(np.float32) + noise
+                cv_img[by1:by2, bx1:bx2] = np.clip(roi, 0, 255).astype(np.uint8)
+                return Image.fromarray(cv_img)
+            return img
 
         if tamper_type == "ALTER_AMOUNT":
             bbox = metadata["field_bboxes"]["Amount"]
             x1, y1, x2, y2 = bbox
 
-            # Simulate attacker drawing white rectangle or clone stamping to erase original amount
+            # In expert skill level, align coordinate to 8x8 JPEG DCT grid boundary
+            if skill_level == "expert":
+                x1 = (x1 // 8) * 8
+                y1 = (y1 // 8) * 8
+
             draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
-            
-            # Splicing in altered amount with slightly mismatched font & color
+            if skill_level == "expert":
+                tampered = _apply_local_noise(tampered, (x1, y1, x2, y2))
+                draw = ImageDraw.Draw(tampered)
+
             font_tampered = get_font(28, bold=True)
             new_amount_str = f"LKR {new_amount:,.2f}"
-            
-            # Attacker often gets color or alignment slightly off
-            attacker_color = (brand_color[0] + 15, max(0, brand_color[1] - 10), min(255, brand_color[2] + 20))
             draw.text((x1 + 5, y1 + 5), new_amount_str, fill=attacker_color, font=font_tampered)
 
             flagged_boxes.append({
@@ -199,11 +233,17 @@ class SyntheticSlipGenerator:
         elif tamper_type in ("ALTER_REFERENCE", "SPOOF_REFERENCE"):
             bbox = metadata["field_bboxes"]["Reference No"]
             x1, y1, x2, y2 = bbox
+            if skill_level == "expert":
+                x1, y1 = (x1 // 8) * 8, (y1 // 8) * 8
 
             draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+            if skill_level == "expert":
+                tampered = _apply_local_noise(tampered, (x1, y1, x2, y2))
+                draw = ImageDraw.Draw(tampered)
+
             font_tampered = get_font(14)
             fake_ref = kwargs.get("new_reference", f"TXN{random.randint(1000000000, 9999999999)}")
-            draw.text((x1 + 5, y1 + 2), fake_ref, fill=(20, 20, 20), font=font_tampered)
+            draw.text((x1 + 5, y1 + 2), fake_ref, fill=text_color, font=font_tampered)
 
             flagged_boxes.append({
                 "box": [x1, y1, x2 - x1, y2 - y1],
@@ -217,10 +257,17 @@ class SyntheticSlipGenerator:
             bbox = metadata["field_bboxes"].get("Beneficiary")
             if bbox:
                 x1, y1, x2, y2 = bbox
+                if skill_level == "expert":
+                    x1, y1 = (x1 // 8) * 8, (y1 // 8) * 8
+
                 draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+                if skill_level == "expert":
+                    tampered = _apply_local_noise(tampered, (x1, y1, x2, y2))
+                    draw = ImageDraw.Draw(tampered)
+
                 font_tampered = get_font(14)
                 fake_beneficiary = kwargs.get("new_beneficiary_name", "K. M. Wickramasinghe")
-                draw.text((x1 + 5, y1 + 2), fake_beneficiary, fill=(20, 20, 20), font=font_tampered)
+                draw.text((x1 + 5, y1 + 2), fake_beneficiary, fill=text_color, font=font_tampered)
 
                 flagged_boxes.append({
                     "box": [x1, y1, x2 - x1, y2 - y1],
@@ -234,10 +281,17 @@ class SyntheticSlipGenerator:
             bbox = metadata["field_bboxes"].get("To Account")
             if bbox:
                 x1, y1, x2, y2 = bbox
+                if skill_level == "expert":
+                    x1, y1 = (x1 // 8) * 8, (y1 // 8) * 8
+
                 draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+                if skill_level == "expert":
+                    tampered = _apply_local_noise(tampered, (x1, y1, x2, y2))
+                    draw = ImageDraw.Draw(tampered)
+
                 font_tampered = get_font(14)
                 fake_account = kwargs.get("new_account", "XXXX-XXXX-9901")
-                draw.text((x1 + 5, y1 + 2), fake_account, fill=(20, 20, 20), font=font_tampered)
+                draw.text((x1 + 5, y1 + 2), fake_account, fill=text_color, font=font_tampered)
 
                 flagged_boxes.append({
                     "box": [x1, y1, x2 - x1, y2 - y1],
@@ -251,10 +305,17 @@ class SyntheticSlipGenerator:
             bbox = metadata["field_bboxes"].get("Date & Time")
             if bbox:
                 x1, y1, x2, y2 = bbox
+                if skill_level == "expert":
+                    x1, y1 = (x1 // 8) * 8, (y1 // 8) * 8
+
                 draw.rectangle([(x1, y1), (x2, y2)], fill=(255, 255, 255))
+                if skill_level == "expert":
+                    tampered = _apply_local_noise(tampered, (x1, y1, x2, y2))
+                    draw = ImageDraw.Draw(tampered)
+
                 font_tampered = get_font(14)
                 fake_date = kwargs.get("new_date", "2026-09-18 11:20:45")
-                draw.text((x1 + 5, y1 + 2), fake_date, fill=(20, 20, 20), font=font_tampered)
+                draw.text((x1 + 5, y1 + 2), fake_date, fill=text_color, font=font_tampered)
 
                 flagged_boxes.append({
                     "box": [x1, y1, x2 - x1, y2 - y1],
@@ -264,20 +325,29 @@ class SyntheticSlipGenerator:
                 })
                 tamper_metadata["tampered_date_time"] = fake_date
 
-        # Re-save with JPEG compression and inject editing software EXIF metadata
+        # Multi-tier JPEG compression and EXIF metadata trace
         cv2_img = cv2.cvtColor(np.array(tampered), cv2.COLOR_RGB2BGR)
-        _, enc = cv2.imencode('.jpg', cv2_img, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+
+        if skill_level == "expert":
+            jpeg_q = 92
+        elif skill_level == "intermediate":
+            jpeg_q = 88
+        else:
+            jpeg_q = 80
+
+        _, enc = cv2.imencode('.jpg', cv2_img, [int(cv2.IMWRITE_JPEG_QUALITY), jpeg_q])
         dec = cv2.imdecode(enc, cv2.IMREAD_COLOR)
         final_pil = Image.fromarray(cv2.cvtColor(dec, cv2.COLOR_BGR2RGB))
 
-        # Add editing software metadata trace (Photoshop Express / Canva)
-        exif = final_pil.getexif()
-        exif[0x0131] = "Adobe Photoshop Express"
-        buf = io.BytesIO()
-        final_pil.save(buf, format="JPEG", quality=82, exif=exif)
-        buf.seek(0)
-        final_pil = Image.open(buf)
-        final_pil.load()
+        if skill_level == "naive":
+            # Add editing software metadata trace (Photoshop Express / Canva)
+            exif = final_pil.getexif()
+            exif[0x0131] = "Adobe Photoshop Express"
+            buf = io.BytesIO()
+            final_pil.save(buf, format="JPEG", quality=jpeg_q, exif=exif)
+            buf.seek(0)
+            final_pil = Image.open(buf)
+            final_pil.load()
 
         tamper_metadata["ground_truth_boxes"] = flagged_boxes
         return final_pil, tamper_metadata

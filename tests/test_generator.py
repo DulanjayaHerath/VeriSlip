@@ -99,3 +99,50 @@ def test_tampered_date_spoofing():
     assert tamp_date_meta["tampered_date_time"] == "2026-09-18 15:45:00"
     assert any(b["label"] == "Spoofed Transaction Timestamp" for b in tamp_date_meta["ground_truth_boxes"])
 
+
+def test_multitier_tampering_skill_levels():
+    """Verify multi-tier adversary skill levels (#32): naive, intermediate, expert."""
+    generator = SyntheticSlipGenerator(width=400, height=700)
+    auth_img, auth_meta = generator.generate_authentic_slip(bank_code="COMBANK", amount_lkr=20000.0)
+
+    # 1. Naive tampering: has Photoshop EXIF metadata tag
+    naive_img, naive_meta = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="ALTER_AMOUNT",
+        new_amount=80000.0,
+        skill_level="naive"
+    )
+    assert naive_meta["skill_level"] == "naive"
+    exif = naive_img.getexif()
+    assert exif.get(0x0131) == "Adobe Photoshop Express"
+
+    # 2. Intermediate tampering: strips editing software metadata
+    inter_img, inter_meta = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="ALTER_AMOUNT",
+        new_amount=95000.0,
+        skill_level="intermediate"
+    )
+    assert inter_meta["skill_level"] == "intermediate"
+    inter_exif = inter_img.getexif()
+    assert inter_exif.get(0x0131) is None
+
+    # 3. Expert tampering: strips EXIF, aligns coordinates to 8x8 DCT grid boundary
+    expert_img, expert_meta = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="ALTER_AMOUNT",
+        new_amount=150000.0,
+        skill_level="expert"
+    )
+    assert expert_meta["skill_level"] == "expert"
+    expert_exif = expert_img.getexif()
+    assert expert_exif.get(0x0131) is None
+    # Check 8x8 grid alignment on box x and y
+    box = expert_meta["ground_truth_boxes"][0]["box"]
+    assert box[0] % 8 == 0
+    assert box[1] % 8 == 0
+
+

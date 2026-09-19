@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 
 from api.middleware.request_tracing import RequestTracingMiddleware
 from api.middleware.rate_limiter import ApiKeyRateLimitMiddleware
+from api.middleware.prometheus_metrics import PrometheusMetricsMiddleware
 from api.routes.verify import router as verify_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
@@ -18,7 +19,10 @@ from api.routes.analytics import router as analytics_router
 from api.routes.courier import router as courier_router
 from api.routes.shopify import router as shopify_router
 from api.routes.triage_feedback import router as triage_router
+from api.routes.active_learning import router as active_learning_router
 from core.observability.logging import configure_json_logging
+from core.observability.metrics import get_metrics_payload, CONTENT_TYPE_LATEST
+from starlette.responses import Response
 
 configure_json_logging()
 
@@ -30,6 +34,7 @@ app = FastAPI(
 
 app.add_middleware(ApiKeyRateLimitMiddleware)
 app.add_middleware(RequestTracingMiddleware)
+app.add_middleware(PrometheusMetricsMiddleware)
 
 # Enable CORS for cross-origin web apps
 app.add_middleware(
@@ -56,6 +61,7 @@ app.include_router(analytics_router)
 app.include_router(courier_router, prefix="/api/v1")
 app.include_router(shopify_router)
 app.include_router(triage_router)
+app.include_router(active_learning_router)
 
 @app.get("/health")
 def health_check():
@@ -65,6 +71,11 @@ def health_check():
         "version": "1.0.0",
         "supported_banks": ["COMBANK", "SAMPATH", "BOC", "HNB", "PEOPLES", "DFCC", "PAN_ASIA", "SEYLAN", "NTB_FRIMI", "GENERIC_CEFTS"]
     }
+
+@app.get("/metrics")
+def metrics():
+    """Prometheus exposition endpoint for latency, throughput, and forensic layer telemetry."""
+    return Response(content=get_metrics_payload(), media_type=CONTENT_TYPE_LATEST)
 
 # Mount static web directory
 web_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "web"))

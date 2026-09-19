@@ -24,8 +24,14 @@ weights/*.pt
 weights/*.pth
 weights/verislip_trained_weights/
 weights/training_metrics.json
+weights/lora_adapters/*
+!weights/lora_adapters/.gitkeep
 !weights/.gitkeep
 !weights/README.md
 kaggle_dataset/
 verislip_dataset/
 *.zip
+datasets/active_learning/*
+!datasets/active_learning/.gitkeep
+datasets/rlhf_feedback/*.jsonl
+!datasets/rlhf_feedback/.gitkeep

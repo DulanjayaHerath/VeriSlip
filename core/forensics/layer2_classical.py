@@ -14,13 +14,26 @@ import cv2
 from scipy.fftpack import dct
 
 from core.forensics.utils import pil_to_cv2, cv2_to_base64, cv2_to_pil
+from core.forensics.layer2_copymove import (
+    detect_copymove_orb,
+    detect_copymove_block_dct,
+    analyze_copymove_forensics,
+)
 
 class Layer2ClassicalForensics:
-    """Classical forensic analyzer combining ELA, DCT compression signatures, and edge variance."""
+    """Classical forensic analyzer combining ELA, DCT compression signatures, copy-move detection, and edge variance."""
 
     def __init__(self, ela_quality: int = 90, ela_scale: float = 18.0):
         self.ela_quality = ela_quality
         self.ela_scale = ela_scale
+
+    def detect_copymove_keypoints(self, cv2_bgr: np.ndarray, **kwargs) -> Dict[str, Any]:
+        """Detect copy-move forgery using ORB/SIFT keypoints."""
+        return detect_copymove_orb(cv2_bgr, **kwargs)
+
+    def detect_copymove_dct_blocks(self, cv2_bgr: np.ndarray, **kwargs) -> Dict[str, Any]:
+        """Detect dense copy-move forgery using block-based DCT correlation."""
+        return detect_copymove_block_dct(cv2_bgr, **kwargs)
 
     def compute_ela(self, pil_image: Image.Image) -> Tuple[Image.Image, np.ndarray, float]:
         """
@@ -286,6 +299,9 @@ class Layer2ClassicalForensics:
         grid_shift_res = self.detect_jpeg_grid_shift(gray_img)
         dct_res["grid_alignment"] = grid_shift_res
 
+        # Detect copy-move forgery (ORB keypoints & block DCT)
+        copymove_res = analyze_copymove_forensics(cv2_img)
+
         # Calculate composite score for Layer 2
         # Normal uncompressed/uniform mobile screenshots have modest ELA variance (~0.5 - 2.5)
         # Spliced/recompressed screenshots exhibit localized ELA variance spikes (> 5.0)
@@ -301,6 +317,7 @@ class Layer2ClassicalForensics:
             notes.append(f"Significant compression error level discrepancies detected ({len(boxes)} anomaly regions).")
         notes.extend(dct_res["notes"])
         notes.extend(grid_shift_res["notes"])
+        notes.extend(copymove_res.get("findings", []))
 
         return {
             "layer_name": "Layer 2: Classical Image Forensics (ELA & DCT)",
@@ -311,6 +328,7 @@ class Layer2ClassicalForensics:
             "double_compression_analysis": dct_res,
             "channel_decomposition": ela_channels,
             "grid_alignment": grid_shift_res,
+            "copy_move_analysis": copymove_res,
             "heatmap_base64": cv2_to_base64(heatmap),
             "diff_gray": diff_gray,
             "findings": notes

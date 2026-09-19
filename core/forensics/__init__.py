@@ -9,6 +9,7 @@ from core.forensics.steganography import (
     profile_authentic_watermark,
     recover_dct_watermark,
 )
+from core.forensics.xai_gradcam import GradCAMForensics, GradCAMVisualizer, Layer4GradCAM, compute_iou
 
 __all__ = [
     "BankWatermarkProfiler",
@@ -18,4 +19,8 @@ __all__ = [
     "extract_bitplanes",
     "profile_authentic_watermark",
     "recover_dct_watermark",
+    "Layer4GradCAM",
+    "GradCAMForensics",
+    "GradCAMVisualizer",
+    "compute_iou",
 ]

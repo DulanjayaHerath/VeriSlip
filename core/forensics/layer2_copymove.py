@@ -14,7 +14,7 @@ import cv2
 def detect_copymove_orb(
     cv2_bgr: np.ndarray,
     min_spatial_dist: float = 30.0,
-    match_ratio: float = 0.75,
+    match_ratio: float = 0.68,
     shift_bin_size: float = 18.0,
     min_cluster_matches: int = 6,
     min_matches: int = None,

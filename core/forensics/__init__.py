@@ -17,6 +17,7 @@ from core.forensics.steganography import (
     recover_dct_watermark,
 )
 from core.forensics.xai_gradcam import GradCAMForensics, GradCAMVisualizer, Layer4GradCAM, compute_iou
+from core.forensics.thermal_fade import ThermalFadeConfig, ThermalFadeDiscriminator, analyze_thermal_fade
 
 __all__ = [
     "ScreenMoireDetector",
@@ -35,4 +36,7 @@ __all__ = [
     "GradCAMForensics",
     "GradCAMVisualizer",
     "compute_iou",
+    "ThermalFadeConfig",
+    "ThermalFadeDiscriminator",
+    "analyze_thermal_fade",
 ]

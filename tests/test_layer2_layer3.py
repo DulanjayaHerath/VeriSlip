@@ -6,6 +6,13 @@ import pytest
 from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
 from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
+from core.forensics.steganography import (
+    SteganographyForensics,
+    detect_watermark_disruption,
+    extract_bitplane,
+    extract_bitplanes,
+    recover_dct_watermark,
+)
 from core.forensics.unified_scorer import VeriSlipForensicEngine
 
 def test_layer2_ela_and_dct():
@@ -127,4 +134,46 @@ def test_layer3_srm_filtering_kernels():
     eval_res = l3.evaluate(auth_img := SyntheticSlipGenerator().generate_authentic_slip()[0])
     assert "srm_analysis" in eval_res
     assert eval_res["srm_analysis"]["kernels_evaluated"] >= 6
+
+
+def test_steganography_bitplanes_and_watermark_recovery():
+    generator = SyntheticSlipGenerator(width=400, height=700)
+    auth_img, auth_meta = generator.generate_authentic_slip(bank_code="COMBANK")
+    tampered_img, _ = generator.generate_tampered_slip(
+        authentic_slip=auth_img,
+        metadata=auth_meta,
+        tamper_type="ALTER_AMOUNT",
+        new_amount=880000.0,
+    )
+
+    bitplane_gray = extract_bitplane(auth_img, bit_index=1, channel="gray")
+    bitplanes = extract_bitplanes(auth_img, bit_indices=(0, 1, 2))
+    assert bitplane_gray.shape == auth_img.size[::-1]
+    assert set(bitplanes.keys()) >= {"0", "1", "2"}
+    assert "r" in bitplanes["1"]
+
+    auth_dct = recover_dct_watermark(auth_img)
+    tamper_dct = recover_dct_watermark(tampered_img)
+    assert "score" in auth_dct and "score" in tamper_dct
+    assert auth_dct["detected"] is True
+    assert auth_dct["score"] >= 0.0 and tamper_dct["score"] >= 0.0
+
+    auth_eval = SteganographyForensics("COMBANK").evaluate(auth_img)
+    tamper_eval = SteganographyForensics("COMBANK").evaluate(tampered_img)
+    assert auth_eval["bank_code"] == "COMBANK"
+    assert "localized_disruptions" in auth_eval
+    assert "localized_disruptions" in tamper_eval
+    assert len(auth_eval["localized_disruptions"]) >= 1
+    assert len(tamper_eval["localized_disruptions"]) >= 1
+
+    region = [
+        float(auth_meta["field_bboxes"]["Amount"][0]) / auth_img.width,
+        float(auth_meta["field_bboxes"]["Amount"][1]) / auth_img.height,
+        float(auth_meta["field_bboxes"]["Amount"][2]) / auth_img.width,
+        float(auth_meta["field_bboxes"]["Amount"][3]) / auth_img.height,
+    ]
+    auth_region = detect_watermark_disruption(auth_img, boxes=[region], bank_code="COMBANK")
+    tamper_region = detect_watermark_disruption(tampered_img, boxes=[region], bank_code="COMBANK")
+    assert auth_region[0]["pixel_box"][2] > auth_region[0]["pixel_box"][0]
+    assert tamper_region[0]["dct_score"] >= 0.0
 

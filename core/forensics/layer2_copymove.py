@@ -115,14 +115,14 @@ def detect_copymove_orb(
            abs(int(round(p["dy"] / shift_bin_size)) - by) <= 1
     ]
 
-    # Filter out 1D collinear typographic repetition (repeated letters on same line or between 1D text lines)
+    # Rigid translation refinement: genuine cloned regions share consistent (dx, dy) within keypoint localization tolerance
     if clustered_pairs:
-        src_ys = [p["src_pt"][1] for p in clustered_pairs]
-        dst_ys = [p["dst_pt"][1] for p in clustered_pairs]
-        src_y_span = max(src_ys) - min(src_ys)
-        dst_y_span = max(dst_ys) - min(dst_ys)
-        if src_y_span < 24.0 and dst_y_span < 24.0:
-            clustered_pairs = []
+        med_dx = float(np.median([p["dx"] for p in clustered_pairs]))
+        med_dy = float(np.median([p["dy"] for p in clustered_pairs]))
+        clustered_pairs = [
+            p for p in clustered_pairs
+            if abs(p["dx"] - med_dx) <= 6.0 and abs(p["dy"] - med_dy) <= 6.0
+        ]
 
     detected = len(clustered_pairs) >= min_cluster_matches
     confidence = min(0.98, max(0.0, (len(clustered_pairs) - min_cluster_matches + 1) / (min_cluster_matches * 2.5))) if detected else 0.0

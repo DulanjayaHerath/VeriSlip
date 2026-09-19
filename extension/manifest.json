@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "VeriSlip Audit",
+  "description": "Audit payment screenshots from WhatsApp Web, Gmail, and Messenger with VeriSlip.",
+  "version": "1.0.0",
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*",
+        "https://mail.google.com/*",
+        "https://*.facebook.com/*",
+        "https://*.messenger.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar.html", "sidebar.css", "sidebar.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "action": {
+    "default_title": "VeriSlip Audit"
+  }
+}

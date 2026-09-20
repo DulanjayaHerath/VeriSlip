@@ -1,0 +1,53 @@
+name: Deploy staging
+
+on:
+  workflow_run:
+    workflows: [VeriSlip CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verislip-staging
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 10
+    steps:
+      - name: Validate deployment configuration
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
+          STAGING_URL: ${{ vars.VERISLIP_STAGING_URL }}
+        run: |
+          test -n "$DEPLOY_HOOK" || { echo "Missing RENDER_STAGING_DEPLOY_HOOK_URL"; exit 1; }
+          test -n "$STAGING_URL" || { echo "Missing VERISLIP_STAGING_URL"; exit 1; }
+
+      - name: Trigger Render deployment
+        env:
+          DEPLOY_HOOK: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK_URL }}
+        run: curl --fail --silent --show-error --max-time 30 --request POST "$DEPLOY_HOOK" >/dev/null
+
+      - name: Wait for healthy staging service
+        env:
+          STAGING_URL: ${{ vars.VERISLIP_STAGING_URL }}
+        run: |
+          for attempt in $(seq 1 30); do
+            status=$(curl --silent --show-error --max-time 10 --output /tmp/health.json --write-out "%{http_code}" "$STAGING_URL/health" || true)
+            if [ "$status" = "200" ] && grep -q '"status":"healthy"' /tmp/health.json; then
+              echo "Staging health check passed."
+              exit 0
+            fi
+            echo "Waiting for staging deployment ($attempt/30)..."
+            sleep 10
+          done
+          echo "Staging did not become healthy within five minutes."
+          exit 1

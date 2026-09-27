@@ -302,6 +302,9 @@ Contributions from computer vision researchers, ML engineers, and software devel
 
 ## 🔒 Security & Dual-Use Policy
 
+* **Merchant Amount Checks:** WooCommerce requires a positive, finite order total and a matching extracted slip amount before recommending processing. Missing, invalid, or mismatched amounts hold the order for manual review. Courier verification also blocks handover when the extracted amount is unavailable or invalid. An image-forensics result is not confirmation of bank settlement.
+* **WooCommerce Uploads:** The integration uses the same bounded, content-detected JPEG/PNG/PDF decoding as the verification endpoint. Unsupported images and oversized uploads or PDF pages are rejected before analysis; internal decoder errors are not returned to clients.
+
 * **Dual-Use Containment:** The synthetic tampering generation engine lives under `core/internal/` for offline training, calibration, and unit tests. It is not mounted by the API or exposed by the frontend. The engine is disabled by default and construction fails unless an authorized offline process explicitly sets `VERISLIP_ENABLE_SYNTHETIC_GENERATOR=1`. Never set this flag in a public API deployment.
 * **Safe Image Ingestion:** Public verification endpoints identify JPEG/PNG inputs from their actual encoded content, cap upload bytes and decoded dimensions, fail closed on Pillow decompression-bomb warnings, reject malformed/truncated/animated or unsupported images, and pass only normalized metadata-free RGB pixels into forensic analysis.
 * **Request Tracing:** Every API response includes `X-Request-ID`. Callers may provide a safe `X-Request-ID` or `X-Correlation-ID`; otherwise VeriSlip generates a UUID. Request lifecycle logs are JSON records containing the correlation ID, route template, status, and duration—never request bodies, uploaded receipts, query strings, credentials, or authorization headers.

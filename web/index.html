@@ -30,6 +30,7 @@
       <nav class="nav-links">
         <button class="nav-tab active" data-tab="cockpit">Forensic Cockpit</button>
         <button class="nav-tab" data-tab="batch">Batch Slip Auditor</button>
+        <button class="nav-tab" data-tab="live">Live Camera</button>
         <button class="nav-tab" data-tab="whatsapp">WhatsApp Fraud Shield</button>
         <button class="nav-tab" data-tab="api">Developer API</button>
         <button class="nav-tab" data-tab="pricing">Enterprise & Pricing</button>
@@ -309,6 +310,23 @@
       </section>
 
       <!-- TAB 2: BATCH SLIP AUDITOR -->
+      <section id="tab-live" class="tab-pane">
+        <div class="live-heading">
+          <div><h2>Live document camera</h2><p>Place a slip under your camera. Hold it still to check for signs of editing.</p></div>
+          <span id="live-fps" class="live-metric">Camera off</span>
+        </div>
+        <div class="live-stage">
+          <video id="live-video" autoplay muted playsinline aria-label="Live document camera preview"></video>
+          <canvas id="live-overlay" aria-label="Highlighted areas requiring review"></canvas>
+        </div>
+        <div class="live-controls">
+          <button id="live-start" class="btn btn-primary">Start camera</button>
+          <button id="live-stop" class="btn btn-secondary" disabled>Stop camera</button>
+          <button id="live-rescan" class="btn btn-secondary" disabled>Scan again</button>
+        </div>
+        <p id="live-status" class="live-status" role="status" aria-live="polite">Camera is off. Start when your document is ready.</p>
+        <p class="live-note">Camera preview stays on this device. Stationary snapshots are sent to this VeriSlip server for analysis. Moving the document clears previous highlights. Confirm payment with your bank before releasing goods.</p>
+      </section>
       <section id="tab-batch" class="tab-pane">
         <div class="batch-container">
           <div class="batch-hero glass-card">
@@ -745,6 +763,7 @@
   </dialog>
   <script src="/static/js/triage_shortcuts.js"></script>
   <script src="/static/js/voice_audit.js"></script>
+  <script src="/static/js/live_scanner.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

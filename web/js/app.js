@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Tab Elements
+  const liveScanner = window.VeriSlipLiveScanner.mount(protectedFetch);
   const tabs = document.querySelectorAll(".nav-tab");
   const tabPanes = document.querySelectorAll(".tab-pane");
 
@@ -253,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const targetId = `tab-${tab.dataset.tab}`;
       const targetPane = document.getElementById(targetId);
       if (targetPane) targetPane.classList.add("active");
+      if (tab.dataset.tab !== "live") liveScanner.stop();
     });
   });
 

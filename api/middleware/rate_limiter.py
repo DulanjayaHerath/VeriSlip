@@ -152,6 +152,8 @@ class ApiKeyRegistry:
         """Load a JSON object of SHA-256 fingerprint to tier mappings."""
         raw_config = os.getenv(API_KEY_HASHES_ENV)
         if not raw_config or raw_config.strip() in ("", "{}"):
+            if os.getenv("VERISLIP_ENV", "production").lower() != "development":
+                return cls({})
             # Provide default development / local demonstration keys when not explicitly configured.
             # Allows out-of-the-box local operation without manual environment setup.
             default_dev_key = "verislip-dev-key"

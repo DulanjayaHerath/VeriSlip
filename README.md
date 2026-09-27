@@ -62,6 +62,11 @@ An interactive commercial dashboard for real-time slip analysis with side-by-sid
 ### 2. WhatsApp Business Fraud Shield
 Webhook integration for messaging bots that intercepts slips sent by buyers, verifies authenticity in `<2.5` seconds, and automatically responds with safe-to-dispatch recommendations.
 
+### Live Document Camera
+The **Live Camera** tab previews a webcam or document camera and checks stationary
+snapshots without blocking the preview. A standalone OpenCV scanner is also
+available. See [setup, model requirements, and performance validation](docs/LIVE_SCANNER.md).
+
 ### 3. Batch Slip Auditor
 Enterprise file triage capable of analyzing hundreds of slips concurrently for end-of-day finance reconciliation, filtering high-risk transfers into CSV audit reports.
 

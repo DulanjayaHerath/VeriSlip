@@ -203,6 +203,18 @@ curl -X POST http://127.0.0.1:8000/api/v1/courier/verify \
   }'
 ```
 
+Webhook delivery through `/api/v1/integrations/webhooks/dispatch` requires an
+explicit comma-separated `VERISLIP_WEBHOOK_HOSTS` allowlist of exact merchant
+hostnames. An empty list disables delivery. Targets must use HTTPS on port 443;
+all resolved addresses must be public. Delivery pins the checked address while
+preserving TLS hostname verification, ignores environment proxies, and does not
+follow redirects.
+
+Missing or empty `VERISLIP_API_KEY_HASHES` disables protected API access (503).
+Only explicit `VERISLIP_ENV=development` enables the public demonstration key
+when no keys are configured. Production deployments must configure key hashes
+and leave development mode disabled.
+
 ### 3. Shopify manual-payment webhook
 
 Configure Shopify's `orders/create` topic to send signed events to
@@ -319,3 +331,13 @@ Contributions from computer vision researchers, ML engineers, and software devel
 ## 📜 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+Webhook signing requires `VERISLIP_WEBHOOK_SECRET` from secret storage; missing
+configuration disables signed delivery. Receivers should verify the signature
+and reject repeated event IDs and stale timestamps.
+
+Payment amount extraction accepts a unique, high-confidence labelled amount
+(e.g. `Amount: LKR 12,500.00`). Conflicting, unsupported or unreadable values
+remain unverified. macOS uses the native Vision helper; Windows/Linux can use
+Tesseract installed on PATH with English language data. Without a text OCR
+engine, geometry detection remains available but cannot confirm an amount.

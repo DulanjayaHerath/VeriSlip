@@ -135,7 +135,12 @@ async def dispatch_merchant_webhook(req: WebhookDispatchRequest):
     """
     Test or trigger an HMAC-SHA256 signed webhook notification to a merchant URL.
     """
-    res = await dispatcher.dispatch(
-        target_url=req.target_url, event_type=req.event, data=req.payload_data
-    )
+    try:
+        res = await dispatcher.dispatch(
+            target_url=req.target_url, event_type=req.event, data=req.payload_data
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    except RuntimeError:
+        raise HTTPException(status_code=503, detail="Webhook signing is not configured.") from None
     return res

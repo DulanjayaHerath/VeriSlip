@@ -9,6 +9,9 @@ import re
 import json
 import subprocess
 import tempfile
+import csv
+import io
+from decimal import Decimal
 from typing import Dict, Any, Optional, List, Tuple
 import numpy as np
 from PIL import Image
@@ -100,6 +103,27 @@ class ReceiptFieldExtractor:
             except Exception:
                 pass
 
+        # Optional cross-platform OCR; never mistake geometry for recognized text.
+        tesseract = shutil.which("tesseract")
+        if tesseract:
+            try:
+                buffer = io.BytesIO()
+                pil_image.save(buffer, format="PNG")
+                proc = subprocess.run(
+                    [tesseract, "stdin", "stdout", "-l", "eng", "tsv"],
+                    input=buffer.getvalue(), capture_output=True, timeout=10,
+                )
+                if proc.returncode == 0:
+                    rows = csv.DictReader(io.StringIO(proc.stdout.decode("utf-8")), delimiter="\t")
+                    return [
+                        {"text": row["text"], "confidence": float(row["conf"]) / 100,
+                         "x": int(row["left"]), "y": int(row["top"]),
+                         "w": int(row["width"]), "h": int(row["height"])}
+                        for row in rows if row.get("text", "").strip()
+                    ]
+            except (OSError, ValueError, KeyError, subprocess.TimeoutExpired):
+                pass
+
         # Fallback: Morphological word/line detection
         cv2_img = pil_to_cv2(pil_image)
         h, w, _ = cv2_img.shape
@@ -109,6 +133,40 @@ class ReceiptFieldExtractor:
             {"text": "", "confidence": 0.5, "x": box[0], "y": box[1], "w": box[2], "h": box[3], "script": "und"}
             for box in lines
         ]
+
+    @staticmethod
+    def extract_amount(tokens: List[Dict[str, Any]]) -> Optional[float]:
+        """Accept a unique, confidently read, explicitly labelled LKR amount."""
+        lines = []
+        for token in sorted(tokens, key=lambda t: (t.get("y", 0), t.get("x", 0))):
+            if not str(token.get("text", "")).strip():
+                continue
+            center = float(token.get("y", 0)) + float(token.get("h", 0)) / 2
+            height = max(1, float(token.get("h", 0)))
+            for line in lines:
+                if abs(line[0] - center) <= min(line[1], height) * 0.5:
+                    line[2].append(token)
+                    break
+            else:
+                lines.append([center, height, [token]])
+        values = set()
+        pattern = re.compile(
+            r"^(?:(?:transfer|transaction|payment)\s+)?amount\s*:?\s*"
+            r"(?:(?:LKR|Rs\.?)\s*)?"
+            r"(?P<value>(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.[0-9]{2})?)"
+            r"\s*(?:LKR|Rs\.?)?$", re.IGNORECASE,
+        )
+        for _, _, words in lines:
+            text = " ".join(str(t["text"]).strip() for t in sorted(words, key=lambda t: t.get("x", 0)))
+            match = pattern.fullmatch(text)
+            if match:
+                if any(float(t.get("confidence", 0)) < 0.8 for t in words):
+                    return None
+                value = Decimal(match.group("value").replace(",", ""))
+                if not 0 < value <= 1_000_000_000:
+                    return None
+                values.add(value)
+        return float(next(iter(values))) if len(values) == 1 else None
 
     def detect_bank_from_visuals(self, cv2_img: np.ndarray) -> Tuple[str, float]:
         """Detect bank template by header color signature and aspect ratio."""
@@ -220,6 +278,7 @@ class ReceiptFieldExtractor:
 
         return {
             "detected_bank_code": detected_bank,
+            "amount": self.extract_amount(ocr_tokens),
             "bank_name": bank_meta["bank_name"],
             "bank_confidence": bank_conf,
             "currency": bank_meta.get("currency", "LKR"),

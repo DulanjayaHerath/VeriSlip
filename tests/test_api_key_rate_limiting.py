@@ -140,7 +140,9 @@ def test_intentionally_public_endpoints_do_not_require_api_key(path):
     assert response.headers["X-Request-ID"]
 
 
-def test_unconfigured_authentication_fails_closed():
+@pytest.mark.parametrize("headers", [{}, {"Sec-Fetch-Site": "same-origin"},
+                                     {"Referer": "http://testserver/"}])
+def test_unconfigured_authentication_fails_closed(headers):
     app = FastAPI()
     app.add_middleware(
         ApiKeyRateLimitMiddleware,
@@ -153,10 +155,31 @@ def test_unconfigured_authentication_fails_closed():
     def protected():
         return {"status": "ok"}
 
-    response = TestClient(app).get("/api/v1/protected")
+    response = TestClient(app).get("/api/v1/protected", headers=headers)
 
     assert response.status_code == 503
     assert response.json() == {"detail": "API authentication is unavailable."}
+
+
+@pytest.mark.parametrize("headers", [
+    {"Sec-Fetch-Site": "same-origin"},
+    {"Referer": "http://testserver/"},
+    {"Referer": "https://untrusted.example/?next=http://testserver/"},
+])
+def test_origin_headers_cannot_replace_api_key(headers):
+    response = TestClient(_test_app()).get("/api/v1/protected", headers=headers)
+    assert response.status_code == 401
+    assert response.headers["X-Request-ID"]
+
+
+def test_authenticated_cockpit_requests_still_obey_quota():
+    client = TestClient(_test_app())
+    headers = {"X-API-Key": FREE_KEY, "Sec-Fetch-Site": "same-origin",
+               "Referer": "http://testserver/"}
+    for _ in range(10):
+        assert client.get("/api/v1/protected", headers=headers).status_code == 200
+    assert client.get("/api/v1/protected", headers=headers).status_code == 429
+    assert client.get("/api/v1/protected", headers={"Sec-Fetch-Site": "same-origin"}).status_code == 401
 
 
 def test_cors_preflight_remains_public_on_existing_middleware_stack():

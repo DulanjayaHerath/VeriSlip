@@ -113,7 +113,7 @@ class ReceiptFieldExtractor:
     def detect_bank_from_visuals(self, cv2_img: np.ndarray) -> Tuple[str, float]:
         """Detect bank template by header color signature and aspect ratio."""
         h, w, _ = cv2_img.shape
-        header_h = int(h * 0.22)
+        header_h = max(1, int(h * 0.22))
         header_roi = cv2_img[:header_h, :]
 
         # Average color in header
@@ -141,7 +141,11 @@ class ReceiptFieldExtractor:
 
     def detect_text_lines(self, gray: np.ndarray, y_min: int, y_max: int) -> List[Tuple[int, int, int, int]]:
         """Detect potential horizontal text lines in an image slice using morphological dilation."""
+        y_min = max(0, min(y_min, gray.shape[0]))
+        y_max = max(0, min(y_max, gray.shape[0]))
         roi = gray[y_min:y_max, :]
+        if roi.size == 0:
+            return []
         _, binary = cv2.threshold(roi, 200, 255, cv2.THRESH_BINARY_INV)
 
         # Horizontal kernel to group characters in a word

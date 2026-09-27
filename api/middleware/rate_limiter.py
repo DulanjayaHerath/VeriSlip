@@ -243,17 +243,8 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or not path_is_protected or is_signed_webhook:
             return await call_next(request)
 
-        # Allow same-origin requests from the integrated web cockpit dashboard
-        is_same_origin = (
-            request.headers.get("sec-fetch-site") == "same-origin"
-            or (request.headers.get("referer") and str(request.base_url) in request.headers.get("referer", ""))
-        )
-
+        # Browser origin headers are caller-controlled, not authentication.
         if not self.registry.is_configured:
-            if is_same_origin:
-                request.state.api_key_id = "same-origin-web"
-                request.state.api_tier = "pro"
-                return await call_next(request)
             logger.error("auth.not_configured")
             return JSONResponse(
                 status_code=503,
@@ -262,10 +253,6 @@ class ApiKeyRateLimitMiddleware(BaseHTTPMiddleware):
 
         raw_key = request.headers.get(API_KEY_HEADER)
         if not raw_key:
-            if is_same_origin:
-                request.state.api_key_id = "same-origin-web"
-                request.state.api_tier = "pro"
-                return await call_next(request)
             logger.warning("auth.missing")
             return JSONResponse(
                 status_code=401,

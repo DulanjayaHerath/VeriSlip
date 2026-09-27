@@ -12,6 +12,7 @@ from api.middleware.request_tracing import RequestTracingMiddleware
 from api.middleware.rate_limiter import ApiKeyRateLimitMiddleware
 from api.middleware.prometheus_metrics import PrometheusMetricsMiddleware
 from api.routes.verify import router as verify_router
+from api.routes.live_scanner import router as live_scanner_router
 from api.routes.webhook_whatsapp import router as whatsapp_router
 from api.routes.reports import router as reports_router
 from api.routes.integrations import router as integrations_router
@@ -58,6 +59,7 @@ app.add_middleware(RequestTracingMiddleware)
 
 # Include API Routers
 app.include_router(verify_router)
+app.include_router(live_scanner_router)
 app.include_router(whatsapp_router)
 app.include_router(reports_router)
 app.include_router(integrations_router)

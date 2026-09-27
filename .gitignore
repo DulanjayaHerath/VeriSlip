@@ -22,6 +22,7 @@ venv/
 # Weights & Dataset Artifacts
 weights/*.pt
 weights/*.pth
+weights/*.onnx
 weights/verislip_trained_weights/
 weights/training_metrics.json
 weights/lora_adapters/*

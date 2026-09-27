@@ -13,11 +13,11 @@ from starlette.concurrency import run_in_threadpool
 
 from api.routes.verify import ForensicAnalysisError, _analyze_image
 from core.security.image_sanitizer import (
-    ImageValidationError,
     MAX_IMAGE_UPLOAD_BYTES,
+    ImageValidationError,
     sanitize_image_bytes,
 )
-
+from core.security.payment_amounts import detected_payment_amount as _detected_amount
 
 router = APIRouter(prefix="/courier", tags=["Courier Rider Mobile API"])
 MAX_ENCODED_IMAGE_CHARS = ((MAX_IMAGE_UPLOAD_BYTES + 2) // 3) * 4
@@ -27,15 +27,20 @@ class CourierVerifyRequest(BaseModel):
     """Existing JSON contract used by mobile courier applications."""
 
     waybill_id: str = Field(
-        ..., min_length=1, max_length=128,
+        ...,
+        min_length=1,
+        max_length=128,
         description="Courier delivery tracking / waybill number.",
     )
     expected_cod_amount: float = Field(
-        ..., gt=0, le=1_000_000_000,
+        ...,
+        gt=0,
+        le=1_000_000_000,
         description="Expected cash-on-delivery total in LKR.",
     )
     slip_base64: str = Field(
-        ..., min_length=1,
+        ...,
+        min_length=1,
         description="Base64-encoded JPEG or PNG captured by the rider.",
     )
     target_bank: Optional[str] = Field(
@@ -78,17 +83,6 @@ def _decode_base64_image(encoded: str):
     except (binascii.Error, ValueError):
         raise ImageValidationError("Image payload is not valid base64.") from None
     return sanitize_image_bytes(image_bytes)
-
-
-def _detected_amount(result) -> Optional[float]:
-    """Return a numeric OCR amount only when the shared extractor supplies one."""
-    value = (result.get("extracted_metadata") or {}).get("amount")
-    if value is None:
-        return None
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
 
 
 @router.post("/verify", response_model=CourierVerifyResponse)
@@ -136,6 +130,10 @@ async def verify_courier_delivery(payload: CourierVerifyRequest):
         can_handover = False
         action = "DO_NOT_HANDOVER_SUSPECTED_FORGERY"
         alert = f"High forgery risk ({risk_pct:.1f}%). Verify with the cashier."
+    elif detected_amount is None:
+        can_handover = False
+        action = "DO_NOT_HANDOVER_AMOUNT_UNVERIFIED"
+        alert = "Slip amount could not be verified. Confirm payment with the cashier."
     else:
         can_handover = True
         action = "HANDOVER_PACKAGE_CONFIRMED"
@@ -143,7 +141,12 @@ async def verify_courier_delivery(payload: CourierVerifyRequest):
 
     if verdict == "HIGH_RISK_TAMPERED" or risk_pct > 45.0:
         risk_level = "FRAUDULENT"
-    elif verdict == "SUSPICIOUS" or risk_pct >= 25.0:
+    elif (
+        verdict == "SUSPICIOUS"
+        or risk_pct >= 25.0
+        or detected_amount is None
+        or amount_mismatch
+    ):
         risk_level = "SUSPICIOUS"
     else:
         risk_level = "SAFE"

@@ -10,7 +10,6 @@ from PIL import Image
 from api.main import app
 from api.routes import courier
 
-
 client = TestClient(app)
 HEADERS = {"X-API-Key": "test-courier-pro-key"}
 
@@ -42,7 +41,9 @@ def _forensic_result(verdict="AUTHENTIC", risk=8.5, amount=12_500.0):
 
 
 def test_successful_low_risk_courier_verification(monkeypatch):
-    monkeypatch.setattr(courier, "_analyze_image", lambda *args, **kwargs: _forensic_result())
+    monkeypatch.setattr(
+        courier, "_analyze_image", lambda *args, **kwargs: _forensic_result()
+    )
     response = client.post("/api/v1/courier/verify", headers=HEADERS, json=_payload())
     assert response.status_code == 200
     data = response.json()
@@ -57,11 +58,11 @@ def test_successful_low_risk_courier_verification(monkeypatch):
 @pytest.mark.parametrize(
     "verdict,risk", [("SUSPICIOUS", 30.0), ("HIGH_RISK_TAMPERED", 91.0)]
 )
-def test_suspicious_and_high_risk_results_block_handover(
-    monkeypatch, verdict, risk
-):
+def test_suspicious_and_high_risk_results_block_handover(monkeypatch, verdict, risk):
     monkeypatch.setattr(
-        courier, "_analyze_image", lambda *args, **kwargs: _forensic_result(verdict, risk)
+        courier,
+        "_analyze_image",
+        lambda *args, **kwargs: _forensic_result(verdict, risk),
     )
     response = client.post("/api/v1/courier/verify", headers=HEADERS, json=_payload())
     assert response.status_code == 200
@@ -72,7 +73,9 @@ def test_suspicious_and_high_risk_results_block_handover(
 
 def test_amount_mismatch_blocks_handover(monkeypatch):
     monkeypatch.setattr(
-        courier, "_analyze_image", lambda *args, **kwargs: _forensic_result(amount=10_000.0)
+        courier,
+        "_analyze_image",
+        lambda *args, **kwargs: _forensic_result(amount=10_000.0),
     )
     response = client.post("/api/v1/courier/verify", headers=HEADERS, json=_payload())
     assert response.status_code == 200
@@ -81,12 +84,32 @@ def test_amount_mismatch_blocks_handover(monkeypatch):
     assert response.json()["rider_action"] == "DO_NOT_HANDOVER_AMOUNT_MISMATCH"
 
 
+@pytest.mark.parametrize("amount", [None, "unreadable", "NaN", "Infinity", -1, 0, True])
+def test_missing_or_invalid_amount_blocks_handover(monkeypatch, amount):
+    monkeypatch.setattr(
+        courier,
+        "_analyze_image",
+        lambda *args, **kwargs: _forensic_result(amount=amount),
+    )
+    response = client.post("/api/v1/courier/verify", headers=HEADERS, json=_payload())
+    assert response.status_code == 200
+    result = response.json()
+    assert result["can_handover_package"] is False
+    assert result["detected_amount"] is None
+    assert result["rider_action"] == "DO_NOT_HANDOVER_AMOUNT_UNVERIFIED"
+    assert result["risk_level"] != "SAFE"
+
+
 @pytest.mark.parametrize(
     "payload",
     [
         {},
         {"waybill_id": "", "expected_cod_amount": -1, "slip_base64": ""},
-        {"waybill_id": "WB-1", "expected_cod_amount": "not-a-number", "slip_base64": "abc"},
+        {
+            "waybill_id": "WB-1",
+            "expected_cod_amount": "not-a-number",
+            "slip_base64": "abc",
+        },
     ],
 )
 def test_malformed_or_missing_request_is_rejected(payload):
@@ -108,7 +131,10 @@ def test_unsupported_image_is_rejected_by_shared_sanitizer():
         "/api/v1/courier/verify", headers=HEADERS, json=_payload(_image_bytes("GIF"))
     )
     assert response.status_code == 415
-    assert response.json()["detail"] == "Unsupported image format. Only JPEG and PNG are accepted."
+    assert (
+        response.json()["detail"]
+        == "Unsupported image format. Only JPEG and PNG are accepted."
+    )
 
 
 def test_oversized_image_is_rejected_before_decode(monkeypatch):
@@ -124,7 +150,9 @@ def test_courier_endpoint_requires_api_key():
 
 
 def test_courier_endpoint_preserves_rate_and_correlation_headers(monkeypatch):
-    monkeypatch.setattr(courier, "_analyze_image", lambda *args, **kwargs: _forensic_result())
+    monkeypatch.setattr(
+        courier, "_analyze_image", lambda *args, **kwargs: _forensic_result()
+    )
     response = client.post(
         "/api/v1/courier/verify",
         headers={**HEADERS, "X-Request-ID": "courier-request-78"},

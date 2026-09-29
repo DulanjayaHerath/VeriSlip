@@ -324,6 +324,12 @@ Contributions from computer vision researchers, ML engineers, and software devel
 * **Background Verification:** `POST /api/v1/verify/jobs` sanitizes an upload and returns `202` with a job ID; `GET /api/v1/verify/jobs/{job_id}` reports `pending`, `processing`, `completed`, or `failed`. Jobs are isolated by API-key fingerprint, inherit the submission correlation ID, and retain only sanitized pixels while running. The existing `POST /api/v1/verify` response remains synchronous-compatible but executes decoding and forensic inference on worker threads.
 * **Merchant History:** `GET /api/v1/verifications/history` returns only the authenticated merchant's bounded verification summary records. Receipt images and detailed forensic/OCR payloads are not persisted for history.
 * **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
+
+Real receipt images intended for research datasets can be sanitized locally
+with the deterministic PII redaction pipeline. It masks or strongly blurs
+detected phone numbers, labelled account numbers/names, and Sri Lankan NICs,
+strips metadata, and never overwrites source files. See
+[`docs/PII_REDACTION.md`](docs/PII_REDACTION.md) for usage and limitations.
 * Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 
 ---

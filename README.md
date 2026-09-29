@@ -117,6 +117,13 @@ Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser to acces
    ```
    Outputs `verislip_kaggle_dataset.zip` containing 4,000 paired authentic & tampered images with binary segmentation masks.
 2. Upload the zip to [Kaggle Datasets](https://www.kaggle.com/datasets).
+
+Before publishing or consuming a dataset, create and verify a deterministic
+SHA-256 image manifest with `scripts/verify_dataset.py`. The read-only checker
+validates actual JPEG/PNG decoding, detects modified, missing, unexpected, and
+corrupt images, and reports duplicate content. See
+[`docs/DATASET_INTEGRITY.md`](docs/DATASET_INTEGRITY.md) for Windows CMD usage
+and the versioned manifest format.
 3. Open [`notebooks/VeriSlip_DualStream_Training.ipynb`](notebooks/VeriSlip_DualStream_Training.ipynb) in Kaggle Notebooks, select **GPU T4 x2**, and click **Run All**.
 4. Download `verislip_dualstream_best.pt` using the one-click download cell and move it to `weights/`:
    ```bash

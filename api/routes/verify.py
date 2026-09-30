@@ -3,6 +3,7 @@ Verification API Route for VeriSlip.
 Receives bank slip image uploads, runs multi-layer forensic detection, and returns verdicts.
 """
 
+import math
 from functools import partial
 from datetime import date
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Request
@@ -20,6 +21,7 @@ from core.security.image_sanitizer import (
     ImageValidationError,
     MAX_IMAGE_UPLOAD_BYTES,
     sanitize_image_bytes,
+    _check_dimensions,
 )
 from core.jobs.forensic_jobs import ForensicJobManager, JobQueueFullError
 from core.history.verification_history import InMemoryVerificationHistoryStore
@@ -61,26 +63,33 @@ def _is_pdf(contents: bytes) -> bool:
 
 
 def _decode_document(contents: bytes):
-    """Decode and sanitize an upload on a worker thread."""
+    """Bound PDF rasterization before allocation and always release native handles."""
     if not _is_pdf(contents):
         return sanitize_image_bytes(contents)
 
     import pypdfium2 as pdfium
 
-    pdf = pdfium.PdfDocument(contents)
-    page = None
-    try:
+    with pdfium.PdfDocument(contents) as pdf:
+        if len(pdf) == 0:
+            raise ImageValidationError("Uploaded PDF contains no pages.")
         page = pdf[0]
-        image = page.render(scale=2.0).to_pil().convert("RGB")
+        try:
+            width, height = page.get_size()
+            if not all(math.isfinite(value) and value > 0 for value in (width, height)):
+                raise ImageValidationError("PDF page dimensions are invalid.")
+            _check_dimensions(math.ceil(width * 2), math.ceil(height * 2))
+            bitmap = page.render(scale=2.0)
+            try:
+                image = bitmap.to_pil().convert("RGB")
+            finally:
+                bitmap.close()
+        finally:
+            page.close()
         try:
             image.info["pdf_metadata"] = pdf.get_metadata_dict()
         except Exception:
             pass
         return image
-    finally:
-        if page is not None:
-            page.close()
-        pdf.close()
 
 
 def _analyze_image(
@@ -318,6 +327,7 @@ async def batch_verify_slips(
                 top_finding="Unreadable or corrupt image file"
             ))
             risk_cnt += 1
+            total_risk += 100.0
 
     total_proc = len(items)
     avg_risk = round(total_risk / max(total_proc, 1), 1)

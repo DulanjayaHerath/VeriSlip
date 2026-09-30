@@ -62,6 +62,11 @@ An interactive commercial dashboard for real-time slip analysis with side-by-sid
 ### 2. WhatsApp Business Fraud Shield
 Webhook integration for messaging bots that intercepts slips sent by buyers, verifies authenticity in `<2.5` seconds, and automatically responds with safe-to-dispatch recommendations.
 
+### Live Document Camera
+The **Live Camera** tab previews a webcam or document camera and checks stationary
+snapshots without blocking the preview. A standalone OpenCV scanner is also
+available. See [setup, model requirements, and performance validation](docs/LIVE_SCANNER.md).
+
 ### 3. Batch Slip Auditor
 Enterprise file triage capable of analyzing hundreds of slips concurrently for end-of-day finance reconciliation, filtering high-risk transfers into CSV audit reports.
 
@@ -112,6 +117,13 @@ Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser to acces
    ```
    Outputs `verislip_kaggle_dataset.zip` containing 4,000 paired authentic & tampered images with binary segmentation masks.
 2. Upload the zip to [Kaggle Datasets](https://www.kaggle.com/datasets).
+
+Before publishing or consuming a dataset, create and verify a deterministic
+SHA-256 image manifest with `scripts/verify_dataset.py`. The read-only checker
+validates actual JPEG/PNG decoding, detects modified, missing, unexpected, and
+corrupt images, and reports duplicate content. See
+[`docs/DATASET_INTEGRITY.md`](docs/DATASET_INTEGRITY.md) for Windows CMD usage
+and the versioned manifest format.
 3. Open [`notebooks/VeriSlip_DualStream_Training.ipynb`](notebooks/VeriSlip_DualStream_Training.ipynb) in Kaggle Notebooks, select **GPU T4 x2**, and click **Run All**.
 4. Download `verislip_dualstream_best.pt` using the one-click download cell and move it to `weights/`:
    ```bash
@@ -197,6 +209,18 @@ curl -X POST http://127.0.0.1:8000/api/v1/courier/verify \
     "target_bank": "COMBANK"
   }'
 ```
+
+Webhook delivery through `/api/v1/integrations/webhooks/dispatch` requires an
+explicit comma-separated `VERISLIP_WEBHOOK_HOSTS` allowlist of exact merchant
+hostnames. An empty list disables delivery. Targets must use HTTPS on port 443;
+all resolved addresses must be public. Delivery pins the checked address while
+preserving TLS hostname verification, ignores environment proxies, and does not
+follow redirects.
+
+Missing or empty `VERISLIP_API_KEY_HASHES` disables protected API access (503).
+Only explicit `VERISLIP_ENV=development` enables the public demonstration key
+when no keys are configured. Production deployments must configure key hashes
+and leave development mode disabled.
 
 ### 3. Shopify manual-payment webhook
 
@@ -297,6 +321,9 @@ Contributions from computer vision researchers, ML engineers, and software devel
 
 ## 🔒 Security & Dual-Use Policy
 
+* **Merchant Amount Checks:** WooCommerce requires a positive, finite order total and a matching extracted slip amount before recommending processing. Missing, invalid, or mismatched amounts hold the order for manual review. Courier verification also blocks handover when the extracted amount is unavailable or invalid. An image-forensics result is not confirmation of bank settlement.
+* **WooCommerce Uploads:** The integration uses the same bounded, content-detected JPEG/PNG/PDF decoding as the verification endpoint. Unsupported images and oversized uploads or PDF pages are rejected before analysis; internal decoder errors are not returned to clients.
+
 * **Dual-Use Containment:** The synthetic tampering generation engine lives under `core/internal/` for offline training, calibration, and unit tests. It is not mounted by the API or exposed by the frontend. The engine is disabled by default and construction fails unless an authorized offline process explicitly sets `VERISLIP_ENABLE_SYNTHETIC_GENERATOR=1`. Never set this flag in a public API deployment.
 * **Safe Image Ingestion:** Public verification endpoints identify JPEG/PNG inputs from their actual encoded content, cap upload bytes and decoded dimensions, fail closed on Pillow decompression-bomb warnings, reject malformed/truncated/animated or unsupported images, and pass only normalized metadata-free RGB pixels into forensic analysis.
 * **Request Tracing:** Every API response includes `X-Request-ID`. Callers may provide a safe `X-Request-ID` or `X-Correlation-ID`; otherwise VeriSlip generates a UUID. Request lifecycle logs are JSON records containing the correlation ID, route template, status, and duration—never request bodies, uploaded receipts, query strings, credentials, or authorization headers.
@@ -304,6 +331,12 @@ Contributions from computer vision researchers, ML engineers, and software devel
 * **Background Verification:** `POST /api/v1/verify/jobs` sanitizes an upload and returns `202` with a job ID; `GET /api/v1/verify/jobs/{job_id}` reports `pending`, `processing`, `completed`, or `failed`. Jobs are isolated by API-key fingerprint, inherit the submission correlation ID, and retain only sanitized pixels while running. The existing `POST /api/v1/verify` response remains synchronous-compatible but executes decoding and forensic inference on worker threads.
 * **Merchant History:** `GET /api/v1/verifications/history` returns only the authenticated merchant's bounded verification summary records. Receipt images and detailed forensic/OCR payloads are not persisted for history.
 * **Privacy by Design:** Personal account numbers, customer names, and bank account identifiers are automatically masked or sanitized before audit log persistence.
+
+Real receipt images intended for research datasets can be sanitized locally
+with the deterministic PII redaction pipeline. It masks or strongly blurs
+detected phone numbers, labelled account numbers/names, and Sri Lankan NICs,
+strips metadata, and never overwrites source files. See
+[`docs/PII_REDACTION.md`](docs/PII_REDACTION.md) for usage and limitations.
 * Real calibration slips placed in `datasets/real_calibration/` are protected by `.gitignore` rules and never tracked.
 
 ---
@@ -311,3 +344,13 @@ Contributions from computer vision researchers, ML engineers, and software devel
 ## 📜 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+Webhook signing requires `VERISLIP_WEBHOOK_SECRET` from secret storage; missing
+configuration disables signed delivery. Receivers should verify the signature
+and reject repeated event IDs and stale timestamps.
+
+Payment amount extraction accepts a unique, high-confidence labelled amount
+(e.g. `Amount: LKR 12,500.00`). Conflicting, unsupported or unreadable values
+remain unverified. macOS uses the native Vision helper; Windows/Linux can use
+Tesseract installed on PATH with English language data. Without a text OCR
+engine, geometry detection remains available but cannot confirm an amount.

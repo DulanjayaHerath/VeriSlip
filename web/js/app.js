@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Tab Elements
+  const liveScanner = window.VeriSlipLiveScanner.mount(protectedFetch);
   const tabs = document.querySelectorAll(".nav-tab");
   const tabPanes = document.querySelectorAll(".tab-pane");
 
@@ -45,6 +46,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const bankSelect = document.getElementById("bank-select");
   const refInput = document.getElementById("ref-input");
+  const voiceCommandInput = document.getElementById("voice-command-input");
+  const btnRunVoiceCommand = document.getElementById("btn-run-voice-command");
+  const btnVoiceListen = document.getElementById("btn-voice-listen");
+  const btnVoiceHelp = document.getElementById("btn-voice-help");
+  const voiceHelpDialog = document.getElementById("voice-help-dialog");
+  const voiceStatus = document.getElementById("voice-status");
 
   // Canvas & Zoom Controls
   const displayImage = document.getElementById("display-image");
@@ -247,6 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const targetId = `tab-${tab.dataset.tab}`;
       const targetPane = document.getElementById(targetId);
       if (targetPane) targetPane.classList.add("active");
+      if (tab.dataset.tab !== "live") liveScanner.stop();
     });
   });
 
@@ -425,6 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const results = await res.json();
       currentResults = results;
       displayVerdict(results);
+      voiceAudit.announce(results.verdict);
 
       // Default to tamper view if high risk, else original
       if (results.verdict === "HIGH_RISK_TAMPERED" || results.verdict === "SUSPICIOUS") {
@@ -1188,6 +1197,41 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnTriageApprove) btnTriageApprove.disabled = unavailable;
     if (btnTriageFlag) btnTriageFlag.disabled = unavailable;
   }
+
+  function applyVoiceCommand(command) {
+    bankSelect.value = command.bankCode;
+    refInput.value = command.reference;
+    voiceCommandInput.value = command.transcript;
+    voiceStatus.classList.remove("error");
+    voiceStatus.textContent = `Ready: ${command.bankCode}, LKR ${command.amount.toLocaleString()}, reference ${command.reference}.`;
+    runScan();
+  }
+
+  const voiceAudit = window.VeriSlipVoiceAudit.install({
+    window,
+    onCommand: applyVoiceCommand,
+    onStatus: (message, isError) => {
+      voiceStatus.textContent = message;
+      voiceStatus.classList.toggle("error", Boolean(isError));
+    },
+    onListeningChange: listening => {
+      btnVoiceListen.setAttribute("aria-pressed", String(listening));
+      btnVoiceListen.textContent = listening ? "■ Stop listening" : "🎙 Start listening";
+    }
+  });
+  btnVoiceListen.addEventListener("click", () => {
+    if (btnVoiceListen.getAttribute("aria-pressed") === "true") voiceAudit.stop();
+    else voiceAudit.start();
+  });
+  btnRunVoiceCommand.addEventListener("click", () => voiceAudit.handleTranscript(voiceCommandInput.value));
+  voiceCommandInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      voiceAudit.handleTranscript(voiceCommandInput.value);
+    }
+  });
+  btnVoiceHelp.addEventListener("click", () => voiceHelpDialog.showModal());
+  window.addEventListener("pagehide", voiceAudit.cleanup, { once: true });
 
   const cleanupTriageShortcuts = window.VeriSlipTriageShortcuts.install({
     document,

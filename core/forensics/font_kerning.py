@@ -12,10 +12,13 @@ import numpy as np
 from PIL import Image
 from typing import Dict, Any, List, Tuple
 
+from core.forensics.font_anti_aliasing import FontAntiAliasingAnalyzer
+
 
 class CharacterAlignmentValidator:
     def __init__(self, baseline_jump_threshold: float = 4.5):
         self.baseline_jump_threshold = baseline_jump_threshold
+        self.anti_aliasing = FontAntiAliasingAnalyzer()
 
     def evaluate(self, pil_image: Image.Image) -> Dict[str, Any]:
         """
@@ -52,11 +55,16 @@ class CharacterAlignmentValidator:
             })
             findings.append(f"Script alignment anomaly: {s_reason}")
 
+        # Report sub-pixel evidence independently. It is not fused into the
+        # legacy alignment score until real-device calibration is available.
+        anti_aliasing = self.anti_aliasing.analyze(pil_image)
+
         return {
             "anomaly_score": round(min(1.0, anomaly_score), 3),
             "is_anomalous": anomaly_score >= 0.50,
             "detected_regions": flagged_boxes,
-            "findings": findings
+            "findings": findings,
+            "subpixel_rasterization": anti_aliasing,
         }
 
     def _analyze_script_baselines(self, gray: np.ndarray) -> List[Tuple[List[int], float, str]]:

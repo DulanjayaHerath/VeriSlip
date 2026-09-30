@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "direction": "forensic-score",
+  "mode": "operate",
+  "tokens": {
+    "color": {
+      "paper": "#f4f6f8",
+      "surface": "#ffffff",
+      "surfaceMuted": "#edf1f5",
+      "surfaceDark": "#172131",
+      "ink": "#18212f",
+      "inkSoft": "#4f5d70",
+      "muted": "#758195",
+      "line": "#d9e0e8",
+      "cobalt": "#2457d6",
+      "teal": "#087f6b",
+      "amber": "#a96c00",
+      "rose": "#bd3b49",
+      "violet": "#6756b1"
+    },
+    "radius": {
+      "sm": "8px",
+      "md": "12px",
+      "lg": "16px"
+    },
+    "font": {
+      "ui": "ui-sans-serif",
+      "mono": "JetBrains Mono"
+    }
+  },
+  "surfaces": {
+    "cockpit": "ingestion -> evidence -> verdict",
+    "batch": "summary -> audit ledger",
+    "whatsapp": "workflow explanation -> live chat simulation",
+    "api": "endpoint inventory -> copyable examples",
+    "pricing": "plan comparison -> trust evidence -> FAQ",
+    "history": "authenticated records drawer"
+  }
+}

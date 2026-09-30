@@ -289,10 +289,10 @@ document.addEventListener("DOMContentLoaded", () => {
     currentResults = null;
     resetZoom();
     resetVerdictCard();
-    metaBank.innerHTML = "🏦 <strong>Bank:</strong> Ready for scan";
-    metaAmount.innerHTML = "💵 <strong>Amount:</strong> Ready for scan";
-    metaRef.innerHTML = "🔖 <strong>Ref:</strong> —";
-    metaViewport.innerHTML = `📄 <strong>File:</strong> ${file.name.substring(0, 18)}`;
+    metaBank.innerHTML = '<span class="meta-symbol" aria-hidden="true">B</span> <strong>Bank:</strong> Ready for scan';
+    metaAmount.innerHTML = '<span class="meta-symbol" aria-hidden="true">A</span> <strong>Amount:</strong> Ready for scan';
+    metaRef.innerHTML = '<span class="meta-symbol" aria-hidden="true">#</span> <strong>Ref:</strong> —';
+    metaViewport.innerHTML = `<span class="meta-symbol" aria-hidden="true">F</span> <strong>File:</strong> ${file.name.substring(0, 18)}`;
 
     if (isPdf) {
       placeholderEmpty.classList.add("hidden");
@@ -469,31 +469,35 @@ document.addEventListener("DOMContentLoaded", () => {
     // Extracted Financial Metadata Bar
     if (data.extracted_metadata) {
       const meta = data.extracted_metadata;
-      metaBank.innerHTML = `🏦 <strong>Bank:</strong> ${meta.bank_name || meta.detected_bank_code}`;
-      metaAmount.innerHTML = `💵 <strong>Currency:</strong> ${meta.currency || 'LKR'}`;
-      metaRef.innerHTML = `🔖 <strong>Ref:</strong> ${refInput.value.trim() || 'Auto-Verified'}`;
+      metaBank.innerHTML = `<span class="meta-symbol" aria-hidden="true">B</span> <strong>Bank:</strong> ${meta.bank_name || meta.detected_bank_code}`;
+      metaAmount.innerHTML = `<span class="meta-symbol" aria-hidden="true">A</span> <strong>Currency:</strong> ${meta.currency || 'LKR'}`;
+      metaRef.innerHTML = `<span class="meta-symbol" aria-hidden="true">#</span> <strong>Ref:</strong> ${refInput.value.trim() || 'Auto-Verified'}`;
       if (meta.layout_geometry) {
-        metaViewport.innerHTML = `📱 <strong>Aspect:</strong> ${meta.layout_geometry.aspect_ratio}:1 (${meta.layout_geometry.is_mobile_viewport ? 'Mobile Slip' : 'Desktop'})`;
+        metaViewport.innerHTML = `<span class="meta-symbol" aria-hidden="true">L</span> <strong>Aspect:</strong> ${meta.layout_geometry.aspect_ratio}:1 (${meta.layout_geometry.is_mobile_viewport ? 'Mobile Slip' : 'Desktop'})`;
       }
     }
 
     // Multi-layer breakdown
     const l1 = data.layer_breakdowns.layer1_structural;
     l1Score.textContent = `${(l1.score * 100).toFixed(0)}%`;
-    l1Score.style.color = l1.is_anomalous ? "var(--accent-rose)" : "var(--accent-emerald)";
+    l1Score.classList.toggle("anomaly", l1.is_anomalous);
+    l1Score.classList.toggle("ok", !l1.is_anomalous);
 
     const l2 = data.layer_breakdowns.layer2_classical;
     l2Score.textContent = `${(l2.score * 100).toFixed(0)}%`;
-    l2Score.style.color = l2.is_anomalous ? "var(--accent-rose)" : "var(--accent-emerald)";
+    l2Score.classList.toggle("anomaly", l2.is_anomalous);
+    l2Score.classList.toggle("ok", !l2.is_anomalous);
 
     const l3 = data.layer_breakdowns.layer3_noise;
     l3Score.textContent = `${(l3.score * 100).toFixed(0)}%`;
-    l3Score.style.color = l3.is_anomalous ? "var(--accent-rose)" : "var(--accent-emerald)";
+    l3Score.classList.toggle("anomaly", l3.is_anomalous);
+    l3Score.classList.toggle("ok", !l3.is_anomalous);
 
     if (data.layer_breakdowns.layer4_ensemble && l4Score) {
       const l4 = data.layer_breakdowns.layer4_ensemble;
       l4Score.textContent = `${(l4.score * 100).toFixed(0)}%`;
-      l4Score.style.color = l4.is_anomalous ? "var(--accent-rose)" : "var(--accent-emerald)";
+      l4Score.classList.toggle("anomaly", l4.is_anomalous);
+      l4Score.classList.toggle("ok", !l4.is_anomalous);
       if (l4Desc) {
         l4Desc.textContent = `Neural tamper prob: ${(l4.tamper_probability * 100).toFixed(1)}% (${l4.engine || 'Dual-Stream CNN'})`;
       }
@@ -629,7 +633,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Label background
       ctx.fillStyle = "#ef4444";
       const labelText = `${reg.label || "Tampered Area"} (${(reg.confidence * 100).toFixed(0)}%)`;
-      ctx.font = "bold 11px Plus Jakarta Sans, sans-serif";
+      ctx.font = "bold 11px ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
       const textWidth = ctx.measureText(labelText).width;
 
       const badgeY = Math.max(16, ry - 6);
@@ -744,7 +748,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnExportBatchCsv.disabled = true;
     batchTableBody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+        <td colspan="8" class="table-message">
           Batch cleared. Upload new slips or click "Load Demo Batch" to audit.
         </td>
       </tr>
@@ -755,9 +759,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setLoading(true);
     batchTableBody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; color: var(--accent-cyan); padding: 30px;">
-          ⚡ Loading and auditing 5 realistic banking screenshots across Sri Lankan banks...
-        </td>
+        <td colspan="8" class="table-message">Loading and auditing 5 realistic banking screenshots across Sri Lankan banks...</td>
       </tr>
     `;
 
@@ -792,7 +794,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setLoading(true);
     batchTableBody.innerHTML = `
       <tr>
-        <td colspan="8" style="text-align: center; color: var(--accent-cyan); padding: 30px;">
+        <td colspan="8" class="table-message loading">
           Analyzing ${files.length} receipts through 5-layer neural & classical pipeline...
         </td>
       </tr>
@@ -819,7 +821,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert(`Batch audit error: ${err.message}`);
       batchTableBody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align: center; color: var(--accent-rose); padding: 30px;">
+          <td colspan="8" class="table-message error">
             Failed to process batch: ${err.message}
           </td>
         </tr>
@@ -869,7 +871,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${idx + 1}</td>
         <td>
           <div class="file-cell">
-            <div class="file-icon">🧾</div>
+            <div class="file-icon" aria-hidden="true">DOC</div>
             <span>${item.filename}</span>
           </div>
         </td>
@@ -882,7 +884,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong>${item.tamper_risk_percentage.toFixed(1)}%</strong>
         </td>
         <td><span class="pill-badge ${pillClass}">${pillText}</span></td>
-        <td style="color: var(--text-secondary); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        <td class="batch-finding">
           ${item.top_finding || 'Compliant layout and noise profile'}
         </td>
         <td>
@@ -973,7 +975,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const b64 = ev.target.result;
-        appendWaMessage("sent", `📷 Forwarded screenshot: [${file.name}]`);
+        appendWaMessage("sent", `Forwarded screenshot: [${file.name}]`);
         await executeWhatsAppWebhook(b64, file.name);
       };
       reader.readAsDataURL(file);
@@ -997,14 +999,14 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       // Echo guidance
       setTimeout(() => {
-        appendWaMessage("received", "👋 To verify a slip, forward an image or click the 'Send Authentic Slip' / 'Send Forged Slip' test buttons above!");
+        appendWaMessage("received", "To verify a slip, forward an image or click the 'Send Authentic Slip' / 'Send Forged Slip' test buttons above.");
       }, 500);
     }
   }
 
   async function simulateWhatsAppCheck(isTampered) {
     const slipLabel = isTampered ? "Doctored_Slip_LKR32000.png" : "Authentic_ComBank_Slip.png";
-    appendWaMessage("sent", `📷 Forwarded image: [${slipLabel}]`);
+    appendWaMessage("sent", `Forwarded image: [${slipLabel}]`);
 
     try {
       const sampleUrl = isTampered ? "/static/samples/combank_tampered_amount.png" : "/static/samples/combank_authentic.png";
@@ -1046,7 +1048,7 @@ document.addEventListener("DOMContentLoaded", () => {
       appendWaMessage("received", formattedReply);
     } catch (err) {
       if (typingElem.parentNode) waChatBody.removeChild(typingElem);
-      appendWaMessage("received", `⚠️ Webhook connection error: ${err.message}`);
+      appendWaMessage("received", `Webhook connection error: ${err.message}`);
     }
   }
 
@@ -1076,7 +1078,7 @@ document.addEventListener("DOMContentLoaded", () => {
         navigator.clipboard.writeText(targetEl.textContent.trim()).then(() => {
           const originalText = btn.textContent;
           btn.textContent = "Copied!";
-          btn.style.color = "var(--accent-emerald)";
+          btn.style.color = "var(--teal)";
           setTimeout(() => {
             btn.textContent = originalText;
             btn.style.color = "";
@@ -1095,7 +1097,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const toast = document.createElement("div");
     toast.className = `toast-item ${type}`;
     const icon = type === "success" ? "✓" : type === "danger" ? "✕" : "ℹ";
-    toast.innerHTML = `<span style="font-weight:bold; font-size:1.1em;">${icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span class="toast-icon" aria-hidden="true">${icon}</span><span>${message}</span>`;
     container.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = "0";

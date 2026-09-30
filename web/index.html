@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VeriSlip — AI Forensic Slip & Invoice Tamper Detection</title>
   <meta name="description" content="Forensic fraud detection platform for Sri Lankan bank transfer slips and payment receipts in peer-to-peer commerce.">
+  <meta name="theme-color" content="#172131">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -100,7 +101,7 @@
                   <span class="dot red"></span>
                   <div class="sample-info">
                     <span class="sample-title">Sampath Time Paradox</span>
-                    <span class="sample-sub">Causality Violation & 40,0000.00</span>
+                    <span class="sample-sub">Causality Violation & 40,000.00</span>
                   </div>
                 </button>
               </div>
@@ -160,10 +161,10 @@
 
               <!-- Extracted Financial Metadata Bar -->
               <div class="metadata-bar" id="metadata-bar">
-                <span class="meta-chip highlight" id="meta-bank">🏦 <strong>Bank:</strong> Auto-detect</span>
-                <span class="meta-chip amount-chip" id="meta-amount">💵 <strong>Extracted Amount:</strong> Awaiting scan</span>
-                <span class="meta-chip" id="meta-ref">🔖 <strong>Reference:</strong> —</span>
-                <span class="meta-chip" id="meta-viewport">📱 <strong>Layout:</strong> Mobile Screen</span>
+                <span class="meta-chip highlight" id="meta-bank"><span class="meta-symbol" aria-hidden="true">B</span> <strong>Bank:</strong> Auto-detect</span>
+                <span class="meta-chip amount-chip" id="meta-amount"><span class="meta-symbol" aria-hidden="true">A</span> <strong>Extracted Amount:</strong> Awaiting scan</span>
+                <span class="meta-chip" id="meta-ref"><span class="meta-symbol" aria-hidden="true">#</span> <strong>Reference:</strong> —</span>
+                <span class="meta-chip" id="meta-viewport"><span class="meta-symbol" aria-hidden="true">L</span> <strong>Layout:</strong> Mobile Screen</span>
               </div>
 
               <div class="canvas-viewport" id="canvas-container">
@@ -171,7 +172,7 @@
                   <div class="spinner"></div>
                   <p>Executing 5-Layer Forensic Pipeline...</p>
                 </div>
-                <img id="display-image" src="" alt="Slip Preview" class="slip-display-img hidden">
+                <img id="display-image" src="/static/samples/combank_authentic.png" alt="Slip preview" class="slip-display-img hidden">
                 <canvas id="overlay-canvas" class="overlay-canvas"></canvas>
                 <div id="placeholder-empty" class="canvas-empty-state">
                   <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -203,7 +204,7 @@
 
                 <div class="risk-gauge-wrapper">
                   <div class="gauge-meter">
-                    <div class="gauge-fill" id="gauge-fill" style="width: 0%;"></div>
+                    <div class="gauge-fill" id="gauge-fill"></div>
                   </div>
                   <div class="gauge-values">
                     <span class="risk-percentage" id="risk-score-text">0.0%</span>
@@ -227,17 +228,17 @@
                 </button>
 
                 <!-- Merchant Rapid Triage Actions -->
-                <div class="triage-action-group" style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
-                  <span style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Merchant Rapid Triage</span>
-                  <div style="display: flex; gap: 8px;">
-                    <button type="button" class="btn btn-sm btn-outline" id="btn-triage-approve" aria-keyshortcuts="Space" disabled style="flex: 1; border-color: rgba(16, 185, 129, 0.4); color: var(--accent-emerald);">
+                <div class="triage-action-group">
+                  <span>Merchant Rapid Triage</span>
+                  <div>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-triage-approve" aria-keyshortcuts="Space" disabled>
                       ✓ Accept <span class="kbd-badge"><kbd>Space</kbd></span>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline" id="btn-triage-flag" aria-keyshortcuts="X" disabled style="flex: 1; border-color: rgba(239, 68, 68, 0.4); color: var(--accent-rose);">
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-triage-flag" aria-keyshortcuts="X" disabled>
                       ✕ Flag <span class="kbd-badge"><kbd>X</kbd></span>
                     </button>
                   </div>
-                  <div class="keyboard-hints" style="margin-top: 4px; justify-content: center;">
+                  <div class="keyboard-hints">
                     <span>Keys:</span>
                     <span class="kbd-badge"><kbd>1-4</kbd> Views</span>
                     <span class="kbd-badge"><kbd>Z</kbd> Zoom</span>
@@ -384,7 +385,7 @@
                 </thead>
                 <tbody id="batch-table-body">
                   <tr>
-                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    <td colspan="8" class="table-message">
                       No batch slips uploaded. Click "Load Demo Batch" or upload slips to initiate batch forensics.
                     </td>
                   </tr>
@@ -404,21 +405,21 @@
 
             <div class="feature-bullets">
               <div class="f-bullet">
-                <span class="f-icon">⚡</span>
+                <span class="f-icon">01</span>
                 <div>
                   <strong>Sub-3 Second Latency</strong>
                   <p>Instant forensic scan returns while customer is waiting in chat.</p>
                 </div>
               </div>
               <div class="f-bullet">
-                <span class="f-icon">🎯</span>
+                <span class="f-icon">02</span>
                 <div>
                   <strong>Visual Tamper Annotations</strong>
                   <p>Forged amounts or doctored references are red-boxed in the return image.</p>
                 </div>
               </div>
               <div class="f-bullet">
-                <span class="f-icon">💰</span>
+                <span class="f-icon">03</span>
                 <div>
                   <strong>High-Margin Monetization</strong>
                   <p>10 free checks/month, followed by LKR 1,490/mo Pro pack or LKR 10/check micropayments.</p>
@@ -448,7 +449,7 @@
 
               <div class="wa-chat-body" id="wa-chat-body">
                 <div class="wa-msg wa-received">
-                  👋 Welcome to VeriSlip Bot! Forward any bank transfer screenshot or payment receipt to instantly verify authenticity.
+                  Welcome to VeriSlip Bot. Forward any bank transfer screenshot or payment receipt to instantly verify authenticity.
                   <span class="wa-time">14:30</span>
                 </div>
               </div>
@@ -461,7 +462,7 @@
                 </button>
                 <input type="file" id="wa-file-input" accept="image/*,application/pdf,.pdf" class="file-input-hidden">
                 <input type="text" id="wa-chat-text" class="wa-real-input" placeholder="Type a message or /verify..." />
-                <button type="button" class="wa-real-send-btn" id="wa-send-btn" title="Send">➤</button>
+                <button type="button" class="wa-real-send-btn" id="wa-send-btn" title="Send" aria-label="Send message">Send</button>
               </div>
             </div>
           </div>
@@ -477,10 +478,10 @@
               <p>Programmatic high-performance forensic REST API for logistics systems, e-commerce checkouts, and mobile courier driver apps.</p>
             </div>
             <div class="api-badge-row">
-              <span class="api-spec-badge">⚡ Sub-1.5s Response</span>
-              <span class="api-spec-badge">🔒 SHA-256 Digital Seals</span>
-              <span class="api-spec-badge">📦 Multi-Bank Support</span>
-              <span class="api-spec-badge">🌐 OpenAPI 3.0 Compliant</span>
+              <span class="api-spec-badge">Sub-1.5s Response</span>
+              <span class="api-spec-badge">SHA-256 Digital Seals</span>
+              <span class="api-spec-badge">Multi-Bank Support</span>
+              <span class="api-spec-badge">OpenAPI 3.0 Compliant</span>
             </div>
           </div>
 
@@ -632,8 +633,8 @@
           <!-- Enterprise Trust Banner -->
           <div class="enterprise-trust-banner">
             <div>
-              <strong style="font-size: 1.05rem;">Enterprise Reliability & Bank-Grade Security</strong>
-              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 2px;">Adheres to standard digital image forensics and ISO evidentiary integrity practices.</p>
+              <strong>Enterprise Reliability & Bank-Grade Security</strong>
+              <p>Adheres to standard digital image forensics and ISO evidentiary integrity practices.</p>
             </div>
             <div class="trust-stats">
               <div class="trust-stat-item">

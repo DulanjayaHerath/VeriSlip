@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "flat-type-hierarchy",
+        "value": "*",
+        "files": [
+          "web/index.html"
+        ],
+        "createdAt": "2026-09-30T14:50:25.130Z",
+        "reason": "Agent: detector cannot resolve the app's /static/css/style.css mount during HTML scans; explicit h2/h3 sizes are defined in web/css/style.css."
+      }
+    ]
+  }
+}

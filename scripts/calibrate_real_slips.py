@@ -10,6 +10,7 @@ import sys
 import glob
 import json
 import random
+import argparse
 
 # Ensure root directory is on sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -24,6 +25,7 @@ from core.forensics.layer2_classical import Layer2ClassicalForensics
 from core.forensics.layer3_noise import Layer3NoiseForensics
 from core.ml.ensemble_model import Layer4DeepEnsemble
 from core.forensics.utils import normalize_dimensions
+from core.privacy.pii_redaction import PIIRedactionError, PIIRedactionPipeline
 
 
 CALIBRATION_DIR = "datasets/real_calibration"
@@ -101,7 +103,18 @@ def create_realistic_spliced_copy(img: Image.Image) -> Image.Image:
     return Image.open(buf)
 
 
-def run_calibration():
+def _redact_samples(samples: List[Image.Image], method: str) -> List[Image.Image]:
+    """Redact real samples in memory and fail before calibration on OCR failure."""
+    pipeline = PIIRedactionPipeline()
+    try:
+        return [pipeline.redact(image, method=method).image for image in samples]
+    except PIIRedactionError as exc:
+        raise RuntimeError(
+            "PII redaction could not be completed; calibration was stopped."
+        ) from exc
+
+
+def run_calibration(redact_pii: bool = False, redaction_method: str = "mask"):
     print("=" * 70)
     print(" 🛡️  VeriSlip: Real-World Slip Calibration Engine")
     print("    Tuning multi-layer physics and neural thresholds on real traffic")
@@ -114,8 +127,8 @@ def run_calibration():
         print(f"\n⚠️  No real authentic slips found in: {AUTHENTIC_DIR}")
         print("\nHow to add your real slips:")
         print(f"1. Copy 3–10 real screenshots into: {AUTHENTIC_DIR}/")
-        print("2. (Optional) Redact sensitive account numbers or customer names.")
-        print("3. Re-run: python3 scripts/calibrate_real_slips.py")
+        print("2. Redact PII: python scripts/redact_receipts.py INPUT OUTPUT")
+        print("3. Re-run: python scripts/calibrate_real_slips.py --redact-pii")
         print("\nNote: Creating a baseline profile using synthetic mobile variations for demonstration...")
         # Create a sample calibration profile
         from core.internal.synthetic_slip_generator import SyntheticSlipGenerator
@@ -132,6 +145,11 @@ def run_calibration():
         else:
             print("ℹ️  No real tampered slips found in tampered/ — synthesizing realistic spliced pairs...")
             tamp_samples = [create_realistic_spliced_copy(img) for img in auth_samples]
+
+        if redact_pii:
+            auth_samples = _redact_samples(auth_samples, redaction_method)
+            tamp_samples = _redact_samples(tamp_samples, redaction_method)
+            print("✓ PII redaction completed in memory before calibration")
 
     # Initialize detection layers
     l1 = Layer1StructuralValidator()
@@ -258,4 +276,14 @@ def run_calibration():
 
 
 if __name__ == "__main__":
-    run_calibration()
+    parser = argparse.ArgumentParser(description="Calibrate VeriSlip with real slips")
+    parser.add_argument(
+        "--redact-pii",
+        action="store_true",
+        help="run fail-closed local OCR redaction before calibration",
+    )
+    parser.add_argument(
+        "--redaction-method", choices=("mask", "blur"), default="mask"
+    )
+    args = parser.parse_args()
+    run_calibration(args.redact_pii, args.redaction_method)

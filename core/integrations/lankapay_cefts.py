@@ -1,10 +1,12 @@
-"""
-LankaPay CEFTS ISO 8583 / ISO 20022 Clearing Settlement Bridge (#116).
-Enables real-time interbank transaction settlement reconciliation against the national clearing switch.
+"""Legacy development simulator from issue #116.
+
+Despite historical class names, this module has no LankaPay or bank connection
+and is not an implementation of an official CEFTS protocol.  It uses a local
+synthetic ledger only.  New Layer 5 work must use the provider-neutral contract
+in :mod:`core.integrations.transaction_verification`.
 """
 
-from typing import Dict, Any, Optional, Tuple, List
-from datetime import datetime
+from typing import Dict, Any, Optional
 import time
 
 
@@ -45,7 +47,7 @@ class ISO8583Packet:
 
 class MockLankaPayCEFTSSwitch:
     """
-    Mock sandbox clearing switch simulating LankaPay CEFTS national switch responses.
+    Development-only switch-shaped mock; not an official LankaPay sandbox.
     Maintains a simulated ledger of settled interbank transactions.
     """
 
@@ -119,7 +121,7 @@ class MockLankaPayCEFTSSwitch:
 
 
 class LankaPayCEFTSBridge:
-    """Fintech Bridge to LankaPay CEFTS interbank settlement network (#116)."""
+    """Compatibility wrapper around the local mock; performs no network I/O."""
 
     def __init__(self, switch: Optional[MockLankaPayCEFTSSwitch] = None):
         self.switch = switch or MockLankaPayCEFTSSwitch()

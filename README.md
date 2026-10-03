@@ -295,6 +295,11 @@ come from deployment secrets. Duplicate alerts with the same WhatsApp
 
 ## 🗺️ Open-Source Roadmap & Backlog
 
+The proposed provider-neutral architecture for authorized, read-only payment
+network checks is documented in the [Layer 5 direct transaction-verification
+roadmap](docs/LAYER5_DIRECT_VERIFICATION.md). It does not claim an existing public
+LankaPay API or production access.
+
 VeriSlip is developed as an open-core research initiative. Browse open issues on our [GitHub Issues Board](https://github.com/chirana07/VeriSlip/issues):
 
 | Domain Track | Scope & Technologies | Status |

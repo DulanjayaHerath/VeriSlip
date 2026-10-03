@@ -124,6 +124,12 @@ validates actual JPEG/PNG decoding, detects modified, missing, unexpected, and
 corrupt images, and reports duplicate content. See
 [`docs/DATASET_INTEGRITY.md`](docs/DATASET_INTEGRITY.md) for Windows CMD usage
 and the versioned manifest format.
+
+Synthetic annotations can be exported deterministically as COCO JSON or Pascal
+VOC XML with `scripts/export_annotations.py`. Existing binary masks are encoded
+as genuine COCO segmentation RLE rather than approximated from boxes. See
+[`docs/ANNOTATION_EXPORT.md`](docs/ANNOTATION_EXPORT.md) for Windows CMD usage,
+geometry validation, category mapping, and limitations.
 3. Open [`notebooks/VeriSlip_DualStream_Training.ipynb`](notebooks/VeriSlip_DualStream_Training.ipynb) in Kaggle Notebooks, select **GPU T4 x2**, and click **Run All**.
 4. Download `verislip_dualstream_best.pt` using the one-click download cell and move it to `weights/`:
    ```bash

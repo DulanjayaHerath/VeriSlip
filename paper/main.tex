@@ -1,0 +1,245 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+
+\newcommand{\pending}{\textit{Pending controlled evaluation}}
+
+\title{VeriSlip: Multi-Evidence Forensics for Bank-Transfer Slip Triage}
+
+% MERCon 2026 requires an anonymous initial submission. Restore verified author
+% names, affiliations, and acknowledgements only for a venue/stage that permits it.
+\author{\IEEEauthorblockN{Anonymous Authors}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Images of bank-transfer slips are frequently used as provisional payment proof,
+yet small edits to amounts, beneficiaries, references, or status text can change
+their meaning. Natural-image forensic assumptions transfer imperfectly to these
+structured, text-heavy documents, while benign screenshotting, recompression,
+and recapture can resemble manipulation. This paper presents VeriSlip, an
+open-source decision-support architecture that combines structural and semantic
+checks, classical compression and copy--move cues, local residual consistency,
+and an optional dual-stream inference component. We formalize the observation
+and attacker model, describe the implementation-aligned evidence fusion, and
+specify a reproducible evaluation protocol for Sri Lankan mobile-payment slips.
+Empirical values are deliberately omitted until the protocol is executed on a
+versioned, consented dataset; therefore this artifact is a conference draft and
+not an accuracy claim.
+\end{abstract}
+
+\begin{IEEEkeywords}
+document forensics, receipt tampering, image manipulation, OCR, financial fraud
+\end{IEEEkeywords}
+
+\section{Introduction}
+Merchants increasingly receive screenshots or photographs of transfer receipts
+before releasing goods. A convincing false proof may require changing only a few
+glyphs. The task is not equivalent to generic natural-image manipulation:
+receipts have uniform backgrounds, repeated typography, rigid layouts, and
+semantically constrained fields. At the same time, legitimate messaging and
+capture pipelines add compression, scaling, moir\'e, or print--scan artifacts.
+
+VeriSlip addresses image-level triage rather than transaction settlement. Its
+central design premise is that no single artifact proves fraud. Instead, weak and
+heterogeneous evidence is retained, localized where possible, and fused into an
+actionable risk category. The intended contributions, subject to the evaluation
+specified in Section~\ref{sec:evaluation}, are:
+\begin{itemize}
+  \item a financial-document threat model separating malicious edits from benign
+  acquisition transforms;
+  \item an implementation-aligned, multi-evidence architecture spanning document
+  semantics and image forensics; and
+  \item a reproducible protocol for document-, region-, calibration-, and
+  generalization-level evaluation.
+\end{itemize}
+
+This draft makes no claim of official bank-network access, universal forgery
+detection, or measured superiority over prior work.
+
+\section{Related Work}
+Passive image forensics studies traces left by acquisition and manipulation
+pipelines~\cite{farid2009survey,verdoliva2020media}. JPEG history can be localized
+through block-level artifacts~\cite{bianchi2012jpeg}; copy--move detection has
+used invariant keypoints~\cite{amerini2011sift} and learned source/target
+localization~\cite{wu2018busternet}. Sensor-pattern noise supports source-camera
+identification when a reference fingerprint and suitable images exist
+~\cite{lukas2006prnu}, assumptions that often fail for screenshots.
+
+Document images add text and layout constraints. DocTamper targets tampered text
+under document-specific compression conditions~\cite{qu2023doctamper}. VeriSlip
+differs in scope: it combines deterministic financial semantics, classical image
+cues, local residuals, and an optional learned component. Error-level analysis
+(ELA) is used only as a recompression-difference feature and visualization; it is
+not treated as a calibrated standalone detector.
+
+\section{Problem Formulation and Threat Model}
+Let a genuine slip be $G\in\{0,\ldots,255\}^{H\times W\times C}$. A manipulation
+$M_\theta$ changes a material region $R$, producing $X=M_\theta(G;R)$. Genuine or
+manipulated images then pass through a benign acquisition channel $T_\phi$:
+\begin{equation}
+  Y=T_\phi(X)+\epsilon,
+\end{equation}
+where $\epsilon$ represents sensor, display, compression, and OCR noise. For a
+genuine observation, $X=G$ and $R=\varnothing$.
+
+The adversary may replace amount, account, beneficiary, reference, date, or
+status fields; copy, splice, erase, or inpaint regions; and resize, recompress,
+screen-recapture, or print--scan the result. Novice through expert attackers are
+considered, including adaptive probing. Genuine replay is a distinct risk: an
+unaltered old receipt may be pixel-authentic yet irrelevant to the current order.
+
+The verifier emits evidence $e$, candidate regions $\widehat R$, and bounded
+risk $s=f(e)\in[0,1]$. Its verdict is image-forensic decision support, not proof
+of payment finality. High-quality reconstruction, unknown templates, OCR error,
+and severe recapture remain residual risks.
+
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Ingestion and normalization}
+Public ingestion paths content-validate and fully decode bounded raster images,
+reject unsupported formats, limit dimensions, detach decoded pixels, and remove
+metadata during canonicalization. The analysis image is RGB with longest
+dimension at most 1400 pixels.
+
+\begin{figure*}[t]
+\centering
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{c c c c c}
+\fbox{\shortstack{Sanitized\\RGB input}} & $\rightarrow$ &
+\fbox{\shortstack{L1/1.5\\structure + semantics}} & $\searrow$ & \\
+&& \fbox{\shortstack{L2/2.5\\ELA, DCT, copy--move}} & $\rightarrow$ &
+\fbox{\shortstack{weighted evidence\\+ gated maxima}} $\rightarrow$
+\fbox{\shortstack{risk, verdict,\\regions, findings}}\\
+&& \fbox{\shortstack{L3\\residual consistency}} & $\nearrow$ & \\
+&& \fbox{\shortstack{L4 + adjuncts\\optional learned path}} & $\nearrow$ &
+\end{tabular}
+\caption{Executable evidence flow. The components run on the normalized image;
+fusion preserves strong corroborated evidence rather than averaging it away.}
+\label{fig:architecture}
+\end{figure*}
+
+\subsection{Structural and semantic evidence}
+Layer 1 evaluates decoded metadata, aspect ratio, bank-color similarity, and an
+optional reference format. With binary conditions $m,a,c,r$, its implemented
+score is
+\begin{equation}
+s_1=\min(1,0.45m+0.15a+0.20c+0.40r).
+\end{equation}
+Local OCR supplies uncertain tokens and boxes to semantic rules for currency
+grouping, mandatory fields, temporal order, and
+$|\mathrm{total}-(\mathrm{amount}+\mathrm{fee})|>0.05$. The semantic score is
+the maximum confidence assigned by a triggered rule.
+
+\subsection{Classical and residual evidence}
+Layer 2 re-encodes the image in memory as JPEG and computes
+$D=|I-J_Q|$ plus $\mathrm{Var}(\mathrm{gray}(D))$. It analyzes 8-by-8 DCT AC
+coefficient histogram periodicity, JPEG-grid phase, ORB and dense block-DCT
+copy--move evidence, occlusion candidates, screen recapture, and thermal-fade
+characteristics. These are heuristic cues with benign confounders.
+
+Layer 3 forms $R=|G-\mathrm{median}_{3\times3}(G)|$ and calculates variance in
+32-by-32 flat-background blocks. A block is a candidate when
+\begin{equation}
+z_b=\frac{v_b-\mu_{flat}}{\sigma_{flat}+10^{-4}}>3.5.
+\end{equation}
+Divider-like one-dimensional clusters are removed. The layer also summarizes
+fixed spatial-rich-model residual kernels. This is local residual analysis, not
+PRNU camera attribution.
+
+\subsection{Optional inference and fusion}
+The Layer 4 code defines RGB and forensic streams. The forensic tensor contains
+ELA difference, median residual, and Sobel gradient channels. A compatible
+checkpoint may produce classification and localization outputs. When no
+checkpoint is loaded, the initialized-network path must not be interpreted as a
+validated model; when PyTorch is unavailable, a statistical ELA/noise fallback
+is used.
+
+Default linear evidence is
+\begin{equation}
+L=0.18s_1+0.225s_2+0.225s_3+0.27s_4+0.10s_v,
+\end{equation}
+with a conditional recapture term. The final risk is the maximum of $L$ and
+corroboration-gated peak signals. Candidate regions are merged by greedy
+non-maximum suppression at intersection-over-union 0.3. This score is a bounded
+triage heuristic, not a posterior probability.
+
+\section{Evaluation Protocol}
+\label{sec:evaluation}
+The evaluation must use a versioned, authorized, privacy-preserving dataset. The
+split unit should prevent bank-template, source-slip, merchant, and device
+leakage. Genuine controls must include resize, repeated JPEG, messaging-app
+transport, screen capture, camera recapture, and print--scan. Manipulations must
+cover field replacement, erasure/inpainting, copy--move, splicing, and replay.
+
+\begin{figure}[t]
+\centering
+\fbox{\parbox{0.92\columnwidth}{\centering
+Versioned manifest $\rightarrow$ leakage-aware split $\rightarrow$ locked
+configuration $\rightarrow$ document and region metrics $\rightarrow$ bootstrap
+confidence intervals $\rightarrow$ error analysis}}
+\caption{Required reproducible evaluation sequence.}
+\label{fig:evaluation}
+\end{figure}
+
+Report precision, recall, F1, ROC-AUC and PR-AUC at document level; IoU and
+pixel-level measures for localized edits; expected calibration error and
+abstention coverage; latency and memory; and per-bank, language, device,
+acquisition, and attack breakdowns. Thresholds are chosen on validation data and
+locked before test evaluation. Bootstrap confidence intervals and paired
+comparisons should accompany point estimates.
+
+\begin{table}[t]
+\caption{Evidence status in this draft (no values are inferred from demos).}
+\label{tab:results}
+\centering
+\begin{tabular}{lp{0.44\columnwidth}}
+\toprule
+Artifact & Status \\
+\midrule
+Dataset manifest and consent record & \pending \\
+Locked train/validation/test split & \pending \\
+Document and localization metrics & \pending \\
+Layer ablations and baselines & \pending \\
+Confidence intervals and error audit & \pending \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The repository contains deterministic demonstration values and synthetic test
+fixtures. They validate software paths but are not experimental observations and
+are excluded from Table~\ref{tab:results}.
+
+\section{Discussion}
+The architecture makes heterogeneous evidence inspectable, but fixed rules and
+max fusion can be miscalibrated across banks or acquisition channels. OCR and
+template checks may fail on multilingual or redesigned interfaces. Compression
+and recapture can either create false positives or erase manipulation traces.
+The optional learned component requires a documented checkpoint and independent
+test set before supporting an accuracy claim. Operationally, an `AUTHENTIC`
+image verdict must never substitute for checking account balance or an
+authorized transaction record.
+
+Privacy is part of the research design: collect only authorized slips, minimize
+retention, redact research exports, separate identifiers from labels, restrict
+access, and never place raw images or OCR values in logs or publications.
+
+\section{Conclusion}
+VeriSlip frames payment-slip screening as multi-evidence document forensics. Its
+implementation combines semantic constraints with compression, copy--move,
+residual, typography, recapture, and optional learned evidence. This draft
+defines the system and a falsifiable evaluation plan. Completion of the
+registered protocol, rather than repository demos, is required before any
+performance or comparative conclusion.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

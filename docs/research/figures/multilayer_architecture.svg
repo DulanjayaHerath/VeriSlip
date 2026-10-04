@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="430" viewBox="0 0 1080 430" role="img" aria-labelledby="title desc">
+<title id="title">VeriSlip multi-layer forensic methodology</title>
+<desc id="desc">Sanitized input fans out to implemented evidence layers, which feed max-pooled fusion and research outputs.</desc>
+<rect width="1080" height="430" fill="#ffffff"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#334155"/></marker></defs>
+<g stroke="#334155" stroke-width="2" fill="none" marker-end="url(#arrow)">
+<path d="M240 72 H260 V59 H285"/><path d="M240 72 H260 V157 H285"/>
+<path d="M240 72 H260 V255 H285"/><path d="M240 72 H260 V353 H285"/>
+<path d="M505 59 H535 V165 H560"/><path d="M505 157 H560"/>
+<path d="M505 255 H535 V247 H560"/><path d="M505 353 H535 V275 H560"/>
+<path d="M780 206 H835"/></g>
+<rect x="30" y="36" width="210" height="72" rx="8" fill="#eff6ff" stroke="#1e3a5f" stroke-width="2"/>
+<text x="135.0" y="63" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Sanitized RGB input</text>
+<text x="135.0" y="86" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">bounded; max dimension 1400</text>
+<rect x="285" y="20" width="220" height="78" rx="8" fill="#eff6ff" stroke="#1e3a5f" stroke-width="2"/>
+<text x="395.0" y="47" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Layer 1 + 1.5</text>
+<text x="395.0" y="70" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">structure, metadata, OCR semantics</text>
+<rect x="285" y="118" width="220" height="78" rx="8" fill="#eff6ff" stroke="#1e3a5f" stroke-width="2"/>
+<text x="395.0" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Layer 2 + 2.5</text>
+<text x="395.0" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">ELA, DCT, copy-move, occlusion</text>
+<rect x="285" y="216" width="220" height="78" rx="8" fill="#eff6ff" stroke="#1e3a5f" stroke-width="2"/>
+<text x="395.0" y="243" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Layer 3</text>
+<text x="395.0" y="266" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">residual variance and SRM summaries</text>
+<rect x="285" y="314" width="220" height="78" rx="8" fill="#eff6ff" stroke="#1e3a5f" stroke-width="2"/>
+<text x="395.0" y="341" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Layer 4 + adjunct</text>
+<text x="395.0" y="364" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">optional dual stream; rule fallback</text>
+<rect x="560" y="118" width="220" height="176" rx="8" fill="#f0fdf4" stroke="#1e3a5f" stroke-width="2"/>
+<text x="670.0" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Evidence fusion</text>
+<text x="670.0" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">weighted term + gated maxima</text>
+<text x="670.0" y="188" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">IoU 0.3 region suppression</text>
+<rect x="835" y="118" width="220" height="176" rx="8" fill="#f0fdf4" stroke="#1e3a5f" stroke-width="2"/>
+<text x="945.0" y="145" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Research output</text>
+<text x="945.0" y="168" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">risk and three-way verdict</text>
+<text x="945.0" y="188" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">regions, findings, maps</text>
+<text x="540" y="418" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#475569">Dashed or planned components are intentionally absent; this figure covers executable paths only.</text>
+</svg>

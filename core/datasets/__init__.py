@@ -22,6 +22,13 @@ from core.datasets.integrity import (
     verify_dataset,
     write_manifest,
 )
+from core.datasets.curation import (
+    CandidateMetadata,
+    CurationError,
+    curate_candidate,
+    curation_status,
+    finalize_integrity,
+)
 
 __all__ = [
     "AnnotationDataset",
@@ -42,4 +49,9 @@ __all__ = [
     "write_manifest",
     "write_coco",
     "write_voc",
+    "CandidateMetadata",
+    "CurationError",
+    "curate_candidate",
+    "curation_status",
+    "finalize_integrity",
 ]
